@@ -7,4 +7,18 @@ Developer Guide:
     .\env\Scripts\activate
 3. Install all dependencies using this command:
     pip install -r requirements.txt
+4. (Optional) To update the requirements.txt, use this command:
+    pip freeze > requirements.txt
 
+*FRONTEND*
+1. npm install
+
+------------------------------------------------------------------
+
+------------BACKEND START:
+THE BACKEND COMMAND MUST BE APPLIED IN THE BACKEND FOLDER
+uvicorn app.main:app --reload
+
+------------FRONTEND START:
+THE FRONTEND COMMAND MUST BE APPLIED IN THE FRONTEND FOLDER
+npx expo start or npm start

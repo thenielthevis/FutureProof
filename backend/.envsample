@@ -1,0 +1,4 @@
+MONGO_URI=mongodb+srv://danieldavis:1234567890@clusterfutureproof.ecsac.mongodb.net/?retryWrites=true&w=majority&appName=Clusterfutureproof
+SECRET_KEY=ZLgwvB2x28VpadY6MErD7xYI4FtKJmV557RUFLUrzlk=
+ACCESS_TOKEN_EXPIRE_MINUTES=30
+ALGORITHM=HS256
