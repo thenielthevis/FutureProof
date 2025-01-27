@@ -21,7 +21,7 @@ app.add_middleware(
     allow_origins=["*"],  # List of allowed origins
     allow_credentials=True,
     allow_methods=["*"],  # Allows all methods (GET, POST, PUT, DELETE, etc.)
-    allow_headers=["*"],  # Allows all headers
+    allow_headers=[],  # Allows all headers
 )
 
 app.include_router(user_routes.router)
