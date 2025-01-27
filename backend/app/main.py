@@ -12,7 +12,7 @@ origins = [
     "http://localhost",       # Localhost for web testing
     "http://172.34.6.61:8000", # Your machine's IP
     "http://10.0.2.2:8000",   # Android emulator accessing backend
-    "http://172.34.6.61:8081"
+    "http://172.34.6.61:8081",
 ]
 
 # Add CORS middleware
