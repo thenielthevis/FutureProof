@@ -6,12 +6,13 @@ const API_URL = 'http://192.168.1.21:8000';  // Your FastAPI backend URL
 export const registerUser = async (userData) => {
   try {
     const response = await axios.post(`${API_URL}/register`, userData);
-    return response.data;
+    return response.data; // Ensure this is a simple object that your frontend can handle
   } catch (error) {
-    throw error.response.data;
+    // Log the error to see its structure
+    console.error('Error during registration:', error.response ? error.response.data : error);
+    throw error.response ? error.response.data : { detail: 'An error occurred' };  // Provide a default error message
   }
 };
-
 // Login a user
 export const loginUser = async (userData) => {
   try {

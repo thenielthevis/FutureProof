@@ -1,8 +1,12 @@
-import React, { useState } from 'react';  
+import React, { useState } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
-import { View, Text, TouchableOpacity, StyleSheet, Image } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Image, ScrollView, StatusBar } from 'react-native';
+import { SafeAreaView, SafeAreaProvider } from 'react-native-safe-area-context';
 import Home from './Components/Home';
+import Contacts from './Components/Contacts';
+import Features from './Components/Features';
+import About from './Components/About';
 import Login from './Components/Login';
 import Register from './Components/Register';
 
@@ -11,84 +15,100 @@ const Stack = createStackNavigator();
 function CustomHeader({ navigation }) {
   const [isLogin, setIsLogin] = useState(true); // Track whether it's Login or Register
 
-  // Function to handle the toggle click and navigate accordingly
   const handleTogglePress = (targetPage) => {
     if (targetPage === 'Login') {
-      setIsLogin(true); // Set the state to login
-      navigation.navigate('Login'); // Navigate to Login
+      setIsLogin(true);
+      navigation.navigate('Login');
     } else {
-      setIsLogin(false); // Set the state to register
-      navigation.navigate('Register'); // Navigate to Register
+      setIsLogin(false);
+      navigation.navigate('Register');
     }
   };
 
   return (
-    <View style={styles.headerContainer}>
-      {/* Logo and clickable FutureProof title */}
+    <SafeAreaView style={styles.headerContainer} edges={['top']}>
       <View style={styles.logoContainer}>
-        <Image
-          source={require('./assets/logo.png')} // Replace with the path to your logo
-          style={styles.logo}
-        />
+        <Image source={require('./assets/logo.png')} style={styles.logo} />
         <TouchableOpacity onPress={() => navigation.navigate('Home')}>
           <Text style={styles.headerTitle}>FutureProof</Text>
         </TouchableOpacity>
       </View>
 
-      {/* Centered navigation links */}
       <View style={styles.navLinks}>
-        <TouchableOpacity onPress={() => navigation.navigate('Home')}>
+        <TouchableOpacity onPress={() => navigation.navigate('About')}>
           <Text style={styles.navLinkText}>About</Text>
         </TouchableOpacity>
-        <TouchableOpacity onPress={() => navigation.navigate('Home')}>
+        <TouchableOpacity onPress={() => navigation.navigate('Features')}>
           <Text style={styles.navLinkText}>Features</Text>
         </TouchableOpacity>
-        <TouchableOpacity onPress={() => navigation.navigate('Home')}>
+        <TouchableOpacity onPress={() => navigation.navigate('Contacts')}>
           <Text style={styles.navLinkText}>Contact Us</Text>
         </TouchableOpacity>
       </View>
 
-      {/* Toggle for Login and Register */}
       <View style={styles.toggleContainer}>
         <View style={styles.toggleBackground}>
-          {/* Handle the toggle click */}
           <TouchableOpacity
             style={[styles.toggleCircle, isLogin ? styles.circleLeft : styles.circleRight]}
-            onPress={() => handleTogglePress(isLogin ? 'Register' : 'Login')} // Toggle logic
+            onPress={() => handleTogglePress(isLogin ? 'Register' : 'Login')}
           />
           <View style={styles.toggleTextContainer}>
-            <Text style={[styles.toggleText, isLogin && styles.activeText]} onPress={() => handleTogglePress('Login')}>Login</Text>
-            <Text style={[styles.toggleText, !isLogin && styles.activeText]} onPress={() => handleTogglePress('Register')}>Register</Text>
+            <Text style={[styles.toggleText, isLogin && styles.activeText]} onPress={() => handleTogglePress('Login')}>
+              Login
+            </Text>
+            <Text style={[styles.toggleText, !isLogin && styles.activeText]} onPress={() => handleTogglePress('Register')}>
+              Register
+            </Text>
           </View>
         </View>
       </View>
-    </View>
+    </SafeAreaView>
   );
 }
 
 export default function App() {
   return (
-    <NavigationContainer>
-      <Stack.Navigator
-        initialRouteName="Home"
-        screenOptions={{
-          header: ({ navigation }) => <CustomHeader navigation={navigation} />,
-        }}
-      >
-        <Stack.Screen name="Home" component={Home} />
-        <Stack.Screen name="Login" component={Login} />
-        <Stack.Screen name="Register" component={Register} />
-      </Stack.Navigator>
-    </NavigationContainer>
+    <SafeAreaProvider>
+      <SafeAreaView style={styles.container} edges={['top']}>
+        <ScrollView 
+          style={styles.scrollView} 
+          contentContainerStyle={{ flexGrow: 1, paddingBottom: 20 }}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={true}
+        >
+          <NavigationContainer>
+            <Stack.Navigator
+              initialRouteName="Home"
+              screenOptions={{
+                header: ({ navigation }) => <CustomHeader navigation={navigation} />,
+              }}
+            >
+              <Stack.Screen name="Home" component={Home} />
+              <Stack.Screen name="About" component={About} />
+              <Stack.Screen name="Contacts" component={Contacts} />
+              <Stack.Screen name="Features" component={Features} />
+              <Stack.Screen name="Login" component={Login} />
+              <Stack.Screen name="Register" component={Register} />
+            </Stack.Navigator>
+          </NavigationContainer>
+        </ScrollView>
+      </SafeAreaView>
+    </SafeAreaProvider>
   );
 }
 
 const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
+  scrollView: {
+    backgroundColor: 'white',
+  },
   headerContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    backgroundColor: '#1A3B32', // Dark green background
+    backgroundColor: '#1A3B32',
     padding: 16,
   },
   logoContainer: {
@@ -96,9 +116,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   logo: {
-    width: 50, // Adjust size to fit your design
+    width: 50,
     height: 40,
-    marginRight: 8, // Space between logo and title
+    marginRight: 8,
   },
   headerTitle: {
     fontSize: 22,
@@ -107,56 +127,57 @@ const styles = StyleSheet.create({
   },
   navLinks: {
     flexDirection: 'row',
-    justifyContent: 'center', // Center navigation links
-    flex: 1, // Take up the remaining space between logo and buttons
+    justifyContent: 'center',
+    flex: 1,
   },
   navLinkText: {
     fontSize: 18,
     color: '#F5F5F5',
-    marginHorizontal: 16, // Space between links
+    marginHorizontal: 16,
   },
   toggleContainer: {
     flexDirection: 'row',
     alignItems: 'center',
   },
   toggleBackground: {
-    width: 143, // Increased width to fit the text inside the toggle
+    width: 143,
     height: 40,
-    borderRadius: 20, // Fully rounded edges
-    backgroundColor: '#E0E0E0', // Light gray background
+    borderRadius: 20,
+    backgroundColor: '#E0E0E0',
     position: 'relative',
     marginRight: 8,
-    justifyContent: 'center', // Center the text vertically inside the background
+    justifyContent: 'center',
   },
   toggleCircle: {
     width: 72,
     height: 36,
     borderRadius: 18,
     position: 'absolute',
-    backgroundColor: '#c1ff72', // Light green
+    backgroundColor: '#c1ff72',
     top: 2,
   },
   circleLeft: {
-    left: 2, // Positioned on the left for Login
+    left: 2,
   },
   circleRight: {
-    left: 70, // Positioned on the right for Register
+    left: 70,
   },
   toggleTextContainer: {
     position: 'absolute',
-    top: 8, // Center text vertically
-    left: 12, // Move the text right for better alignment
-    right: 5, // Space for both texts
+    top: 8,
+    left: 12,
+    right: 5,
     flexDirection: 'row',
     justifyContent: 'space-between',
-    zIndex: 1, // Ensure the text is in front of the toggle
+    zIndex: 1,
   },
   toggleText: {
     fontSize: 16,
-    color: '#1A3B32', // Dark green text
+    color: '#1A3B32',
     fontWeight: '600',
   },
   activeText: {
-    color: '#1A3B32', // Light green when active
+    color: '#1A3B32',
   },
 });
+

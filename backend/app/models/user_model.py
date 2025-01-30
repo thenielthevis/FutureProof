@@ -1,6 +1,6 @@
 from pydantic import BaseModel, EmailStr, Field
 from bson import ObjectId
-from typing import Optional
+from typing import Optional, List
 
 # Convert ObjectId to string for serialization
 def str_objectid(id: ObjectId) -> str:
@@ -13,17 +13,39 @@ class ObjectIdModel(BaseModel):
     class Config:
         arbitrary_types_allowed = True
 
-# This will be used for registration
+# Extended UserCreate model to include all fields from the frontend
 class UserCreate(BaseModel):
     username: str
     email: EmailStr
     password: str
+    age: int
+    gender: str
+    height: float
+    weight: float
+    environment: str
+    vices: List[str] = []
+    genetic_diseases: List[str] = []
+    lifestyle: List[str] = []
+    food_intake: List[str] = []
+    sleep_hours: str
+    activeness: str
 
 # This model is for internal representation in the database (MongoDB)
 class UserInDB(ObjectIdModel):
     username: str
     email: EmailStr
     hashed_password: str
+    age: int
+    gender: str
+    height: float
+    weight: float
+    environment: str
+    vices: List[str] = []
+    genetic_diseases: List[str] = []
+    lifestyle: List[str] = []
+    food_intake: List[str] = []
+    sleep_hours: str
+    activeness: str
 
     class Config:
         json_encoders = {

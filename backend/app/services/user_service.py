@@ -39,7 +39,21 @@ async def register_user(user: UserCreate):
     
     hashed_password = get_password_hash(user.password)
     user_in_db = UserInDB(
-        username=user.username, email=user.email, hashed_password=hashed_password, id=ObjectId()
+        username=user.username,
+        email=user.email,
+        hashed_password=hashed_password,
+        age=user.age,
+        gender=user.gender,
+        height=user.height,
+        weight=user.weight,
+        environment=user.environment,
+        vices=user.vices,
+        genetic_diseases=user.genetic_diseases,
+        lifestyle=user.lifestyle,
+        food_intake=user.food_intake,
+        sleep_hours=user.sleep_hours,
+        activeness=user.activeness,
+        id=ObjectId()  # MongoDB ObjectId
     )
     await db.users.insert_one(user_in_db.dict(exclude={"id"}))
     return user_in_db
