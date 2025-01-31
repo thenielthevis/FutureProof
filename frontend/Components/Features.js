@@ -1,205 +1,201 @@
-import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
+import React, { useRef, useState } from 'react'; 
+import { View, Text, StyleSheet, Image, Animated, Dimensions, ScrollView, Platform } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 
+const { width: screenWidth } = Dimensions.get('window');
+
 const Features = ({ navigation }) => {
-    return (
-        <LinearGradient
-          colors={['#E8F5E9', '#72f2b8']} // Gradient colors
-          style={styles.container}
-        >
-          <View style={styles.container}>
-            {/* Header Section */}
-            <View style={styles.header}>
-              <View style={styles.headerTextContainer}>
-                <Text style={styles.title}>Features</Text>
-                <Text style={styles.subtitle}>
-                  FutureProof uses AI to provide predictive health insights and preventive wellness
-                  solutions, helping you stay ahead of potential health risks and optimize your
-                  well-being.
-                </Text>
-                <TouchableOpacity
-                  style={styles.joinButton}
-                  onPress={() => navigation.navigate('Register')} // Replace 'Register' with your actual screen name
-                >
-                  <Text style={styles.joinButtonText}>Join Now!</Text>
-                </TouchableOpacity>
-              </View>
-              <Image
-                source={require('../assets/video.gif')} // Correct relative path to your GIF
-                style={styles.headerGif}
-              />
-            </View>
-    
-            {/* Features Section */}
-            <View style={styles.features}>
-              {/* Feature 1 */}
-              <View style={styles.featureBox}>
-                <TouchableOpacity style={styles.nextIcon}>
-                  <Text style={styles.nextIconText}>{"<"}</Text>
-                </TouchableOpacity>
-                <View style={styles.featureContent}>
-                  <Text style={styles.featureTitle}>Gamified</Text>
-                  <Text style={styles.featureDescription}>
-                    Engage in a fun, interactive experience that turns health goals into rewarding
-                    challenges, making wellness enjoyable and motivating.
-                  </Text>
-                </View>
-                <Image
-                  source={require('../assets/gamified.png')}
-                  style={styles.featureImage}
-                />
-              </View>
-    
-              {/* Feature 2 */}
-              <View style={styles.featureBox}>
-                <TouchableOpacity style={styles.nextIcon}>
-                  <Text style={styles.nextIconText}>{"<"}</Text>
-                </TouchableOpacity>
-                <View style={styles.featureContent}>
-                  <Text style={styles.featureTitle}>Nutritional Tracking</Text>
-                  <Text style={styles.featureDescription}>
-                    Easily track your daily food intake and gain valuable insights into your nutrition to
-                    help you make healthier choices.
-                  </Text>
-                </View>
-                <Image
-                  source={require('../assets/nutrition.png')}
-                  style={styles.featureImage}
-                />
-              </View>
-    
-              {/* Feature 3 */}
-              <View style={styles.featureBox}>
-                <TouchableOpacity style={styles.nextIcon}>
-                  <Text style={styles.nextIconText}>{"<"}</Text>
-                </TouchableOpacity>
-                <View style={styles.featureContent}>
-                  <Text style={styles.featureTitle}>Daily Assessment</Text>
-                  <Text style={styles.featureDescription}>
-                    Receive personalized daily assessments to monitor your progress, identify health
-                    trends, and optimize your wellness journey.
-                  </Text>
-                </View>
-                <Image
-                  source={require('../assets/assessment.png')}
-                  style={styles.featureImage}
-                />
-              </View>
-            </View>
+  const scrollX = useRef(new Animated.Value(0)).current;
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const scrollViewRef = useRef(null);
+
+  const featuresList = [
+    { title: '', image: require('../assets/logo.png') },
+    { title: '', image: require('../assets/gamified.png') },
+    { title: '', image: require('../assets/nutrition.png') },
+    { title: ' ', image: require('../assets/assessment.png') },
+  ];
+
+  // Duplicate the list to create an infinite effect
+  const infiniteFeaturesList = [featuresList[featuresList.length - 1], ...featuresList, featuresList[0]];
+
+  const handleScroll = Animated.event(
+    [{ nativeEvent: { contentOffset: { x: scrollX } } }],
+    { useNativeDriver: false }
+  );
+
+  const handleSlideChange = (event) => {
+    const contentOffset = event.nativeEvent.contentOffset.x;
+    const index = Math.round(contentOffset / screenWidth);
+
+    // Adjust index for infinite scroll
+    if (index === 0) {
+      scrollViewRef.current.scrollTo({ x: screenWidth * featuresList.length, animated: false });
+      setCurrentIndex(featuresList.length - 1);
+    } else if (index === infiniteFeaturesList.length - 1) {
+      scrollViewRef.current.scrollTo({ x: screenWidth, animated: false });
+      setCurrentIndex(0);
+    } else {
+      setCurrentIndex((index - 1 + featuresList.length) % featuresList.length);
+    }
+  };
+
+  return (
+    <LinearGradient
+      colors={['#E8F5E9', '#72f2b8']}
+      style={styles.container}
+    >
+      <View style={styles.container}>
+        {/* Header Section */}
+        <View style={styles.header}>
+          <View style={styles.headerTextContainer}>
+            <Text style={styles.title}>            MOST POPULAR FEATURES</Text>
           </View>
-        </LinearGradient>
-      );
-    };
-    
-    const styles = StyleSheet.create({
-      container: {
-        flex: 1,
-        padding: 16,
-      },
-      header: {
-        flexDirection: 'row', // Align the header content horizontally
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        marginBottom: 1,
-      },
-      headerTextContainer: {
-        flex: 1,
-        marginLeft: 10, // Add some margin for spacing from the GIF
-        marginTop: 1, // Adjust the space from the top
-      },
-      title: {
-        fontSize: 45,
-        fontWeight: 'bold',
-        color: '#1B5E20',
-        marginBottom: 16,
-      },
-      subtitle: {
-        fontSize: 20,
-        color: '#388E3C',
-        marginBottom: 16,
-      },
-      joinButton: {
-        backgroundColor: '#c1ff72',
-        height: 40, // Set a fixed height
-        width: 200, // Set a fixed width
-        borderRadius: 25,
-        justifyContent: 'center', // Center the text vertically
-        alignItems: 'center', // Center the text horizontally
-        display: 'flex', // Make sure the container behaves like a flexbox
-      },
-      joinButtonText: {
-        color: '#1B5E20',
-        fontWeight: 'bold',
-        fontSize: 20,
-        textAlign: 'center', // Ensure the text is centered horizontally
-      },
-      headerGif: {
-        width: 700, // Increased the width of the GIF
-        height: 400, // Increased the height of the GIF
-        marginRight: 20, // Add some margin to the right for spacing
-      },
-      features: {
-        flexDirection: 'row-reverse', // Place images on the right
-        justifyContent: 'space-between',
-        marginTop: 1,
-      },
-      featureBox: {
-        width: '30%',
-        height: '150%',
-        alignItems: 'flex-start', // Align the content to the left
-        backgroundColor: '#C8E6C9', // Light green for the boxes
-        padding: 10,
-        borderRadius: 10,
-        borderColor: '#1B5E20', // Border color
-        borderWidth: 3, // Border thickness
-        flexDirection: 'row', // Arrange the icon and content horizontally
-        paddingRight: 20, // Add space between the text and the image
-        marginBottom: 20, // Add space between feature boxes
-        position: 'relative', // Allow absolute positioning of the icon
-      },
-      featureContent: {
-        flex: 1, // Allow the content to take up the remaining space
-        paddingLeft: 10, // Add some space between the icon and the content
-      },
-      featureImage: {
-        width: 120, // Keep the width of the image
-        height: 120, // Keep the height of the image
-        position: 'absolute', // Absolute positioning
-        bottom: 1, // Distance from the bottom
-        right: 1, // Distance from the right
-      },
-      
-      
-      featureTitle: {
-        fontSize: 20,
-        fontWeight: 'bold',
-        color: '#2E7D32',
-        marginBottom: 8,
-        textAlign: 'left', // Center align the title
-      },
-      featureDescription: {
-        fontSize: 16,
-        textAlign: 'left', // Center align the description
-        color: '#4CAF50',
-        marginBottom: 8, // Add some space between the description and image
-      },
-      nextIcon: {
-        backgroundColor: '#81C784', // Same color as the button
-        borderRadius: 25,
-        width: 40,
-        height: 40,
-        justifyContent: 'center',
-        alignItems: 'center',
-        position: 'absolute', // Position it at the bottom left
-        bottom: 5, // Set distance from the bottom
-        left: 20, // Set distance from the left
-      },
-      nextIconText: {
-        color: '#1B5E20',
-        fontSize: 24,
-        fontWeight: 'bold',
-      },
-    });
-    
+        </View>
+
+        {/* Carousel Section */}
+        <View style={styles.carouselContainer}>
+          <ScrollView
+            ref={scrollViewRef}
+            horizontal
+            pagingEnabled
+            showsHorizontalScrollIndicator={false}
+            onScroll={handleScroll}
+            onMomentumScrollEnd={handleSlideChange}
+            initialScrollIndex={1} // Start at the first item in the original list
+          >
+            {infiniteFeaturesList.map((feature, index) => (
+              <View key={index} style={styles.carouselItem}>
+                <Animated.View
+                  style={[
+                    styles.featureImageContainer,
+                    {
+                      transform: [
+                        {
+                          scale: scrollX.interpolate({
+                            inputRange: [
+                              (index - 1) * screenWidth,
+                              index * screenWidth,
+                              (index + 1) * screenWidth,
+                            ],
+                            outputRange: [1, 1.1, 1],
+                            extrapolate: 'clamp',
+                          }),
+                        },
+                      ],
+                    },
+                  ]}
+                >
+                  <Image
+                    source={feature.image}
+                    style={styles.featureImage}
+                  />
+                </Animated.View>
+                
+              </View>
+            ))}
+          </ScrollView>
+        </View>
+
+        {/* Pagination Dots */}
+        <View style={styles.pagination}>
+          {featuresList.map((_, index) => (
+            <Animated.View
+              key={index}
+              style={[
+                styles.paginationDot,
+                currentIndex === index && styles.paginationDotActive,
+                {
+                  transform: [
+                    {
+                      scale: scrollX.interpolate({
+                        inputRange: [
+                          (index - 1) * screenWidth,
+                          index * screenWidth,
+                          (index + 1) * screenWidth,
+                        ],
+                        outputRange: [1, 1.5, 1],
+                        extrapolate: 'clamp',
+                      }),
+                    },
+                  ],
+                  backgroundColor: currentIndex === index ? '#388E3C' : '#388E3C',
+                },
+              ]}
+            />
+          ))}
+        </View>
+      </View>
+    </LinearGradient>
+  );
+};
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    padding: 30,
+  },
+  header: {
+    alignItems: 'center',
+    marginBottom: 10, // Increased margin to create space between title and carousel
+  },
+  headerTextContainer: {
+    alignItems: 'center',
+  },
+  title: {
+    fontSize: 30,
+    fontWeight: 'bold',
+    color: '#1B5E20',
+    fontFamily: 'serif', // Semi-formal font family
+    fontStyle: 'italic', // Italic style
+  },
+  carouselContainer: {
+    height: 500,
+    marginBottom: 50, // Adjust space between carousel and pagination dots
+  },
+  carouselItem: {
+    width: screenWidth - 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  featureImageContainer: {
+    shadowColor: '#000', // Black shadow
+    shadowOffset: { width: 0, height: 10 }, // Shadow positioning
+    shadowOpacity: 0.50, // Shadow intensity
+    shadowRadius: 15, // Shadow blur
+    elevation: 5, // Elevation for Android shadow
+    marginBottom: 10, // Space between image and title
+    borderRadius: 20, // Rounded corners for the container
+  },
+  featureImage: {
+    width: 500,
+    height: 500,
+    borderRadius: 20, // Rounded corners for the image
+    borderWidth: 5, // Border width
+    borderColor: '#388E3C', // Border color (dark green)
+  },
+  featureTitle: {
+    fontSize: 50,
+    fontWeight: 'bold',
+    color: '#2E7D32',
+    marginTop: 25,
+  },
+  pagination: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 1, // Adjusted to create space between carousel and pagination
+  },
+  paginationDot: {
+    width: 20,
+    height: 20,
+    borderRadius: 4,
+    backgroundColor: '#388E3C', // Default light color for inactive dots
+    marginHorizontal: 4,
+  },
+  paginationDotActive: {
+    backgroundColor: '#388E3C', // Dark Green for active dot
+  },
+});
+
 export default Features;

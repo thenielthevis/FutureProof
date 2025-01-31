@@ -150,7 +150,7 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start', // Align the content to the left
     backgroundColor: '#C8E6C9', // Light green for the boxes
     padding: 10,
-    borderRadius: 10,
+    borderRadius: 30,
     borderColor: '#1B5E20', // Border color
     borderWidth: 3, // Border thickness
     flexDirection: 'row', // Arrange the icon and content horizontally

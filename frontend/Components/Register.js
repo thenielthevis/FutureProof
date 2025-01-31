@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, Button, StyleSheet, ScrollView } from 'react-native';
+import { View, Text, TextInput, Button, StyleSheet, ScrollView, Image } from 'react-native';
 import { Checkbox, RadioButton } from 'react-native-paper'; // Import checkbox component
 import { registerUser } from '../API/api';
+
+
 
 const Register = ({ navigation }) => {
   const [step, setStep] = useState(1);
@@ -25,6 +27,8 @@ const Register = ({ navigation }) => {
   const [customVice, setCustomVice] = useState("");
   const [customGeneticDisease, setCustomGeneticDisease] = useState("");
   const [customLifestyle, setCustomLifestyle] = useState("");
+  
+
 
   const handleCheckboxToggle = (option, setState, state) => {
     setState(state.includes(option) ? state.filter(item => item !== option) : [...state, option]);
@@ -73,6 +77,11 @@ const Register = ({ navigation }) => {
   };
 
   return (
+    
+    <View style={styles.container}>
+      
+    {/* Left Side - Steps */}
+    <View style={styles.leftContainer}>
     <ScrollView contentContainerStyle={styles.container}>
       {step === 1 && (
         <View>
@@ -231,15 +240,44 @@ const Register = ({ navigation }) => {
       )}       
       {error ? <Text style={styles.error}>{error}</Text> : null}
       </ScrollView>
+      </View>
+     
+    
+      {/* Right Side - Logo */}
+      <View style={styles.rightContainer}>
+        <Image source={require('../assets/logo-2.png')} style={styles.logo} />
+      </View>
+    </View>
+    
     );
   };
 
   const styles = StyleSheet.create({
-    container: { flexGrow: 1, padding: 16, justifyContent: 'center' },
+    container: {
+      flexDirection: 'row', // This arranges the left and right containers in a row
+      flex: 1,
+      justifyContent: 'space-between',
+    },
+    leftContainer: {
+      flex: 2, // This container takes 2/3 of the screen width
+      padding: 16,
+      justifyContent: 'center',
+    },
+    rightContainer: {
+      flex: 1, // This container takes 1/3 of the screen width
+      justifyContent: 'center',
+      alignItems: 'center', // Centers the logo within the container
+    },
+    logo: {
+      width: 150, // Set the logo width
+      height: 150, // Set the logo height
+      resizeMode: 'contain', // Ensures the image is properly scaled
+    },
     header: { fontSize: 24, textAlign: 'center', marginBottom: 20 },
     subHeader: { fontSize: 18, fontWeight: 'bold', marginTop: 20 },
     input: { height: 40, borderColor: '#ccc', borderWidth: 1, marginBottom: 10, paddingHorizontal: 8 },
     error: { color: 'red', marginBottom: 10 },
   });
+  
 
 export default Register;

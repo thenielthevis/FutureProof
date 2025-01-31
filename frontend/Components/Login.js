@@ -53,7 +53,7 @@ const Login = ({ navigation }) => {
 
         <View style={styles.inputContainer}>
           <View style={styles.iconWrapper}>
-            <Icon name="email" size={20} color="#ffffff" />
+            <Icon name="email" size={30} color="#ffffff" />
           </View>
           <TextInput
             style={styles.input}
@@ -66,7 +66,7 @@ const Login = ({ navigation }) => {
 
         <View style={styles.inputContainer}>
           <View style={styles.iconWrapper}>
-            <Icon name="lock" size={20} color="#ffffff" />
+            <Icon name="lock" size={30} color="#ffffff" />
           </View>
           <TextInput
             style={styles.input}
