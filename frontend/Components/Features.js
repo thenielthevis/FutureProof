@@ -1,129 +1,207 @@
-import React, { useRef, useState } from 'react'; 
-import { View, Text, StyleSheet, Image, Animated, Dimensions, ScrollView, Platform } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, Image, Animated, TouchableOpacity } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import FontAwesome from 'react-native-vector-icons/FontAwesome'; // Importing FontAwesome icon set
 
-const { width: screenWidth } = Dimensions.get('window');
+const Features = () => {
+  const [scaleAnim] = useState(new Animated.Value(1)); // Initial scale for image
+  const [glowAnim] = useState(new Animated.Value(0)); // Initial glow opacity for image
+  const [fontSizeAnim] = useState(new Animated.Value(24)); // Increased initial font size for text
+  const [fontColorAnim] = useState(new Animated.Value(1)); // Font color animation (1 is for green)
+  const [fontSizeAnime] = useState(new Animated.Value(40)); // Initial font size
 
-const Features = ({ navigation }) => {
-  const scrollX = useRef(new Animated.Value(0)).current;
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const scrollViewRef = useRef(null);
+  const handlePressIn = () => {
+    // Animate scaling, glowing, font size, and font color when pressed
+    Animated.parallel([
+      Animated.spring(scaleAnim, {
+        toValue: 2, // Scale the image to 1.2 times
+        friction: 3,  // Set friction for smooth scaling
+        useNativeDriver: true,
+      }),
+      Animated.timing(glowAnim, {
+        toValue: 1, // Make the glow fully visible
+        duration: 300,
+        useNativeDriver: false, // glow opacity cannot be done with native driver
+      }),
+      Animated.timing(fontSizeAnim, {
+        toValue: 28, // Increase font size more
+        duration: 300,
+        useNativeDriver: false,
+      }),
+      Animated.timing(fontColorAnim, {
+        toValue: 0, // Change font color to a darker shade (0 is for dark color)
+        duration: 300,
+        useNativeDriver: false,
+      }),
+    ]).start();
+  };
 
-  const featuresList = [
-    { title: '', image: require('../assets/logo.png') },
-    { title: '', image: require('../assets/gamified.png') },
-    { title: '', image: require('../assets/nutrition.png') },
-    { title: ' ', image: require('../assets/assessment.png') },
-  ];
-
-  // Duplicate the list to create an infinite effect
-  const infiniteFeaturesList = [featuresList[featuresList.length - 1], ...featuresList, featuresList[0]];
-
-  const handleScroll = Animated.event(
-    [{ nativeEvent: { contentOffset: { x: scrollX } } }],
-    { useNativeDriver: false }
-  );
-
-  const handleSlideChange = (event) => {
-    const contentOffset = event.nativeEvent.contentOffset.x;
-    const index = Math.round(contentOffset / screenWidth);
-
-    // Adjust index for infinite scroll
-    if (index === 0) {
-      scrollViewRef.current.scrollTo({ x: screenWidth * featuresList.length, animated: false });
-      setCurrentIndex(featuresList.length - 1);
-    } else if (index === infiniteFeaturesList.length - 1) {
-      scrollViewRef.current.scrollTo({ x: screenWidth, animated: false });
-      setCurrentIndex(0);
-    } else {
-      setCurrentIndex((index - 1 + featuresList.length) % featuresList.length);
-    }
+  const handlePressOut = () => {
+    // Reset the scale, glow, font size, and font color when the press ends
+    Animated.parallel([
+      Animated.spring(scaleAnim, {
+        toValue: 1, // Reset scale to 1 (normal size)
+        friction: 3,
+        useNativeDriver: true,
+      }),
+      Animated.timing(glowAnim, {
+        toValue: 0, // Remove the glow
+        duration: 300,
+        useNativeDriver: false,
+      }),
+      Animated.timing(fontSizeAnim, {
+        toValue: 24, // Reset font size to normal
+        duration: 300,
+        useNativeDriver: false,
+      }),
+      Animated.timing(fontColorAnim, {
+        toValue: 1, // Reset font color to original green
+        duration: 300,
+        useNativeDriver: false,
+      }),
+    ]).start();
   };
 
   return (
-    <LinearGradient
-      colors={['#E8F5E9', '#72f2b8']}
-      style={styles.container}
-    >
-      <View style={styles.container}>
-        {/* Header Section */}
-        <View style={styles.header}>
-          <View style={styles.headerTextContainer}>
-            <Text style={styles.title}>            MOST POPULAR FEATURES</Text>
-          </View>
-        </View>
+    <LinearGradient colors={['#E8F5E9', '#72f2b8']} style={styles.container}>
+      {/* Repeated Visible Icons as Background */}
+      <View style={styles.backgroundIcons}>
+        {/* Multiple repeated icons filling up the background */}
+        <FontAwesome name="leaf" size={150} color="#4CAF50" style={styles.iconBackground} />
+        <FontAwesome name="leaf" size={150} color="#4CAF50" style={[styles.iconBackground, {top: 100, left: 50}]} />
+        <FontAwesome name="leaf" size={150} color="#4CAF50" style={[styles.iconBackground, {top: 200, left: 100}]} />
+        <FontAwesome name="leaf" size={150} color="#4CAF50" style={[styles.iconBackground, {top: 300, left: 150}]} />
+        <FontAwesome name="leaf" size={150} color="#4CAF50" style={[styles.iconBackground, {top: 100, right: 50}]} />
+        <FontAwesome name="leaf" size={150} color="#4CAF50" style={[styles.iconBackground, {top: 220, right: 100}]} />
+        <FontAwesome name="leaf" size={150} color="#4CAF50" style={[styles.iconBackground, {top: 350, right: 150}]} />
+        <FontAwesome name="leaf" size={150} color="#4CAF50" style={[styles.iconBackground, {top: 350, top: 150}]} />
+        <FontAwesome name="leaf" size={150} color="#4CAF50" style={[styles.iconBackground, {top: 500, top: 500}]} />
+        {/* You can add more icons to fill the entire screen */}
+      </View>
 
-        {/* Carousel Section */}
-        <View style={styles.carouselContainer}>
-          <ScrollView
-            ref={scrollViewRef}
-            horizontal
-            pagingEnabled
-            showsHorizontalScrollIndicator={false}
-            onScroll={handleScroll}
-            onMomentumScrollEnd={handleSlideChange}
-            initialScrollIndex={1} // Start at the first item in the original list
-          >
-            {infiniteFeaturesList.map((feature, index) => (
-              <View key={index} style={styles.carouselItem}>
-                <Animated.View
-                  style={[
-                    styles.featureImageContainer,
-                    {
-                      transform: [
-                        {
-                          scale: scrollX.interpolate({
-                            inputRange: [
-                              (index - 1) * screenWidth,
-                              index * screenWidth,
-                              (index + 1) * screenWidth,
-                            ],
-                            outputRange: [1, 1.1, 1],
-                            extrapolate: 'clamp',
-                          }),
-                        },
-                      ],
-                    },
-                  ]}
-                >
-                  <Image
-                    source={feature.image}
-                    style={styles.featureImage}
-                  />
-                </Animated.View>
-                
-              </View>
-            ))}
-          </ScrollView>
-        </View>
+      <Animated.Text
+        style={[
+          styles.featureTitle,
+          {
+            fontSize: fontSizeAnime, // Animated font size (you can adjust this value)
+            fontStyle: 'italic', // Italic style
+            fontWeight: 'bold',
+            textAlign: 'center', // Center the text horizontally
+            color: '#2E7D32', // Dark green color
+            textShadowColor: '#2E7D32', // Dark green shadow color
+            textShadowOffset: { width: 0, height: 0 }, // No offset for the shadow
+            textShadowRadius: 15, // Apply a radius to the glow effect (increased for a stronger glow)
+            marginTop: 30, // Adds space at the top, can adjust as needed
+          },
+        ]}
+      >
+        Learn More about our Features
+      </Animated.Text>
 
-        {/* Pagination Dots */}
-        <View style={styles.pagination}>
-          {featuresList.map((_, index) => (
-            <Animated.View
-              key={index}
+      <View style={styles.featuresContainer}>
+        {/* Nutritional Tracking */}
+        <View style={[styles.featureRow, styles.alternateRow]}>
+          <View style={styles.textContainer}>
+            <Animated.Text
               style={[
-                styles.paginationDot,
-                currentIndex === index && styles.paginationDotActive,
+                styles.featureTitle,
                 {
-                  transform: [
-                    {
-                      scale: scrollX.interpolate({
-                        inputRange: [
-                          (index - 1) * screenWidth,
-                          index * screenWidth,
-                          (index + 1) * screenWidth,
-                        ],
-                        outputRange: [1, 1.5, 1],
-                        extrapolate: 'clamp',
-                      }),
-                    },
-                  ],
-                  backgroundColor: currentIndex === index ? '#388E3C' : '#388E3C',
+                  fontSize: fontSizeAnim, // Animated font size
+                  fontStyle: 'italic', // Italic style
+                  fontWeight: 'bold',
+                  color: fontColorAnim.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: ['#2E7D32', '#000'], // Change from green to black on press
+                  }),
                 },
               ]}
-            />
-          ))}
+            >
+              Nourish Your Body
+            </Animated.Text>
+            <Text style={styles.featureDescription}>
+              Easily track your daily food intake and gain valuable insights into your nutrition. By regularly monitoring your eating habits, you can identify patterns, make healthier choices, and ensure that you maintain a balanced diet that contributes to your overall well-being.
+            </Text>
+          </View>
+          <Animated.View
+            style={[styles.iconContainer, {transform: [{scale: scaleAnim}]}]}
+          >
+            <TouchableOpacity onPressIn={handlePressIn} onPressOut={handlePressOut}>
+              <Image
+                source={require('../assets/f-1.png')}
+                style={styles.icon}
+              />
+            </TouchableOpacity>
+          </Animated.View>
+        </View>
+
+        {/* Daily Assessment */}
+        <View style={[styles.featureRow, styles.dailyAssessmentRow]}>
+          <View style={styles.textContainer}>
+            <Animated.Text
+              style={[
+                styles.featureTitle,
+                {
+                  fontSize: fontSizeAnim, // Animated font size
+                  fontStyle: 'italic', // Italic style
+                  fontWeight: 'bold',
+                  color: fontColorAnim.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: ['#2E7D32', '#000'], // Change from green to black on press
+                  }),
+                },
+              ]}
+            >
+              Track Your Progress
+            </Animated.Text>
+            <Text style={styles.featureDescription}>
+              Receive personalized daily assessments based on your health data and habits. These assessments help you monitor health trends over time, so you can make adjustments to optimize your wellness.
+            </Text>
+          </View>
+          <Animated.View
+            style={[styles.iconContainer, {transform: [{scale: scaleAnim}]}]}
+          >
+            <TouchableOpacity onPressIn={handlePressIn} onPressOut={handlePressOut}>
+              <Image
+                source={require('../assets/f-2.png')}
+                style={styles.icon}
+              />
+            </TouchableOpacity>
+          </Animated.View>
+        </View>
+
+        {/* Gamified */}
+        <View style={[styles.featureRow, styles.alternateRow]}>
+          <View style={styles.textContainer}>
+            <Animated.Text
+              style={[
+                styles.featureTitle,
+                {
+                  fontSize: fontSizeAnim, // Animated font size
+                  fontStyle: 'italic', // Italic style
+                  fontWeight: 'bold',
+                  color: fontColorAnim.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: ['#2E7D32', '#000'], // Change from green to black on press
+                  }),
+                },
+              ]}
+            >
+              Wellness Challenges
+            </Animated.Text>
+            <Text style={styles.featureDescription}>
+              Engage in a fun and interactive experience that turns your health goals into rewarding challenges. This feature uses game-like mechanics to motivate you to stay on track with your wellness journey.
+            </Text>
+          </View>
+          <Animated.View
+            style={[styles.iconContainer, {transform: [{scale: scaleAnim}]}]}
+          >
+            <TouchableOpacity onPressIn={handlePressIn} onPressOut={handlePressOut}>
+              <Image
+                source={require('../assets/f-3.png')}
+                style={styles.icon}
+              />
+            </TouchableOpacity>
+          </Animated.View>
         </View>
       </View>
     </LinearGradient>
@@ -133,68 +211,70 @@ const Features = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 30,
+    padding: 50,
   },
-  header: {
-    alignItems: 'center',
-    marginBottom: 10, // Increased margin to create space between title and carousel
-  },
-  headerTextContainer: {
-    alignItems: 'center',
-  },
-  title: {
-    fontSize: 30,
-    fontWeight: 'bold',
-    color: '#1B5E20',
-    fontFamily: 'serif', // Semi-formal font family
-    fontStyle: 'italic', // Italic style
-  },
-  carouselContainer: {
-    height: 500,
-    marginBottom: 50, // Adjust space between carousel and pagination dots
-  },
-  carouselItem: {
-    width: screenWidth - 20,
+  backgroundIcons: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    zIndex: -1, // Keep the icons behind the content
     justifyContent: 'center',
     alignItems: 'center',
   },
-  featureImageContainer: {
-    shadowColor: '#000', // Black shadow
-    shadowOffset: { width: 0, height: 10 }, // Shadow positioning
-    shadowOpacity: 0.50, // Shadow intensity
-    shadowRadius: 15, // Shadow blur
-    elevation: 5, // Elevation for Android shadow
-    marginBottom: 10, // Space between image and title
-    borderRadius: 20, // Rounded corners for the container
+  iconBackground: {
+    opacity: 0.5, // Make the background icons visible
+    position: 'absolute',
   },
-  featureImage: {
-    width: 500,
-    height: 500,
-    borderRadius: 20, // Rounded corners for the image
-    borderWidth: 5, // Border width
-    borderColor: '#388E3C', // Border color (dark green)
+  featuresContainer: {
+    flexDirection: 'column',
+    alignItems: 'center',
+  },
+  featureRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: 1,
+    marginBottom: 1,
+    width: '70%',
+  },
+  alternateRow: {
+    flexDirection: 'row-reverse',
+  },
+  dailyAssessmentRow: {
+    justifyContent: 'flex-end',
+  },
+  textContainer: {
+    flex: 1,
+    marginLeft: 10,
+    marginRight: 10,
+  },
+  iconContainer: {
+    alignItems: 'center',
+  },
+  icon: {
+    width: 200,
+    height: 200,
+    borderWidth: 5,
+    borderColor: '#4CAF50',
+    borderRadius: 15,
+    padding: 5,
+  },
+  dailyAssessmentIcon: {
+    marginLeft: 10,
   },
   featureTitle: {
     fontSize: 50,
     fontWeight: 'bold',
     color: '#2E7D32',
-    marginTop: 25,
+    textAlign: 'left',
+    marginBottom: 5,
   },
-  pagination: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginTop: 1, // Adjusted to create space between carousel and pagination
-  },
-  paginationDot: {
-    width: 20,
-    height: 20,
-    borderRadius: 4,
-    backgroundColor: '#388E3C', // Default light color for inactive dots
-    marginHorizontal: 4,
-  },
-  paginationDotActive: {
-    backgroundColor: '#388E3C', // Dark Green for active dot
+  featureDescription: {
+    fontSize: 20,
+    color: '#2A3D3A', // Darker green for description
+    textAlign: 'left',
   },
 });
 
