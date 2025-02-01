@@ -1,35 +1,46 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, Image, Animated, TouchableOpacity } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  Image,
+  Animated,
+  TouchableOpacity,
+  Dimensions,
+  ScrollView,
+} from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import FontAwesome from 'react-native-vector-icons/FontAwesome'; // Importing FontAwesome icon set
+import FontAwesome from 'react-native-vector-icons/FontAwesome';
+
+const { width, height } = Dimensions.get('window');
+const isMobile = width < 768; // Adjust this value based on your needs
 
 const Features = () => {
-  const [scaleAnim] = useState(new Animated.Value(1)); // Initial scale for image
-  const [glowAnim] = useState(new Animated.Value(0)); // Initial glow opacity for image
-  const [fontSizeAnim] = useState(new Animated.Value(24)); // Increased initial font size for text
-  const [fontColorAnim] = useState(new Animated.Value(1)); // Font color animation (1 is for green)
-  const [fontSizeAnime] = useState(new Animated.Value(40)); // Initial font size
+  const [scaleAnim] = useState(new Animated.Value(1));
+  const [glowAnim] = useState(new Animated.Value(0));
+  const [fontSizeAnim] = useState(new Animated.Value(isMobile ? 18 : 24)); // Adjusted for mobile
+  const [fontColorAnim] = useState(new Animated.Value(1));
+  const [fontSizeAnime] = useState(new Animated.Value(isMobile ? 30 : 40)); // Adjusted for mobile
 
   const handlePressIn = () => {
-    // Animate scaling, glowing, font size, and font color when pressed
     Animated.parallel([
       Animated.spring(scaleAnim, {
-        toValue: 2, // Scale the image to 1.2 times
-        friction: 3,  // Set friction for smooth scaling
+        toValue: isMobile ? 1.2 : 1.5, // Reduced scaling for mobile
+        friction: 3,
         useNativeDriver: true,
       }),
       Animated.timing(glowAnim, {
-        toValue: 1, // Make the glow fully visible
+        toValue: 1,
         duration: 300,
-        useNativeDriver: false, // glow opacity cannot be done with native driver
+        useNativeDriver: false,
       }),
       Animated.timing(fontSizeAnim, {
-        toValue: 28, // Increase font size more
+        toValue: isMobile ? 22 : 28, // Adjusted for mobile
         duration: 300,
         useNativeDriver: false,
       }),
       Animated.timing(fontColorAnim, {
-        toValue: 0, // Change font color to a darker shade (0 is for dark color)
+        toValue: 0,
         duration: 300,
         useNativeDriver: false,
       }),
@@ -37,25 +48,24 @@ const Features = () => {
   };
 
   const handlePressOut = () => {
-    // Reset the scale, glow, font size, and font color when the press ends
     Animated.parallel([
       Animated.spring(scaleAnim, {
-        toValue: 1, // Reset scale to 1 (normal size)
+        toValue: 1,
         friction: 3,
         useNativeDriver: true,
       }),
       Animated.timing(glowAnim, {
-        toValue: 0, // Remove the glow
+        toValue: 0,
         duration: 300,
         useNativeDriver: false,
       }),
       Animated.timing(fontSizeAnim, {
-        toValue: 24, // Reset font size to normal
+        toValue: isMobile ? 18 : 24, // Adjusted for mobile
         duration: 300,
         useNativeDriver: false,
       }),
       Animated.timing(fontColorAnim, {
-        toValue: 1, // Reset font color to original green
+        toValue: 1,
         duration: 300,
         useNativeDriver: false,
       }),
@@ -64,146 +74,154 @@ const Features = () => {
 
   return (
     <LinearGradient colors={['#E8F5E9', '#72f2b8']} style={styles.container}>
-      {/* Repeated Visible Icons as Background */}
-      <View style={styles.backgroundIcons}>
-        {/* Multiple repeated icons filling up the background */}
-        <FontAwesome name="leaf" size={150} color="#4CAF50" style={styles.iconBackground} />
-        <FontAwesome name="leaf" size={150} color="#4CAF50" style={[styles.iconBackground, {top: 100, left: 50}]} />
-        <FontAwesome name="leaf" size={150} color="#4CAF50" style={[styles.iconBackground, {top: 200, left: 100}]} />
-        <FontAwesome name="leaf" size={150} color="#4CAF50" style={[styles.iconBackground, {top: 300, left: 150}]} />
-        <FontAwesome name="leaf" size={150} color="#4CAF50" style={[styles.iconBackground, {top: 100, right: 50}]} />
-        <FontAwesome name="leaf" size={150} color="#4CAF50" style={[styles.iconBackground, {top: 220, right: 100}]} />
-        <FontAwesome name="leaf" size={150} color="#4CAF50" style={[styles.iconBackground, {top: 350, right: 150}]} />
-        <FontAwesome name="leaf" size={150} color="#4CAF50" style={[styles.iconBackground, {top: 350, top: 150}]} />
-        <FontAwesome name="leaf" size={150} color="#4CAF50" style={[styles.iconBackground, {top: 500, top: 500}]} />
-        {/* You can add more icons to fill the entire screen */}
-      </View>
-
-      <Animated.Text
-        style={[
-          styles.featureTitle,
-          {
-            fontSize: fontSizeAnime, // Animated font size (you can adjust this value)
-            fontStyle: 'italic', // Italic style
-            fontWeight: 'bold',
-            textAlign: 'center', // Center the text horizontally
-            color: '#2E7D32', // Dark green color
-            textShadowColor: '#2E7D32', // Dark green shadow color
-            textShadowOffset: { width: 0, height: 0 }, // No offset for the shadow
-            textShadowRadius: 15, // Apply a radius to the glow effect (increased for a stronger glow)
-            marginTop: 30, // Adds space at the top, can adjust as needed
-          },
-        ]}
-      >
-        Learn More about our Features
-      </Animated.Text>
-
-      <View style={styles.featuresContainer}>
-        {/* Nutritional Tracking */}
-        <View style={[styles.featureRow, styles.alternateRow]}>
-          <View style={styles.textContainer}>
-            <Animated.Text
-              style={[
-                styles.featureTitle,
-                {
-                  fontSize: fontSizeAnim, // Animated font size
-                  fontStyle: 'italic', // Italic style
-                  fontWeight: 'bold',
-                  color: fontColorAnim.interpolate({
-                    inputRange: [0, 1],
-                    outputRange: ['#2E7D32', '#000'], // Change from green to black on press
-                  }),
-                },
-              ]}
-            >
-              Nourish Your Body
-            </Animated.Text>
-            <Text style={styles.featureDescription}>
-              Easily track your daily food intake and gain valuable insights into your nutrition. By regularly monitoring your eating habits, you can identify patterns, make healthier choices, and ensure that you maintain a balanced diet that contributes to your overall well-being.
-            </Text>
-          </View>
-          <Animated.View
-            style={[styles.iconContainer, {transform: [{scale: scaleAnim}]}]}
-          >
-            <TouchableOpacity onPressIn={handlePressIn} onPressOut={handlePressOut}>
-              <Image
-                source={require('../assets/f-1.png')}
-                style={styles.icon}
-              />
-            </TouchableOpacity>
-          </Animated.View>
+      <ScrollView contentContainerStyle={styles.scrollContainer}>
+        {/* Background Icons */}
+        <View style={styles.backgroundIcons}>
+          <FontAwesome name="leaf" size={150} color="#4CAF50" style={styles.iconBackground} />
+          <FontAwesome name="leaf" size={150} color="#4CAF50" style={[styles.iconBackground, { top: 100, left: 50 }]} />
+          <FontAwesome name="leaf" size={150} color="#4CAF50" style={[styles.iconBackground, { top: 200, left: 100 }]} />
+          <FontAwesome name="leaf" size={150} color="#4CAF50" style={[styles.iconBackground, { top: 300, left: 150 }]} />
+          <FontAwesome name="leaf" size={150} color="#4CAF50" style={[styles.iconBackground, { top: 100, right: 50 }]} />
+          <FontAwesome name="leaf" size={150} color="#4CAF50" style={[styles.iconBackground, { top: 220, right: 100 }]} />
+          <FontAwesome name="leaf" size={150} color="#4CAF50" style={[styles.iconBackground, { top: 350, right: 150 }]} />
+          <FontAwesome name="leaf" size={150} color="#4CAF50" style={[styles.iconBackground, { top: 350, top: 150 }]} />
+          <FontAwesome name="leaf" size={150} color="#4CAF50" style={[styles.iconBackground, { top: 500, top: 500 }]} />
         </View>
 
-        {/* Daily Assessment */}
-        <View style={[styles.featureRow, styles.dailyAssessmentRow]}>
-          <View style={styles.textContainer}>
-            <Animated.Text
-              style={[
-                styles.featureTitle,
-                {
-                  fontSize: fontSizeAnim, // Animated font size
-                  fontStyle: 'italic', // Italic style
-                  fontWeight: 'bold',
-                  color: fontColorAnim.interpolate({
-                    inputRange: [0, 1],
-                    outputRange: ['#2E7D32', '#000'], // Change from green to black on press
-                  }),
-                },
-              ]}
-            >
-              Track Your Progress
-            </Animated.Text>
-            <Text style={styles.featureDescription}>
-              Receive personalized daily assessments based on your health data and habits. These assessments help you monitor health trends over time, so you can make adjustments to optimize your wellness.
-            </Text>
-          </View>
-          <Animated.View
-            style={[styles.iconContainer, {transform: [{scale: scaleAnim}]}]}
-          >
-            <TouchableOpacity onPressIn={handlePressIn} onPressOut={handlePressOut}>
-              <Image
-                source={require('../assets/f-2.png')}
-                style={styles.icon}
-              />
-            </TouchableOpacity>
-          </Animated.View>
-        </View>
+        {/* Title */}
+        <Animated.Text
+          style={[
+            styles.featureTitle,
+            {
+              fontSize: fontSizeAnime,
+              fontStyle: 'italic',
+              fontWeight: 'bold',
+              textAlign: 'center',
+              color: '#2E7D32',
+              textShadowColor: '#2E7D32',
+              textShadowOffset: { width: 0, height: 0 },
+              textShadowRadius: 15,
+              marginTop: 30,
+            },
+          ]}
+        >
+          Learn More about our Features
+        </Animated.Text>
 
-        {/* Gamified */}
-        <View style={[styles.featureRow, styles.alternateRow]}>
-          <View style={styles.textContainer}>
-            <Animated.Text
-              style={[
-                styles.featureTitle,
-                {
-                  fontSize: fontSizeAnim, // Animated font size
-                  fontStyle: 'italic', // Italic style
-                  fontWeight: 'bold',
-                  color: fontColorAnim.interpolate({
-                    inputRange: [0, 1],
-                    outputRange: ['#2E7D32', '#000'], // Change from green to black on press
-                  }),
-                },
-              ]}
+        {/* Features Container */}
+        <View style={styles.featuresContainer}>
+          {/* Nutritional Tracking */}
+          <View style={[styles.featureRow, isMobile ? styles.mobileFeatureRow : styles.alternateRow]}>
+            <View style={styles.textContainer}>
+              <Animated.Text
+                style={[
+                  styles.featureTitle,
+                  {
+                    fontSize: fontSizeAnim,
+                    fontStyle: 'italic',
+                    fontWeight: 'bold',
+                    color: fontColorAnim.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: ['#2E7D32', '#000'],
+                    }),
+                  },
+                ]}
+              >
+                Nourish Your Body
+              </Animated.Text>
+              <Text style={styles.featureDescription}>
+                Easily track your daily food intake and gain valuable insights into your nutrition. By regularly monitoring your eating habits, you can identify patterns, make healthier choices, and ensure that you maintain a balanced diet that contributes to your overall well-being.
+              </Text>
+            </View>
+            <Animated.View
+              style={[styles.iconContainer, { transform: [{ scale: scaleAnim }] }]}
             >
-              Wellness Challenges
-            </Animated.Text>
-            <Text style={styles.featureDescription}>
-              Engage in a fun and interactive experience that turns your health goals into rewarding challenges. This feature uses game-like mechanics to motivate you to stay on track with your wellness journey.
-            </Text>
+              <TouchableOpacity onPressIn={handlePressIn} onPressOut={handlePressOut}>
+                <Image
+                  source={require('../assets/f-1.png')}
+                  style={styles.icon}
+                />
+              </TouchableOpacity>
+            </Animated.View>
           </View>
-          <Animated.View
-            style={[styles.iconContainer, {transform: [{scale: scaleAnim}]}]}
-          >
-            <TouchableOpacity onPressIn={handlePressIn} onPressOut={handlePressOut}>
-              <Image
-                source={require('../assets/f-3.png')}
-                style={styles.icon}
-              />
-            </TouchableOpacity>
-          </Animated.View>
+
+          {/* Separator Line */}
+          <View style={styles.separator} />
+
+          {/* Daily Assessment */}
+          <View style={[styles.featureRow, isMobile ? styles.mobileFeatureRow : styles.dailyAssessmentRow]}>
+            <View style={styles.textContainer}>
+              <Animated.Text
+                style={[
+                  styles.featureTitle,
+                  {
+                    fontSize: fontSizeAnim,
+                    fontStyle: 'italic',
+                    fontWeight: 'bold',
+                    color: fontColorAnim.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: ['#2E7D32', '#000'],
+                    }),
+                  },
+                ]}
+              >
+                Track Your Progress
+              </Animated.Text>
+              <Text style={styles.featureDescription}>
+                Receive personalized daily assessments based on your health data and habits. These assessments help you monitor health trends over time, so you can make adjustments to optimize your wellness.
+              </Text>
+            </View>
+            <Animated.View
+              style={[styles.iconContainer, { transform: [{ scale: scaleAnim }] }]}
+            >
+              <TouchableOpacity onPressIn={handlePressIn} onPressOut={handlePressOut}>
+                <Image
+                  source={require('../assets/f-2.png')}
+                  style={styles.icon}
+                />
+              </TouchableOpacity>
+            </Animated.View>
+          </View>
+
+          {/* Separator Line */}
+          <View style={styles.separator} />
+
+          {/* Gamified */}
+          <View style={[styles.featureRow, isMobile ? styles.mobileFeatureRow : styles.alternateRow]}>
+            <View style={styles.textContainer}>
+              <Animated.Text
+                style={[
+                  styles.featureTitle,
+                  {
+                    fontSize: fontSizeAnim,
+                    fontStyle: 'italic',
+                    fontWeight: 'bold',
+                    color: fontColorAnim.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: ['#2E7D32', '#000'],
+                    }),
+                  },
+                ]}
+              >
+                Wellness Challenges
+              </Animated.Text>
+              <Text style={styles.featureDescription}>
+                Engage in a fun and interactive experience that turns your health goals into rewarding challenges. This feature uses game-like mechanics to motivate you to stay on track with your wellness journey.
+              </Text>
+            </View>
+            <Animated.View
+              style={[styles.iconContainer, { transform: [{ scale: scaleAnim }] }]}
+            >
+              <TouchableOpacity onPressIn={handlePressIn} onPressOut={handlePressOut}>
+                <Image
+                  source={require('../assets/f-3.png')}
+                  style={styles.icon}
+                />
+              </TouchableOpacity>
+            </Animated.View>
+          </View>
         </View>
-      </View>
+      </ScrollView>
     </LinearGradient>
   );
 };
@@ -211,7 +229,10 @@ const Features = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 50,
+  },
+  scrollContainer: {
+    flexGrow: 1,
+    padding: isMobile ? 20 : 50,
   },
   backgroundIcons: {
     position: 'absolute',
@@ -219,12 +240,12 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
-    zIndex: -1, // Keep the icons behind the content
+    zIndex: -1,
     justifyContent: 'center',
     alignItems: 'center',
   },
   iconBackground: {
-    opacity: 0.5, // Make the background icons visible
+    opacity: 0.5,
     position: 'absolute',
   },
   featuresContainer: {
@@ -232,49 +253,58 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   featureRow: {
-    flexDirection: 'row',
+    flexDirection: isMobile ? 'column' : 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     padding: 1,
-    marginBottom: 1,
-    width: '70%',
+    marginBottom: isMobile ? 30 : 1,
+    width: isMobile ? '100%' : '70%',
+  },
+  mobileFeatureRow: {
+    flexDirection: 'column',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   alternateRow: {
-    flexDirection: 'row-reverse',
+    flexDirection: isMobile ? 'column' : 'row-reverse',
   },
   dailyAssessmentRow: {
-    justifyContent: 'flex-end',
+    justifyContent: isMobile ? 'center' : 'flex-end',
   },
   textContainer: {
     flex: 1,
-    marginLeft: 10,
-    marginRight: 10,
+    marginLeft: isMobile ? 0 : 10,
+    marginRight: isMobile ? 0 : 10,
+    marginBottom: isMobile ? 20 : 0,
   },
   iconContainer: {
     alignItems: 'center',
   },
   icon: {
-    width: 200,
-    height: 200,
+    width: isMobile ? 120 : 200,
+    height: isMobile ? 120 : 200,
     borderWidth: 5,
     borderColor: '#4CAF50',
     borderRadius: 15,
     padding: 5,
   },
-  dailyAssessmentIcon: {
-    marginLeft: 10,
-  },
   featureTitle: {
-    fontSize: 50,
+    fontSize: isMobile ? 24 : 50,
     fontWeight: 'bold',
     color: '#2E7D32',
-    textAlign: 'left',
+    textAlign: isMobile ? 'center' : 'left',
     marginBottom: 5,
   },
   featureDescription: {
-    fontSize: 20,
-    color: '#2A3D3A', // Darker green for description
-    textAlign: 'left',
+    fontSize: isMobile ? 14 : 20,
+    color: '#2A3D3A',
+    textAlign: isMobile ? 'center' : 'left',
+  },
+  separator: {
+    height: 2,
+    backgroundColor: '#4CAF50',
+    width: '80%',
+    marginVertical: 20, // Adjust spacing as needed
   },
 });
 

@@ -69,7 +69,7 @@ const Register = ({ navigation }) => {
           style={[styles.logo, isMobile && styles.mobileLogo]} 
         />
         <Text style={[styles.logoText, isMobile && styles.mobileLogoText]}>
-          Welcome to Our App
+          FutureProof
         </Text>
       </View>
 
