@@ -1,76 +1,108 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  Image,
+  Dimensions,
+  Platform,
+  ScrollView,
+} from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import Icon from 'react-native-vector-icons/MaterialIcons'; // Import the icon library
 
+const { width, height } = Dimensions.get('window');
+
 const Contacts = ({ navigation }) => {
   return (
-    <View style={styles.container}>
-      {/* Background Section */}
-      <View style={styles.slantedBackground}>
-        <LinearGradient
-          colors={["#E8F5E9", "#72f2b8"]} // Green gradient colors
-          style={styles.gradient}
-        />
-      </View>
-
-      {/* Content Section */}
-      <View style={styles.content}>
-        {/* Header Section */}
-        <View style={styles.header}>
-          <Text style={styles.title}>Contact Us</Text>
-          <Text style={styles.subtitle}>
-            Have questions or need assistance? Get in touch with us today!
-          </Text>
-          <TouchableOpacity
-            style={styles.contactButton}
-            onPress={() => navigation.navigate("Register")}
-          >
-            <Text style={styles.contactButtonText}>Reach Out</Text>
-          </TouchableOpacity>
-        </View>
-
-        {/* Contact Details Section with Image on Right */}
-        <View style={styles.detailsWrapper}>
-          <View style={styles.detailsSection}>
-            <View style={styles.detailBox}>
-              <Icon name="email" size={40} color="#4CAF50" style={styles.icon} />
-              <View style={styles.textContainer}>
-                <Text style={styles.detailTitle}>Email Us</Text>
-                <Text style={styles.detailText}>support@example.com</Text>
-              </View>
-            </View>
-            <View style={styles.detailBox}>
-              <Icon name="phone" size={40} color="#4CAF50" style={styles.icon} />
-              <View style={styles.textContainer}>
-                <Text style={styles.detailTitle}>Call Us</Text>
-                <Text style={styles.detailText}>+1 (800) 123-4567</Text>
-              </View>
-            </View>
-            <View style={styles.detailBox}>
-              <Icon name="location-on" size={40} color="#4CAF50" style={styles.icon} />
-              <View style={styles.textContainer}>
-                <Text style={styles.detailTitle}>Visit Us</Text>
-                <Text style={styles.detailText}>123 Greenway Blvd, Suite 456</Text>
-              </View>
-            </View>
-          </View>
-
-          {/* Image Section on the Right */}
-          <Image
-            source={require('../assets/about.gif')} // Replace with your image URL or local path
-            style={styles.contactImage}
+    <ScrollView contentContainerStyle={styles.scrollContainer}>
+      <View style={styles.container}>
+        {/* Background Section */}
+        <View style={styles.slantedBackground}>
+          <LinearGradient
+            colors={['#E8F5E9', '#72f2b8']} // Green gradient colors
+            style={styles.gradient}
           />
         </View>
+
+        {/* Content Section */}
+        <View style={styles.content}>
+          {/* Header Section */}
+          <View style={styles.header}>
+            <Text style={styles.title}>Contact Us</Text>
+            <Text style={styles.subtitle}>
+              Have questions or need assistance? Get in touch with us today!
+            </Text>
+            <TouchableOpacity
+              style={styles.contactButton}
+              onPress={() => navigation.navigate('Register')}
+            >
+              <Text style={styles.contactButtonText}>Reach Out</Text>
+            </TouchableOpacity>
+          </View>
+
+          {/* Contact Details Section with Image on Right */}
+          <View style={styles.detailsWrapper}>
+            <View style={styles.detailsSection}>
+              <View style={styles.detailBox}>
+                <Icon
+                  name="email"
+                  size={Platform.OS === 'web' ? 30 : 40}
+                  color="#4CAF50"
+                  style={styles.icon}
+                />
+                <View style={styles.textContainer}>
+                  <Text style={styles.detailTitle}>Email Us</Text>
+                  <Text style={styles.detailText}>support@example.com</Text>
+                </View>
+              </View>
+              <View style={styles.detailBox}>
+                <Icon
+                  name="phone"
+                  size={Platform.OS === 'web' ? 30 : 40}
+                  color="#4CAF50"
+                  style={styles.icon}
+                />
+                <View style={styles.textContainer}>
+                  <Text style={styles.detailTitle}>Call Us</Text>
+                  <Text style={styles.detailText}>+1 (800) 123-4567</Text>
+                </View>
+              </View>
+              <View style={styles.detailBox}>
+                <Icon
+                  name="location-on"
+                  size={Platform.OS === 'web' ? 30 : 40}
+                  color="#4CAF50"
+                  style={styles.icon}
+                />
+                <View style={styles.textContainer}>
+                  <Text style={styles.detailTitle}>Visit Us</Text>
+                  <Text style={styles.detailText}>123 Greenway Blvd, Suite 456</Text>
+                </View>
+              </View>
+            </View>
+
+            {/* Image Section on the Right */}
+            <Image
+              source={require('../assets/about.gif')} // Replace with your image URL or local path
+              style={styles.contactImage}
+            />
+          </View>
+        </View>
       </View>
-    </View>
+    </ScrollView>
   );
 };
 
 const styles = StyleSheet.create({
+  scrollContainer: {
+    flexGrow: 1,
+  },
   container: {
     flex: 1,
     position: 'relative',
+    minHeight: height, // Ensure the container takes at least the full height of the screen
   },
   slantedBackground: {
     position: 'absolute',
@@ -78,7 +110,7 @@ const styles = StyleSheet.create({
     left: 0,
     right: 5,
     height: '50%',
-    transform: [{ skewY: "-25deg" }],
+    transform: [{ skewY: '-25deg' }],
     overflow: 'hidden',
   },
   gradient: {
@@ -86,52 +118,52 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
-    padding: 40,
+    padding: Platform.OS === 'web' ? 20 : 40,
     justifyContent: 'center',
     alignItems: 'center',
   },
   header: {
-    marginBottom: 1,
+    marginBottom: 20,
     alignItems: 'center',
-    marginTop: 100,  // Adjusted to move the content down
+    marginTop: Platform.OS === 'web' ? 50 : 100, // Adjusted to move the content down
   },
   title: {
-    fontSize: 50,
+    fontSize: Platform.OS === 'web' ? 40 : 50,
     fontWeight: 'bold',
     color: '#1B5E20',
-    marginBottom: 1,  // Increased margin to move title down
+    marginBottom: 10, // Increased margin to move title down
   },
   subtitle: {
-    fontSize: 25,
+    fontSize: Platform.OS === 'web' ? 20 : 25,
     color: '#388E3C',
     textAlign: 'center',
-    marginBottom: 10,  // Increased margin to move subtitle down
+    marginBottom: 20, // Increased margin to move subtitle down
   },
   contactButton: {
     backgroundColor: '#4CAF50',
     paddingVertical: 12,
     paddingHorizontal: 24,
     borderRadius: 20,
-    
   },
   contactButtonText: {
-    fontSize: 20,
+    fontSize: Platform.OS === 'web' ? 18 : 20,
     color: '#FFFFFF',
     fontWeight: 'bold',
   },
   detailsWrapper: {
-    flexDirection: 'row', // Align details on the left and image on the right
+    flexDirection: Platform.OS === 'web' && width > 768 ? 'row' : 'column', // Align details on the left and image on the right
     justifyContent: 'space-between',
     alignItems: 'center',
     width: '100%',
+    marginTop: 20,
   },
   detailsSection: {
-    width: '60%', // Take up 60% of the screen width
-    marginRight: 1, // Reduced margin to bring the details section closer to the image
+    width: Platform.OS === 'web' && width > 768 ? '60%' : '100%', // Take up 60% of the screen width
+    marginRight: Platform.OS === 'web' && width > 768 ? 20 : 0, // Reduced margin to bring the details section closer to the image
   },
   detailBox: {
     backgroundColor: '#72f2b8',
-    padding: 25,
+    padding: Platform.OS === 'web' ? 15 : 25,
     marginBottom: 20,
     borderRadius: 15,
     width: '100%', // Take full width for better spacing
@@ -144,7 +176,7 @@ const styles = StyleSheet.create({
   },
   icon: {
     marginRight: 15, // Adds space between the icon and text
-    fontSize: 50, // Increased icon size here
+    fontSize: Platform.OS === 'web' ? 30 : 50, // Increased icon size here
   },
   textContainer: {
     justifyContent: 'center', // Center the text vertically
@@ -152,21 +184,22 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   detailTitle: {
-    fontSize: 30,
+    fontSize: Platform.OS === 'web' ? 24 : 30,
     fontWeight: 'bold',
     color: '#2E7D32',
     marginBottom: 8,
     textAlign: 'left', // Align the title to the left
   },
   detailText: {
-    fontSize: 20,
+    fontSize: Platform.OS === 'web' ? 18 : 20,
     color: '#4CAF50',
     textAlign: 'left', // Align the text to the left
   },
   contactImage: {
-    width: 700, // Increased image width
-    height: 700, // Increased image height
+    width: Platform.OS === 'web' && width > 768 ? 500 : 300, // Adjusted image width
+    height: Platform.OS === 'web' && width > 768 ? 500 : 300, // Adjusted image height
     borderRadius: 15, // Optional: to round the corners of the image
+    marginTop: Platform.OS === 'web' && width > 768 ? 0 : 20, // Add margin on mobile
   },
 });
 

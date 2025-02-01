@@ -1,6 +1,9 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Image, ScrollView, Dimensions, Platform } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+
+const { width, height } = Dimensions.get('window');
+const isMobile = width < 768;
 
 const Home = ({ navigation }) => {
   return (
@@ -8,9 +11,17 @@ const Home = ({ navigation }) => {
       colors={['#E8F5E9', '#72f2b8']} // Gradient colors
       style={styles.container}
     >
-      <View style={styles.container}>
+      <ScrollView contentContainerStyle={styles.scrollViewContent}>
         {/* Header Section */}
         <View style={styles.header}>
+          {/* GIF on Top for Mobile */}
+          {isMobile && (
+            <Image
+              source={require('../assets/video.gif')} // Correct relative path to your GIF
+              style={styles.headerGif}
+            />
+          )}
+
           <View style={styles.headerTextContainer}>
             <Text style={styles.title}>Gamifying Wellness: Track, Assess, and Thrive Every Day</Text>
             <Text style={styles.subtitle}>
@@ -18,26 +29,29 @@ const Home = ({ navigation }) => {
               solutions, helping you stay ahead of potential health risks and optimize your
               well-being.
             </Text>
-            <TouchableOpacity
-              style={styles.joinButton}
-              onPress={() => navigation.navigate('Register')} // Replace 'Register' with your actual screen name
-            >
-              <Text style={styles.joinButtonText}>Join Now!</Text>
-            </TouchableOpacity>
+            <View style={styles.joinButtonContainer}>
+              <TouchableOpacity
+                style={styles.joinButton}
+                onPress={() => navigation.navigate('Register')} // Replace 'Register' with your actual screen name
+              >
+                <Text style={styles.joinButtonText}>Join Now!</Text>
+              </TouchableOpacity>
+            </View>
           </View>
-          <Image
-            source={require('../assets/video.gif')} // Correct relative path to your GIF
-            style={styles.headerGif}
-          />
+
+          {/* GIF on Right for Desktop */}
+          {!isMobile && (
+            <Image
+              source={require('../assets/video.gif')} // Correct relative path to your GIF
+              style={styles.headerGif}
+            />
+          )}
         </View>
 
         {/* Features Section */}
         <View style={styles.features}>
           {/* Feature 1 */}
           <View style={styles.featureBox}>
-            <TouchableOpacity style={styles.nextIcon}>
-              <Text style={styles.nextIconText}>{"<"}</Text>
-            </TouchableOpacity>
             <View style={styles.featureContent}>
               <Text style={styles.featureTitle}>Gamified</Text>
               <Text style={styles.featureDescription}>
@@ -53,9 +67,6 @@ const Home = ({ navigation }) => {
 
           {/* Feature 2 */}
           <View style={styles.featureBox}>
-            <TouchableOpacity style={styles.nextIcon}>
-              <Text style={styles.nextIconText}>{"<"}</Text>
-            </TouchableOpacity>
             <View style={styles.featureContent}>
               <Text style={styles.featureTitle}>Nutritional Tracking</Text>
               <Text style={styles.featureDescription}>
@@ -71,9 +82,6 @@ const Home = ({ navigation }) => {
 
           {/* Feature 3 */}
           <View style={styles.featureBox}>
-            <TouchableOpacity style={styles.nextIcon}>
-              <Text style={styles.nextIconText}>{"<"}</Text>
-            </TouchableOpacity>
             <View style={styles.featureContent}>
               <Text style={styles.featureTitle}>Daily Assessment</Text>
               <Text style={styles.featureDescription}>
@@ -87,7 +95,7 @@ const Home = ({ navigation }) => {
             />
           </View>
         </View>
-      </View>
+      </ScrollView>
     </LinearGradient>
   );
 };
@@ -95,110 +103,97 @@ const Home = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 16,
+  },
+  scrollViewContent: {
+    flexGrow: 1,
+    padding: isMobile ? 10 : 16,
   },
   header: {
-    flexDirection: 'row', // Align the header content horizontally
+    flexDirection: isMobile ? 'column' : 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 1,
+    marginBottom: 20,
   },
   headerTextContainer: {
     flex: 1,
-    marginLeft: 10, // Add some margin for spacing from the GIF
-    marginTop: 1, // Adjust the space from the top
+    marginLeft: isMobile ? 0 : 10,
+    marginTop: isMobile ? 10 : 0,
+    alignItems: isMobile ? 'center' : 'flex-start',
   },
   title: {
-    fontSize: 45,
+    fontSize: isMobile ? 28 : 45,
     fontWeight: 'bold',
     color: '#1B5E20',
     marginBottom: 16,
+    textAlign: isMobile ? 'center' : 'left',
   },
   subtitle: {
-    fontSize: 20,
+    fontSize: isMobile ? 16 : 20,
     color: '#388E3C',
     marginBottom: 16,
+    textAlign: isMobile ? 'center' : 'left',
+  },
+  joinButtonContainer: {
+    width: '100%',
+    alignItems: 'center',
   },
   joinButton: {
     backgroundColor: '#c1ff72',
-    height: 40, // Set a fixed height
-    width: 200, // Set a fixed width
+    height: 40,
+    width: isMobile ? '80%' : 200,
     borderRadius: 25,
-    justifyContent: 'center', // Center the text vertically
-    alignItems: 'center', // Center the text horizontally
-    display: 'flex', // Make sure the container behaves like a flexbox
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 7,
   },
   joinButtonText: {
     color: '#1B5E20',
     fontWeight: 'bold',
     fontSize: 20,
-    textAlign: 'center', // Ensure the text is centered horizontally
+    textAlign: 'center',
   },
   headerGif: {
-    width: 700, // Increased the width of the GIF
-    height: 400, // Increased the height of the GIF
-    marginRight: 20, // Add some margin to the right for spacing
+    width: isMobile ? width * 0.9 : 700,
+    height: isMobile ? 200 : 400,
+    marginRight: isMobile ? 0 : 20,
+    marginBottom: isMobile ? 20 : 0,
   },
   features: {
-    flexDirection: 'row-reverse', // Place images on the right
+    flexDirection: isMobile ? 'column' : 'row',
     justifyContent: 'space-between',
-    marginTop: 1,
+    marginTop: 20,
   },
   featureBox: {
-    width: '30%',
-    height: '150%',
-    alignItems: 'flex-start', // Align the content to the left
-    backgroundColor: '#C8E6C9', // Light green for the boxes
-    padding: 10,
+    width: isMobile ? '100%' : '30%',
+    backgroundColor: '#C8E6C9',
+    padding: 15,
     borderRadius: 30,
-    borderColor: '#1B5E20', // Border color
-    borderWidth: 3, // Border thickness
-    flexDirection: 'row', // Arrange the icon and content horizontally
-    paddingRight: 20, // Add space between the text and the image
-    marginBottom: 20, // Add space between feature boxes
-    position: 'relative', // Allow absolute positioning of the icon
+    borderColor: '#1B5E20',
+    borderWidth: 3,
+    marginBottom: 20,
+    alignItems: 'center',
   },
   featureContent: {
-    flex: 1, // Allow the content to take up the remaining space
-    paddingLeft: 10, // Add some space between the icon and the content
+    width: '100%',
+    marginBottom: 10,
   },
   featureImage: {
-    width: 120, // Keep the width of the image
-    height: 120, // Keep the height of the image
-    position: 'absolute', // Absolute positioning
-    bottom: 1, // Distance from the bottom
-    right: 1, // Distance from the right
+    width: 120,
+    height: 120,
+    marginTop: 10,
   },
-  
-  
   featureTitle: {
     fontSize: 20,
     fontWeight: 'bold',
     color: '#2E7D32',
     marginBottom: 8,
-    textAlign: 'left', // Center align the title
+    textAlign: 'center',
   },
   featureDescription: {
     fontSize: 16,
-    textAlign: 'left', // Center align the description
+    textAlign: 'center',
     color: '#4CAF50',
-    marginBottom: 8, // Add some space between the description and image
-  },
-  nextIcon: {
-    backgroundColor: '#81C784', // Same color as the button
-    borderRadius: 25,
-    width: 40,
-    height: 40,
-    justifyContent: 'center',
-    alignItems: 'center',
-    position: 'absolute', // Position it at the bottom left
-    bottom: 5, // Set distance from the bottom
-    left: 20, // Set distance from the left
-  },
-  nextIconText: {
-    color: '#1B5E20',
-    fontSize: 24,
-    fontWeight: 'bold',
+    marginBottom: 8,
   },
 });
 

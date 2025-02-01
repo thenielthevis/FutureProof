@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
-import { View, Text, TouchableOpacity, StyleSheet, Image, ScrollView, StatusBar } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Image, ScrollView, Dimensions, Platform } from 'react-native';
 import { SafeAreaView, SafeAreaProvider } from 'react-native-safe-area-context';
 import Home from './Components/Home';
 import Contacts from './Components/Contacts';
@@ -11,9 +11,12 @@ import Login from './Components/Login';
 import Register from './Components/Register';
 
 const Stack = createStackNavigator();
+const { width, height } = Dimensions.get('window');
+const isMobile = width < 768;
 
 function CustomHeader({ navigation }) {
-  const [isLogin, setIsLogin] = useState(true); // Track whether it's Login or Register
+  const [isLogin, setIsLogin] = useState(true); // Track Login/Register state
+  const [isMenuOpen, setIsMenuOpen] = useState(false); // Track hamburger menu state
 
   const handleTogglePress = (targetPage) => {
     if (targetPage === 'Login') {
@@ -25,8 +28,13 @@ function CustomHeader({ navigation }) {
     }
   };
 
+  const toggleMenu = () => {
+    setIsMenuOpen(!isMenuOpen); // Toggle menu visibility
+  };
+
   return (
     <SafeAreaView style={styles.headerContainer} edges={['top']}>
+      {/* Logo and Title */}
       <View style={styles.logoContainer}>
         <Image source={require('./assets/logo.png')} style={styles.logo} />
         <TouchableOpacity onPress={() => navigation.navigate('Home')}>
@@ -34,18 +42,44 @@ function CustomHeader({ navigation }) {
         </TouchableOpacity>
       </View>
 
-      <View style={styles.navLinks}>
-        <TouchableOpacity onPress={() => navigation.navigate('About')}>
-          <Text style={styles.navLinkText}>About</Text>
+      {/* Hamburger Menu (Mobile Only) */}
+      {isMobile && (
+        <TouchableOpacity onPress={toggleMenu} style={styles.hamburgerMenu}>
+          <Text style={styles.hamburgerIcon}>☰</Text>
         </TouchableOpacity>
-        <TouchableOpacity onPress={() => navigation.navigate('Features')}>
-          <Text style={styles.navLinkText}>Features</Text>
-        </TouchableOpacity>
-        <TouchableOpacity onPress={() => navigation.navigate('Contacts')}>
-          <Text style={styles.navLinkText}>Contact Us</Text>
-        </TouchableOpacity>
-      </View>
+      )}
 
+      {/* Dropdown Menu (Mobile Only) */}
+      {isMobile && isMenuOpen && (
+        <View style={styles.dropdownMenu}>
+          <TouchableOpacity onPress={() => { navigation.navigate('About'); setIsMenuOpen(false); }}>
+            <Text style={styles.dropdownItem}>About</Text>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={() => { navigation.navigate('Features'); setIsMenuOpen(false); }}>
+            <Text style={styles.dropdownItem}>Features</Text>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={() => { navigation.navigate('Contacts'); setIsMenuOpen(false); }}>
+            <Text style={styles.dropdownItem}>Contact Us</Text>
+          </TouchableOpacity>
+        </View>
+      )}
+
+      {/* Navigation Links (Desktop Only) */}
+      {!isMobile && (
+        <View style={styles.navLinks}>
+          <TouchableOpacity onPress={() => navigation.navigate('About')}>
+            <Text style={styles.navLinkText}>About</Text>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={() => navigation.navigate('Features')}>
+            <Text style={styles.navLinkText}>Features</Text>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={() => navigation.navigate('Contacts')}>
+            <Text style={styles.navLinkText}>Contact Us</Text>
+          </TouchableOpacity>
+        </View>
+      )}
+
+      {/* Login/Register Toggle */}
       <View style={styles.toggleContainer}>
         <View style={styles.toggleBackground}>
           <TouchableOpacity
@@ -74,7 +108,7 @@ export default function App() {
           style={styles.scrollView} 
           contentContainerStyle={{ flexGrow: 1, paddingBottom: 20 }}
           keyboardShouldPersistTaps="handled"
-          showsVerticalScrollIndicator={true}
+          showsVerticalScrollIndicator={Platform.OS === 'web' ? false : true}
         >
           <NavigationContainer>
             <Stack.Navigator
@@ -103,17 +137,22 @@ const styles = StyleSheet.create({
   },
   scrollView: {
     backgroundColor: 'white',
+    width: width,
+    height: Platform.OS === 'web' ? '100vh' : height,
   },
   headerContainer: {
-    flexDirection: 'row',
+    flexDirection: isMobile ? 'column' : 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     backgroundColor: '#1A3B32',
     padding: 16,
+    width: width,
+    position: 'relative', // Needed for absolute positioning of dropdown
   },
   logoContainer: {
     flexDirection: 'row',
     alignItems: 'center',
+    marginBottom: isMobile ? 10 : 0,
   },
   logo: {
     width: 50,
@@ -121,19 +160,45 @@ const styles = StyleSheet.create({
     marginRight: 8,
   },
   headerTitle: {
-    fontSize: 22,
+    fontSize: isMobile ? 18 : 22,
     fontWeight: 'bold',
     color: '#F5F5F5',
+  },
+  hamburgerMenu: {
+    position: 'absolute',
+    right: 16,
+    top: 16,
+  },
+  hamburgerIcon: {
+    fontSize: 24,
+    color: '#F5F5F5',
+  },
+  dropdownMenu: {
+    position: 'absolute',
+    top: 60, // Position below the hamburger icon
+    right: 16,
+    backgroundColor: '#2C4A3E',
+    borderRadius: 8,
+    padding: 10,
+    zIndex: 10, // Ensure it appears above other elements
+  },
+  dropdownItem: {
+    fontSize: 16,
+    color: '#F5F5F5',
+    paddingVertical: 8,
+    paddingHorizontal: 16,
   },
   navLinks: {
     flexDirection: 'row',
     justifyContent: 'center',
     flex: 1,
+    flexWrap: 'wrap',
   },
   navLinkText: {
-    fontSize: 18,
+    fontSize: isMobile ? 16 : 18,
     color: '#F5F5F5',
-    marginHorizontal: 16,
+    marginHorizontal: isMobile ? 8 : 16,
+    marginVertical: isMobile ? 4 : 0,
   },
   toggleContainer: {
     flexDirection: 'row',
@@ -180,4 +245,3 @@ const styles = StyleSheet.create({
     color: '#1A3B32',
   },
 });
-

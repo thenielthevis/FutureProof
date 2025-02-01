@@ -6,10 +6,12 @@ import {
   TouchableOpacity,
   StyleSheet,
   Image,
+  Dimensions,
+  Platform,
 } from 'react-native';
 import { loginUser } from '../API/api';
-import { LinearGradient } from 'expo-linear-gradient'; // Import LinearGradient
-import Icon from 'react-native-vector-icons/MaterialIcons'; // Import icons
+import { LinearGradient } from 'expo-linear-gradient';
+import Icon from 'react-native-vector-icons/MaterialIcons';
 
 const Login = ({ navigation }) => {
   const [email, setEmail] = useState('');
@@ -17,12 +19,12 @@ const Login = ({ navigation }) => {
   const [error, setError] = useState('');
 
   const handleLogin = async () => {
-    setError(''); // Clear previous errors
+    setError('');
     try {
       const userData = { email, password };
       const response = await loginUser(userData);
       console.log('Login success:', response);
-      navigation.navigate('Home'); // Navigate to home after login
+      navigation.navigate('Home');
     } catch (err) {
       console.log('Login error:', err);
       const errorMessage =
@@ -33,30 +35,38 @@ const Login = ({ navigation }) => {
     }
   };
 
+  // Get screen dimensions
+  const { width, height } = Dimensions.get('window');
+  const isMobile = width < 768; // Adjust breakpoint as needed
+
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, isMobile && styles.mobileContainer]}>
       {/* Left section */}
-      <View style={styles.leftSection}>
+      <View style={[styles.leftSection, isMobile && styles.mobileLeftSection]}>
         <Image
-          source={require('../assets/logo-2.png')} // Replace with your logo
-          style={styles.logo}
+          source={require('../assets/logo-2.png')}
+          style={[styles.logo, isMobile && styles.mobileLogo]}
         />
-        <Text style={styles.logoText}>FutureProof</Text>
+        <Text style={[styles.logoText, isMobile && styles.mobileLogoText]}>
+          FutureProof
+        </Text>
       </View>
 
       {/* Right section */}
       <LinearGradient
-        colors={['#ffffff', '#72f2b8']} // White to green gradient
-        style={styles.rightSection}
+        colors={['#ffffff', '#72f2b8']}
+        style={[styles.rightSection, isMobile && styles.mobileRightSection]}
       >
-        <Text style={styles.header}>Sign in account</Text>
+        <Text style={[styles.header, isMobile && styles.mobileHeader]}>
+          Sign in account
+        </Text>
 
-        <View style={styles.inputContainer}>
+        <View style={[styles.inputContainer, isMobile && styles.mobileInputContainer]}>
           <View style={styles.iconWrapper}>
-            <Icon name="email" size={30} color="#ffffff" />
+            <Icon name="email" size={isMobile ? 20 : 30} color="#ffffff" />
           </View>
           <TextInput
-            style={styles.input}
+            style={[styles.input, isMobile && styles.mobileInput]}
             placeholder="Email"
             placeholderTextColor="#aaa"
             value={email}
@@ -64,12 +74,12 @@ const Login = ({ navigation }) => {
           />
         </View>
 
-        <View style={styles.inputContainer}>
+        <View style={[styles.inputContainer, isMobile && styles.mobileInputContainer]}>
           <View style={styles.iconWrapper}>
-            <Icon name="lock" size={30} color="#ffffff" />
+            <Icon name="lock" size={isMobile ? 20 : 30} color="#ffffff" />
           </View>
           <TextInput
-            style={styles.input}
+            style={[styles.input, isMobile && styles.mobileInput]}
             placeholder="Password"
             placeholderTextColor="#aaa"
             secureTextEntry
@@ -80,12 +90,14 @@ const Login = ({ navigation }) => {
 
         {error ? <Text style={styles.error}>{error}</Text> : null}
 
-        <TouchableOpacity style={styles.button} onPress={handleLogin}>
-          <Text style={styles.buttonText}>LOGIN</Text>
+        <TouchableOpacity style={[styles.button, isMobile && styles.mobileButton]} onPress={handleLogin}>
+          <Text style={[styles.buttonText, isMobile && styles.mobileButtonText]}>LOGIN</Text>
         </TouchableOpacity>
 
         <TouchableOpacity onPress={() => navigation.navigate('ForgotPassword')}>
-          <Text style={styles.forgotPassword}>Forgot Password?</Text>
+          <Text style={[styles.forgotPassword, isMobile && styles.mobileForgotPassword]}>
+            Forgot Password?
+          </Text>
         </TouchableOpacity>
       </LinearGradient>
     </View>
@@ -98,17 +110,26 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     backgroundColor: '#f8f8f8',
   },
+  mobileContainer: {
+    flexDirection: 'column',
+  },
   leftSection: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: '#ffffff',
-    padding: 1,
+    padding: 20,
+  },
+  mobileLeftSection: {
+    padding: 10,
   },
   logo: {
     width: 550,
     height: 500,
-    marginRight: 1,
+  },
+  mobileLogo: {
+    width: 200,
+    height: 200,
   },
   logoText: {
     fontSize: 40,
@@ -116,10 +137,16 @@ const styles = StyleSheet.create({
     color: '#004d00',
     textAlign: 'center',
   },
+  mobileLogoText: {
+    fontSize: 24,
+  },
   rightSection: {
     flex: 1,
     justifyContent: 'center',
     padding: 20,
+  },
+  mobileRightSection: {
+    padding: 10,
   },
   header: {
     fontSize: 55,
@@ -128,25 +155,32 @@ const styles = StyleSheet.create({
     marginBottom: 60,
     textAlign: 'center',
   },
+  mobileHeader: {
+    fontSize: 32,
+    marginBottom: 30,
+  },
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 15,
-    borderWidth: 3, // Black border
-    borderColor: '#000000', // Black border
+    borderWidth: 3,
+    borderColor: '#000000',
     borderRadius: 50,
-    paddingHorizontal: 0.5,
+    paddingHorizontal: 10,
     backgroundColor: '#f9f9f9',
+  },
+  mobileInputContainer: {
+    paddingHorizontal: 5,
   },
   iconWrapper: {
     width: 60,
     height: 50,
     borderRadius: 50,
-    backgroundColor: '#004d00', // Dark green background
+    backgroundColor: '#004d00',
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 20, // Decrease margin to bring the icon closer to the input
-    alignSelf: 'center', // Vertically align the icon to the center of the input
+    marginRight: 20,
+    alignSelf: 'center',
   },
   input: {
     flex: 1,
@@ -154,25 +188,38 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#333',
   },
+  mobileInput: {
+    height: 35,
+    fontSize: 14,
+  },
   button: {
     backgroundColor: '#004d00',
     paddingVertical: 10,
     borderRadius: 50,
     alignItems: 'center',
     marginTop: 10,
-    borderWidth: 3, // Black border
-    borderColor: '#000000', // Black border
+    borderWidth: 3,
+    borderColor: '#000000',
+  },
+  mobileButton: {
+    paddingVertical: 8,
   },
   buttonText: {
     color: '#ffffff',
     fontWeight: 'bold',
     fontSize: 16,
   },
+  mobileButtonText: {
+    fontSize: 14,
+  },
   forgotPassword: {
     color: '#004d00',
     fontSize: 18,
     textAlign: 'center',
     marginTop: 10,
+  },
+  mobileForgotPassword: {
+    fontSize: 14,
   },
   error: {
     color: 'red',
