@@ -61,6 +61,23 @@ function CustomHeader({ navigation }) {
           <TouchableOpacity onPress={() => { navigation.navigate('Contacts'); setIsMenuOpen(false); }}>
             <Text style={styles.dropdownItem}>Contact Us</Text>
           </TouchableOpacity>
+          {/* Login/Register Toggle in Mobile Menu */}
+          <View style={styles.toggleContainerMobile}>
+            <View style={styles.toggleBackground}>
+              <TouchableOpacity
+                style={[styles.toggleCircle, isLogin ? styles.circleLeft : styles.circleRight]}
+                onPress={() => handleTogglePress(isLogin ? 'Register' : 'Login')}
+              />
+              <View style={styles.toggleTextContainer}>
+                <Text style={[styles.toggleText, isLogin && styles.activeText]} onPress={() => handleTogglePress('Login')}>
+                  Login
+                </Text>
+                <Text style={[styles.toggleText, !isLogin && styles.activeText]} onPress={() => handleTogglePress('Register')}>
+                  Register
+                </Text>
+              </View>
+            </View>
+          </View>
         </View>
       )}
 
@@ -79,23 +96,25 @@ function CustomHeader({ navigation }) {
         </View>
       )}
 
-      {/* Login/Register Toggle */}
-      <View style={styles.toggleContainer}>
-        <View style={styles.toggleBackground}>
-          <TouchableOpacity
-            style={[styles.toggleCircle, isLogin ? styles.circleLeft : styles.circleRight]}
-            onPress={() => handleTogglePress(isLogin ? 'Register' : 'Login')}
-          />
-          <View style={styles.toggleTextContainer}>
-            <Text style={[styles.toggleText, isLogin && styles.activeText]} onPress={() => handleTogglePress('Login')}>
-              Login
-            </Text>
-            <Text style={[styles.toggleText, !isLogin && styles.activeText]} onPress={() => handleTogglePress('Register')}>
-              Register
-            </Text>
+      {/* Login/Register Toggle (Desktop Only) */}
+      {!isMobile && (
+        <View style={styles.toggleContainer}>
+          <View style={styles.toggleBackground}>
+            <TouchableOpacity
+              style={[styles.toggleCircle, isLogin ? styles.circleLeft : styles.circleRight]}
+              onPress={() => handleTogglePress(isLogin ? 'Register' : 'Login')}
+            />
+            <View style={styles.toggleTextContainer}>
+              <Text style={[styles.toggleText, isLogin && styles.activeText]} onPress={() => handleTogglePress('Login')}>
+                Login
+              </Text>
+              <Text style={[styles.toggleText, !isLogin && styles.activeText]} onPress={() => handleTogglePress('Register')}>
+                Register
+              </Text>
+            </View>
           </View>
         </View>
-      </View>
+      )}
     </SafeAreaView>
   );
 }
@@ -203,6 +222,9 @@ const styles = StyleSheet.create({
   toggleContainer: {
     flexDirection: 'row',
     alignItems: 'center',
+  },
+  toggleContainerMobile: {
+    marginTop: 10,
   },
   toggleBackground: {
     width: 143,
