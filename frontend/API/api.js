@@ -1,18 +1,28 @@
 import axios from 'axios';
+import { Platform } from 'react-native';
 
-const API_URL = 'http://192.168.1.21:8000';  // Your FastAPI backend URL
+// Get the correct API base URL
+const getApiUrl = () => {
+  if (Platform.OS === 'android') {
+    return 'http://10.0.2.2:8000';  // Android Emulator
+  }
+  return 'http://localhost:8000';  // Web (React Web & iOS Simulator)
+};
+
+// Use the dynamic API URL
+const API_URL = getApiUrl();
 
 // Register a new user
 export const registerUser = async (userData) => {
   try {
     const response = await axios.post(`${API_URL}/register`, userData);
-    return response.data; // Ensure this is a simple object that your frontend can handle
+    return response.data;
   } catch (error) {
-    // Log the error to see its structure
     console.error('Error during registration:', error.response ? error.response.data : error);
-    throw error.response ? error.response.data : { detail: 'An error occurred' };  // Provide a default error message
+    throw error.response ? error.response.data : { detail: 'An error occurred' };
   }
 };
+
 // Login a user
 export const loginUser = async (userData) => {
   try {
@@ -20,14 +30,37 @@ export const loginUser = async (userData) => {
     return response.data;
   } catch (error) {
     if (error.response) {
-      // Server responded with a status code outside the 2xx range
       throw error.response.data;
     } else if (error.request) {
-      // No response received
       console.error('No response received:', error.request);
       throw { detail: 'No response from server' };
     } else {
-      // Other errors
+      console.error('Error:', error.message);
+      throw { detail: error.message };
+    }
+  }
+};
+
+// Get prediction for the logged-in user
+export const getPrediction = async (token) => {
+  try {
+    const response = await axios.post(
+      `${API_URL}/predict`,
+      {},
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+    return response.data;
+  } catch (error) {
+    if (error.response) {
+      throw error.response.data;
+    } else if (error.request) {
+      console.error('No response received:', error.request);
+      throw { detail: 'No response from server' };
+    } else {
       console.error('Error:', error.message);
       throw { detail: error.message };
     }

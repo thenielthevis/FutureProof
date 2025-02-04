@@ -51,6 +51,7 @@ class UserInDB(ObjectIdModel):
         json_encoders = {
             ObjectId: str_objectid
         }
+        arbitrary_types_allowed = True
 
 # This model is for the login input
 class UserLogin(BaseModel):

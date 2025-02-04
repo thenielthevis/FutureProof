@@ -6,6 +6,8 @@ from typing import Optional
 from bson import ObjectId
 from app.config import get_database
 from app.models.user_model import UserCreate, UserInDB, UserLogin
+from jose import JWTError, jwt
+from app.database import get_user_by_email
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
@@ -73,3 +75,15 @@ async def login_user(user: UserLogin):
         data={"sub": user.email}, expires_delta=access_token_expires
     )
     return access_token
+
+# Function to get user by token
+async def get_user_by_token(token: str) -> UserInDB:
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        email: str = payload.get("sub")
+        if email is None:
+            return None
+        user = await get_user_by_email(email)
+        return user
+    except JWTError:
+        return None

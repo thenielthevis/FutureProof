@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { View, Text, TouchableOpacity, StyleSheet, Image, ScrollView, Dimensions, Platform } from 'react-native';
@@ -9,14 +9,28 @@ import Features from './Components/Features';
 import About from './Components/About';
 import Login from './Components/Login';
 import Register from './Components/Register';
+import Gamification from './Components/Gamification';
+import Logout from './Components/Logout';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const Stack = createStackNavigator();
 const { width, height } = Dimensions.get('window');
 const isMobile = width < 768;
 
 function CustomHeader({ navigation }) {
-  const [isLogin, setIsLogin] = useState(true); // Track Login/Register state
-  const [isMenuOpen, setIsMenuOpen] = useState(false); // Track hamburger menu state
+  const [isLogin, setIsLogin] = useState(true);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+
+  useEffect(() => {
+    const checkToken = async () => {
+      const token = await AsyncStorage.getItem('token');
+      if (token) {
+        setIsLoggedIn(true);
+      }
+    };
+    checkToken();
+  }, []);
 
   const handleTogglePress = (targetPage) => {
     if (targetPage === 'Login') {
@@ -26,6 +40,11 @@ function CustomHeader({ navigation }) {
       setIsLogin(false);
       navigation.navigate('Register');
     }
+  };
+
+  const handleLogoutPress = async () => {
+    navigation.navigate('Logout');
+    setIsLoggedIn(false);
   };
 
   const toggleMenu = () => {
@@ -81,20 +100,26 @@ function CustomHeader({ navigation }) {
 
       {/* Login/Register Toggle */}
       <View style={styles.toggleContainer}>
-        <View style={styles.toggleBackground}>
-          <TouchableOpacity
-            style={[styles.toggleCircle, isLogin ? styles.circleLeft : styles.circleRight]}
-            onPress={() => handleTogglePress(isLogin ? 'Register' : 'Login')}
-          />
-          <View style={styles.toggleTextContainer}>
-            <Text style={[styles.toggleText, isLogin && styles.activeText]} onPress={() => handleTogglePress('Login')}>
-              Login
-            </Text>
-            <Text style={[styles.toggleText, !isLogin && styles.activeText]} onPress={() => handleTogglePress('Register')}>
-              Register
-            </Text>
+        {isLoggedIn ? (
+          <TouchableOpacity style={styles.logoutButton} onPress={handleLogoutPress}>
+            <Text style={styles.logoutText}>Logout</Text>
+          </TouchableOpacity>
+        ) : (
+          <View style={styles.toggleBackground}>
+            <TouchableOpacity
+              style={[styles.toggleCircle, isLogin ? styles.circleLeft : styles.circleRight]}
+              onPress={() => handleTogglePress(isLogin ? 'Register' : 'Login')}
+            />
+            <View style={styles.toggleTextContainer}>
+              <Text style={[styles.toggleText, isLogin && styles.activeText]} onPress={() => handleTogglePress('Login')}>
+                Login
+              </Text>
+              <Text style={[styles.toggleText, !isLogin && styles.activeText]} onPress={() => handleTogglePress('Register')}>
+                Register
+              </Text>
+            </View>
           </View>
-        </View>
+        )}
       </View>
     </SafeAreaView>
   );
@@ -122,7 +147,9 @@ export default function App() {
               <Stack.Screen name="Contacts" component={Contacts} />
               <Stack.Screen name="Features" component={Features} />
               <Stack.Screen name="Login" component={Login} />
+              <Stack.Screen name="Logout" component={Logout} />
               <Stack.Screen name="Register" component={Register} />
+              <Stack.Screen name="Gamification" component={Gamification} />
             </Stack.Navigator>
           </NavigationContainer>
         </ScrollView>
@@ -243,5 +270,14 @@ const styles = StyleSheet.create({
   },
   activeText: {
     color: '#1A3B32',
+  },
+  logoutButton: {
+    backgroundColor: '#E0E0E0',
+    padding: 10,
+    borderRadius: 5,
+  },
+  logoutText: {
+    color: '#1A3B32',
+    fontWeight: '600',
   },
 });

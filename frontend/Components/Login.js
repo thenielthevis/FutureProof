@@ -12,6 +12,7 @@ import {
 import { loginUser } from '../API/api';
 import { LinearGradient } from 'expo-linear-gradient';
 import Icon from 'react-native-vector-icons/MaterialIcons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const Login = ({ navigation }) => {
   const [email, setEmail] = useState('');
@@ -24,13 +25,21 @@ const Login = ({ navigation }) => {
       const userData = { email, password };
       const response = await loginUser(userData);
       console.log('Login success:', response);
+
+      // Save the token in AsyncStorage
+      await AsyncStorage.setItem('token', response.access_token);
+
+      // Log the token to the console for debugging
+      const token = await AsyncStorage.getItem('token');
+      console.log('Stored token:', token);
+
       navigation.navigate('Home');
     } catch (err) {
       console.log('Login error:', err);
       const errorMessage =
         typeof err === 'object' && err.msg
           ? err.msg
-          : 'Something went wrong. Please try again.';
+          : 'An error occurred during login';
       setError(errorMessage);
     }
   };
@@ -71,6 +80,8 @@ const Login = ({ navigation }) => {
             placeholderTextColor="#aaa"
             value={email}
             onChangeText={setEmail}
+            keyboardType="email-address"
+            autoCapitalize="none"
           />
         </View>
 
@@ -94,11 +105,11 @@ const Login = ({ navigation }) => {
           <Text style={[styles.buttonText, isMobile && styles.mobileButtonText]}>LOGIN</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity onPress={() => navigation.navigate('ForgotPassword')}>
+        {/* <TouchableOpacity onPress={() => navigation.navigate('ForgotPassword')}> */}
           <Text style={[styles.forgotPassword, isMobile && styles.mobileForgotPassword]}>
             Forgot Password?
           </Text>
-        </TouchableOpacity>
+        {/* </TouchableOpacity> */}
       </LinearGradient>
     </View>
   );

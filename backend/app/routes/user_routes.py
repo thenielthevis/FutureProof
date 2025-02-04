@@ -1,13 +1,20 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Depends
+from fastapi.security import OAuth2PasswordBearer
 from pydantic import BaseModel
-from app.services.user_service import register_user, login_user
-from app.models.user_model import UserCreate, UserLogin
+from app.services.user_service import register_user, login_user, get_user_by_token
+from app.services.prediction_service import predict_disease
+from app.models.user_model import UserCreate, UserLogin, UserInDB
 
 router = APIRouter()
+
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
 class Token(BaseModel):
     access_token: str
     token_type: str
+
+class PredictionResponse(BaseModel):
+    diseases: str
 
 @router.post("/register")
 async def register(user: UserCreate):
@@ -23,4 +30,20 @@ async def login(user: UserLogin):
     access_token = await login_user(user)
     if not access_token:
         raise HTTPException(status_code=401, detail="Invalid credentials")
+    print("Generated token:", access_token)
     return {"access_token": access_token, "token_type": "bearer"}
+
+@router.post("/predict", response_model=PredictionResponse)
+async def predict(token: str = Depends(oauth2_scheme)):
+    user = await get_user_by_token(token)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    predicted_diseases = predict_disease(user)
+    return {"diseases": predicted_diseases}
+
+@router.get("/user", response_model=UserInDB)
+async def get_user(token: str = Depends(oauth2_scheme)):
+    user = await get_user_by_token(token)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    return user
