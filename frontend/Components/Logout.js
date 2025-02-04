@@ -1,12 +1,25 @@
 import React from 'react';
-import { View, Text, Button, StyleSheet } from 'react-native';
+import { View, Text, Button, StyleSheet, Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import Toast from 'react-native-toast-message';
 
 const Logout = ({ navigation }) => {
   const handleLogout = async () => {
     try {
       await AsyncStorage.removeItem('token');
-      navigation.navigate('Login');
+      
+      Toast.show({
+        type: 'success',
+        text1: 'Logged out successfully!',
+        position: 'top',
+        visibilityTime: 3000,
+        autoHide: true,
+        topOffset: Platform.OS === 'android' ? 30 : 60,
+      });
+
+      setTimeout(() => {
+        navigation.navigate('Login');
+      }, 2000);
     } catch (err) {
       console.error('Logout error:', err);
     }

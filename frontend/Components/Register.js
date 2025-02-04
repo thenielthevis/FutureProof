@@ -1,10 +1,9 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, Button, StyleSheet, ScrollView, Image, Dimensions, TouchableOpacity } from 'react-native';
+import { View, Text, TextInput, Button, StyleSheet, ScrollView, Image, Dimensions, TouchableOpacity, Platform } from 'react-native';
 import { Checkbox } from 'react-native-paper';
 import { LinearGradient } from 'expo-linear-gradient'; // Import LinearGradient
 import { registerUser } from '../API/api';
-import Toastify from 'toastify-js';
-import "toastify-js/src/toastify.css";
+import Toast from 'react-native-toast-message';
 
 const { width } = Dimensions.get('window');
 
@@ -36,48 +35,34 @@ const Register = ({ navigation }) => {
   };
 
   const showToast = (message, type) => {
-      const backgroundColors = {
-        success: 'green',
-        warning: 'yellow',
-        error: 'red',
-      };
-    
-      const icons = {
-        success: '✅', // Check mark for success
-        warning: '⚠️', // Warning sign
-        error: '❌', // Cross mark for error
-      };
-    
-      Toastify({
-        text: `${icons[type] || ''} ${message}`,
-        duration: 3000,
-        gravity: "top",
-        position: "center",
-        backgroundColor: backgroundColors[type] || 'gray',
-        style: {
-          fontSize: '22px',
-          padding: '25px',
-        },
-      }).showToast();
+    const icons = {
+      success: '✅',
+      warning: '⚠️',
+      error: '❌',
     };
+
+    Toast.show({
+      type: type,
+      position: 'top',
+      text1: `${icons[type] || ''} ${message}`,
+      visibilityTime: 2000,
+      autoHide: true,
+      topOffset: Platform.OS === 'android' ? 30 : 60,
+    });
+  };
 
   const handleRegister = async () => {
     setError(''); // Reset any previous error
 
-     const loadingToast = Toastify({
-          text: "Registering... ⏳",
-          duration: -1,
-          gravity: "top",
-          position: "center",
-          backgroundColor: "yellowgreen",
-          close: false,
-          style: {
-            fontSize: '22px',
-            padding: '25px',
-          },
-        });
-        
-        loadingToast.showToast();
+    // Show loading toast
+    Toast.show({
+      type: 'info',
+      text1: 'Registering... ⏳',
+      position: 'top',
+      visibilityTime: 10000,
+      autoHide: false,
+      id: 'loading',
+    });
 
     const updatedVices = customVice.trim() !== "" ? [...vices, customVice.trim()] : vices;
     const updatedGeneticDiseases = customGeneticDisease.trim() !== "" ? [...genetic_diseases, customGeneticDisease.trim()] : genetic_diseases;
@@ -95,20 +80,24 @@ const Register = ({ navigation }) => {
       const response = await registerUser(userData);
       console.log('Register success:', response);
 
-        
-      loadingToast.hideToast();
-      showToast("Register Successful! 🎉", 'success');
+      // Hide loading toast and show success toast
+      Toast.hide('loading');
+      showToast("Registration Successful! 🎉", 'success');
 
-      navigation.navigate('Login');
+      // Navigate to the Login screen
+      setTimeout(() => {
+        navigation.navigate('Login');
+      }, 2000);
     } catch (error) {
-       console.log('Register error:', error);
+      console.log('Register error:', error);
       const errorMessage =
         typeof error === 'object' && error.msg
           ? error.msg
           : 'Something went wrong. Please try again.';
       setError(errorMessage);
-  
-      loadingToast.hideToast();
+
+      // Hide loading toast and show error toast
+      Toast.hide('loading');
       showToast(errorMessage, 'error');
     }
   };
@@ -380,6 +369,8 @@ const Register = ({ navigation }) => {
           {error ? <Text style={styles.error}>{error}</Text> : null}
         </ScrollView>
       </LinearGradient>
+      {/* Toast component */}
+      <Toast />
     </View>
   );
 };

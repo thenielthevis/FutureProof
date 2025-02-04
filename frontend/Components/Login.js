@@ -31,7 +31,7 @@ const Login = ({ navigation }) => {
       type: type,
       position: 'top',
       text1: `${icons[type] || ''} ${message}`,
-      visibilityTime: 3000,
+      visibilityTime: 2000,
       autoHide: true,
       topOffset: Platform.OS === 'android' ? 30 : 60,
     });
@@ -40,7 +40,6 @@ const Login = ({ navigation }) => {
   const handleLogin = async () => {
     setError('');
 
-    // Show loading toast
     Toast.show({
       type: 'info',
       text1: 'Logging in... ⏳',
@@ -65,9 +64,9 @@ const Login = ({ navigation }) => {
       // Hide loading toast and show success toast
       Toast.hide('loading');
       showToast('Login Successful! 🎉', 'success');
-
-      // Navigate to the Home screen
-      navigation.navigate('Home');
+      setTimeout(() => {
+        navigation.navigate('Home');
+      }, 2000);
     } catch (err) {
       console.log('Login error:', err);
       const errorMessage =
@@ -75,8 +74,6 @@ const Login = ({ navigation }) => {
           ? err.msg
           : 'An error occurred during login';
       setError(errorMessage);
-
-      // Hide loading toast and show error toast
       Toast.hide('loading');
       showToast(errorMessage, 'error');
     }

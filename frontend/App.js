@@ -11,6 +11,7 @@ import Login from './Components/Login';
 import Logout from './Components/Logout';
 import Register from './Components/Register';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import Toast from 'react-native-toast-message';
 
 const Stack = createStackNavigator();
 const { width, height } = Dimensions.get('window');
@@ -173,6 +174,7 @@ export default function App() {
             </Stack.Navigator>
           </NavigationContainer>
         </ScrollView>
+        <Toast />
       </SafeAreaView>
     </SafeAreaProvider>
   );

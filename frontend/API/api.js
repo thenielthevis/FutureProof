@@ -9,13 +9,21 @@ const getApiUrl = async () => {
   } else if (Platform.OS === 'ios') {
     return 'http://localhost:8000';  // iOS Simulator
   } else {
-    const ipAddress = await NetworkInfo.getIPAddress();
-    return `http://${ipAddress}:8000`;  // Physical Device
+    try {
+      const ipAddress = await NetworkInfo.getIPAddress();
+      return `http://${ipAddress}:8000`;  // Physical Device
+    } catch (error) {
+      console.error('Error getting IP address:', error);
+      return 'http://localhost:8000';  // Fallback for web
+    }
   }
 };
 
 // Use the dynamic API URL
-const API_URL = getApiUrl();
+let API_URL;
+(async () => {
+  API_URL = await getApiUrl();
+})();
 
 // Register a new user
 export const registerUser = async (userData) => {
