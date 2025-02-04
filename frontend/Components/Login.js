@@ -13,8 +13,7 @@ import { loginUser } from '../API/api';
 import { LinearGradient } from 'expo-linear-gradient';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import Toastify from 'toastify-js';
-import "toastify-js/src/toastify.css";
+import Toast from 'react-native-toast-message';
 
 const Login = ({ navigation }) => {
   const [email, setEmail] = useState('');
@@ -22,49 +21,35 @@ const Login = ({ navigation }) => {
   const [error, setError] = useState('');
 
   const showToast = (message, type) => {
-    const backgroundColors = {
-      success: 'green',
-      warning: 'yellow',
-      error: 'red',
-    };
-  
     const icons = {
-      success: '✅', // Check mark for success
-      warning: '⚠️', // Warning sign
-      error: '❌', // Cross mark for error
+      success: '✅',
+      warning: '⚠️',
+      error: '❌',
     };
-  
-    Toastify({
-      text: `${icons[type] || ''} ${message}`,
-      duration: 3000,
-      gravity: "top",
-      position: "center",
-      backgroundColor: backgroundColors[type] || 'gray',
-      style: {
-        fontSize: '22px',
-        padding: '25px',
-      },
-    }).showToast();
+
+    Toast.show({
+      type: type,
+      position: 'top',
+      text1: `${icons[type] || ''} ${message}`,
+      visibilityTime: 3000,
+      autoHide: true,
+      topOffset: Platform.OS === 'android' ? 30 : 60,
+    });
   };
-  
+
   const handleLogin = async () => {
     setError('');
-    
-    const loadingToast = Toastify({
-      text: "Logging in... ⏳",
-      duration: -1,
-      gravity: "top",
-      position: "center",
-      backgroundColor: "yellowgreen",
-      close: false,
-      style: {
-        fontSize: '22px',
-        padding: '25px',
-      },
+
+    // Show loading toast
+    Toast.show({
+      type: 'info',
+      text1: 'Logging in... ⏳',
+      position: 'top',
+      visibilityTime: 10000,
+      autoHide: false,
+      id: 'loading',
     });
-    
-    loadingToast.showToast();
-    
+
     try {
       const userData = { email, password };
       const response = await loginUser(userData);
@@ -77,10 +62,11 @@ const Login = ({ navigation }) => {
       const token = await AsyncStorage.getItem('token');
       console.log('Stored token:', token);
 
-  
-      loadingToast.hideToast();
-      showToast("Login Successful! 🎉", 'success');
-  
+      // Hide loading toast and show success toast
+      Toast.hide('loading');
+      showToast('Login Successful! 🎉', 'success');
+
+      // Navigate to the Home screen
       navigation.navigate('Home');
     } catch (err) {
       console.log('Login error:', err);
@@ -89,26 +75,39 @@ const Login = ({ navigation }) => {
           ? err.msg
           : 'An error occurred during login';
       setError(errorMessage);
-  
-      loadingToast.hideToast();
+
+      // Hide loading toast and show error toast
+      Toast.hide('loading');
       showToast(errorMessage, 'error');
     }
   };
-  
+
   const { width } = Dimensions.get('window');
   const isMobile = width < 768;
 
   return (
     <View style={[styles.container, isMobile && styles.mobileContainer]}>
       <View style={[styles.leftSection, isMobile && styles.mobileLeftSection]}>
-        <Image source={require('../assets/logo-2.png')} style={[styles.logo, isMobile && styles.mobileLogo]} />
-        <Text style={[styles.logoText, isMobile && styles.mobileLogoText]}>FutureProof</Text>
+        <Image
+          source={require('../assets/logo-2.png')}
+          style={[styles.logo, isMobile && styles.mobileLogo]}
+        />
+        <Text style={[styles.logoText, isMobile && styles.mobileLogoText]}>
+          FutureProof
+        </Text>
       </View>
 
-      <LinearGradient colors={['#ffffff', '#72f2b8']} style={[styles.rightSection, isMobile && styles.mobileRightSection]}>
-        <Text style={[styles.header, isMobile && styles.mobileHeader]}>Sign in account</Text>
+      <LinearGradient
+        colors={['#ffffff', '#72f2b8']}
+        style={[styles.rightSection, isMobile && styles.mobileRightSection]}
+      >
+        <Text style={[styles.header, isMobile && styles.mobileHeader]}>
+          Sign in account
+        </Text>
 
-        <View style={[styles.inputContainer, isMobile && styles.mobileInputContainer]}>
+        <View
+          style={[styles.inputContainer, isMobile && styles.mobileInputContainer]}
+        >
           <View style={styles.iconWrapper}>
             <Icon name="email" size={isMobile ? 20 : 30} color="#ffffff" />
           </View>
@@ -123,7 +122,9 @@ const Login = ({ navigation }) => {
           />
         </View>
 
-        <View style={[styles.inputContainer, isMobile && styles.mobileInputContainer]}>
+        <View
+          style={[styles.inputContainer, isMobile && styles.mobileInputContainer]}
+        >
           <View style={styles.iconWrapper}>
             <Icon name="lock" size={isMobile ? 20 : 30} color="#ffffff" />
           </View>
@@ -139,16 +140,22 @@ const Login = ({ navigation }) => {
 
         {error ? <Text style={styles.error}>{error}</Text> : null}
 
-        <TouchableOpacity style={[styles.button, isMobile && styles.mobileButton]} onPress={handleLogin}>
-          <Text style={[styles.buttonText, isMobile && styles.mobileButtonText]}>LOGIN</Text>
+        <TouchableOpacity
+          style={[styles.button, isMobile && styles.mobileButton]}
+          onPress={handleLogin}
+        >
+          <Text style={[styles.buttonText, isMobile && styles.mobileButtonText]}>
+            LOGIN
+          </Text>
         </TouchableOpacity>
 
-        {/* <TouchableOpacity onPress={() => navigation.navigate('ForgotPassword')}> */}
-          <Text style={[styles.forgotPassword, isMobile && styles.mobileForgotPassword]}>
-            Forgot Password?
-          </Text>
-        {/* </TouchableOpacity> */}
+        <Text style={[styles.forgotPassword, isMobile && styles.mobileForgotPassword]}>
+          Forgot Password?
+        </Text>
       </LinearGradient>
+
+      {/* Toast component */}
+      <Toast />
     </View>
   );
 };
@@ -156,22 +163,67 @@ const Login = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: { flex: 1, flexDirection: 'row', backgroundColor: '#f8f8f8' },
   mobileContainer: { flexDirection: 'column' },
-  leftSection: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#ffffff', padding: 20 },
+  leftSection: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#ffffff',
+    padding: 20,
+  },
   mobileLeftSection: { padding: 10 },
   logo: { width: 550, height: 500 },
   mobileLogo: { width: 200, height: 200 },
-  logoText: { fontSize: 40, fontWeight: 'bold', color: '#004d00', textAlign: 'center' },
+  logoText: {
+    fontSize: 40,
+    fontWeight: 'bold',
+    color: '#004d00',
+    textAlign: 'center',
+  },
   mobileLogoText: { fontSize: 24 },
   rightSection: { flex: 1, justifyContent: 'center', padding: 20 },
   mobileRightSection: { padding: 10 },
-  header: { fontSize: 55, fontWeight: 'bold', color: '#333', marginBottom: 60, textAlign: 'center' },
+  header: {
+    fontSize: 55,
+    fontWeight: 'bold',
+    color: '#333',
+    marginBottom: 60,
+    textAlign: 'center',
+  },
   mobileHeader: { fontSize: 32, marginBottom: 30 },
-  inputContainer: { flexDirection: 'row', alignItems: 'center', marginBottom: 15, borderWidth: 3, borderColor: '#1B5E20', borderRadius: 50, backgroundColor: '#f9f9f9' },
-  iconWrapper: { width: 60, height: 50, borderRadius: 70, backgroundColor: '#1B5E20', justifyContent: 'center', alignItems: 'center', marginRight: 20, alignSelf: 'center' },
+  inputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 15,
+    borderWidth: 3,
+    borderColor: '#1B5E20',
+    borderRadius: 50,
+    backgroundColor: '#f9f9f9',
+  },
+  iconWrapper: {
+    width: 60,
+    height: 50,
+    borderRadius: 70,
+    backgroundColor: '#1B5E20',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 20,
+    alignSelf: 'center',
+  },
   input: { flex: 1, height: 40, fontSize: 16, color: '#333' },
-  button: { backgroundColor: '#004d00', paddingVertical: 10, borderRadius: 50, alignItems: 'center', marginTop: 10 },
+  button: {
+    backgroundColor: '#004d00',
+    paddingVertical: 10,
+    borderRadius: 50,
+    alignItems: 'center',
+    marginTop: 10,
+  },
   buttonText: { color: '#ffffff', fontWeight: 'bold', fontSize: 16 },
-  forgotPassword: { color: '#004d00', fontSize: 18, textAlign: 'center', marginTop: 10 },
+  forgotPassword: {
+    color: '#004d00',
+    fontSize: 18,
+    textAlign: 'center',
+    marginTop: 10,
+  },
   error: { color: 'red', marginBottom: 10, textAlign: 'center' },
 });
 
