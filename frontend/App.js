@@ -8,9 +8,8 @@ import Contacts from './Components/Contacts';
 import Features from './Components/Features';
 import About from './Components/About';
 import Login from './Components/Login';
-import Register from './Components/Register';
-import Gamification from './Components/Gamification';
 import Logout from './Components/Logout';
+import Register from './Components/Register';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const Stack = createStackNavigator();
@@ -18,9 +17,9 @@ const { width, height } = Dimensions.get('window');
 const isMobile = width < 768;
 
 function CustomHeader({ navigation }) {
-  const [isLogin, setIsLogin] = useState(true);
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [isLogin, setIsLogin] = useState(true); // Track Login/Register state
+  const [isMenuOpen, setIsMenuOpen] = useState(false); // Track hamburger menu state
+  const [isLoggedIn, setIsLoggedIn] = useState(false); // Track user login state
 
   useEffect(() => {
     const checkToken = async () => {
@@ -80,6 +79,29 @@ function CustomHeader({ navigation }) {
           <TouchableOpacity onPress={() => { navigation.navigate('Contacts'); setIsMenuOpen(false); }}>
             <Text style={styles.dropdownItem}>Contact Us</Text>
           </TouchableOpacity>
+          {/* Login/Register Toggle in Mobile Menu */}
+          <View style={styles.toggleContainerMobile}>
+            {isLoggedIn ? (
+              <TouchableOpacity style={styles.logoutButton} onPress={handleLogoutPress}>
+                <Text style={styles.logoutText}>Logout</Text>
+              </TouchableOpacity>
+            ) : (
+              <View style={styles.toggleBackground}>
+                <TouchableOpacity
+                  style={[styles.toggleCircle, isLogin ? styles.circleLeft : styles.circleRight]}
+                  onPress={() => handleTogglePress(isLogin ? 'Register' : 'Login')}
+                />
+                <View style={styles.toggleTextContainer}>
+                  <Text style={[styles.toggleText, isLogin && styles.activeText]} onPress={() => handleTogglePress('Login')}>
+                    Login
+                  </Text>
+                  <Text style={[styles.toggleText, !isLogin && styles.activeText]} onPress={() => handleTogglePress('Register')}>
+                    Register
+                  </Text>
+                </View>
+              </View>
+            )}
+          </View>
         </View>
       )}
 
@@ -95,32 +117,31 @@ function CustomHeader({ navigation }) {
           <TouchableOpacity onPress={() => navigation.navigate('Contacts')}>
             <Text style={styles.navLinkText}>Contact Us</Text>
           </TouchableOpacity>
+          {/* Login/Register Toggle */}
+          <View style={styles.toggleContainer}>
+            {isLoggedIn ? (
+              <TouchableOpacity style={styles.logoutButton} onPress={handleLogoutPress}>
+                <Text style={styles.logoutText}>Logout</Text>
+              </TouchableOpacity>
+            ) : (
+              <View style={styles.toggleBackground}>
+                <TouchableOpacity
+                  style={[styles.toggleCircle, isLogin ? styles.circleLeft : styles.circleRight]}
+                  onPress={() => handleTogglePress(isLogin ? 'Register' : 'Login')}
+                />
+                <View style={styles.toggleTextContainer}>
+                  <Text style={[styles.toggleText, isLogin && styles.activeText]} onPress={() => handleTogglePress('Login')}>
+                    Login
+                  </Text>
+                  <Text style={[styles.toggleText, !isLogin && styles.activeText]} onPress={() => handleTogglePress('Register')}>
+                    Register
+                  </Text>
+                </View>
+              </View>
+            )}
+          </View>
         </View>
       )}
-
-      {/* Login/Register Toggle */}
-      <View style={styles.toggleContainer}>
-        {isLoggedIn ? (
-          <TouchableOpacity style={styles.logoutButton} onPress={handleLogoutPress}>
-            <Text style={styles.logoutText}>Logout</Text>
-          </TouchableOpacity>
-        ) : (
-          <View style={styles.toggleBackground}>
-            <TouchableOpacity
-              style={[styles.toggleCircle, isLogin ? styles.circleLeft : styles.circleRight]}
-              onPress={() => handleTogglePress(isLogin ? 'Register' : 'Login')}
-            />
-            <View style={styles.toggleTextContainer}>
-              <Text style={[styles.toggleText, isLogin && styles.activeText]} onPress={() => handleTogglePress('Login')}>
-                Login
-              </Text>
-              <Text style={[styles.toggleText, !isLogin && styles.activeText]} onPress={() => handleTogglePress('Register')}>
-                Register
-              </Text>
-            </View>
-          </View>
-        )}
-      </View>
     </SafeAreaView>
   );
 }
@@ -149,7 +170,6 @@ export default function App() {
               <Stack.Screen name="Login" component={Login} />
               <Stack.Screen name="Logout" component={Logout} />
               <Stack.Screen name="Register" component={Register} />
-              <Stack.Screen name="Gamification" component={Gamification} />
             </Stack.Navigator>
           </NavigationContainer>
         </ScrollView>
@@ -231,11 +251,14 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
   },
+  toggleContainerMobile: {
+    marginTop: 10,
+  },
   toggleBackground: {
     width: 143,
     height: 40,
     borderRadius: 20,
-    backgroundColor: '#E0E0E0',
+    backgroundColor: '#f0fdf7',
     position: 'relative',
     marginRight: 8,
     justifyContent: 'center',
@@ -245,7 +268,7 @@ const styles = StyleSheet.create({
     height: 36,
     borderRadius: 18,
     position: 'absolute',
-    backgroundColor: '#c1ff72',
+    backgroundColor: '#388E3C',
     top: 2,
   },
   circleLeft: {
@@ -269,7 +292,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   activeText: {
-    color: '#1A3B32',
+    color: '#f0fdf7',
   },
   logoutButton: {
     backgroundColor: '#E0E0E0',

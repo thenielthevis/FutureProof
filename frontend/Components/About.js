@@ -14,7 +14,10 @@ const About = () => {
       style={styles.container}
     >
       {isWeb ? (
-        <ScrollView contentContainerStyle={styles.scrollContainer}>
+      <ScrollView 
+      contentContainerStyle={[styles.scrollViewContent, { minHeight: height }]}
+      showsVerticalScrollIndicator={false}
+    >
           <View style={styles.mainLayout}>
             {/* Left Section */}
             <View style={styles.leftSection}>
@@ -155,6 +158,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     flexWrap: 'wrap',
     marginBottom: 40,
+    padding: 16,
   },
   leftSection: {
     width: width > 768 ? '30%' : '100%',
@@ -173,19 +177,16 @@ const styles = StyleSheet.create({
   title: {
     fontSize: width > 768 ? 50 : 35,
     fontWeight: 'bold',
-    color: '#2E7D32',
+    color: '#1B5E20',
     marginBottom: 20,
-    textShadowColor: 'rgba(46, 125, 50, 0.8)',
-    textShadowOffset: { width: 2, height: 2 },
-    textShadowRadius: 5,
-    fontFamily: 'Georgia',
-    fontStyle: 'italic',
+    fontWeight: '800',
+    textAlign: 'center',
   },
   subtitle: {
     fontSize: width > 768 ? 25 : 18,
     color: '#388E3C',
-    fontFamily: 'serif',
-    fontStyle: 'italic',
+    textAlign: 'justify',
+    lineHeight: 24,
   },
   headerGif: {
     width: width > 768 ? 400 : 300,
@@ -195,20 +196,16 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: width > 768 ? 40 : 30,
     fontWeight: 'bold',
-    color: '#2E7D32',
-    marginBottom: 1,
-    textShadowColor: 'rgba(46, 125, 50, 0.8)',
-    textShadowOffset: { width: 2, height: 2 },
-    textShadowRadius: 5,
-    textAlign: 'left',
-    fontFamily: 'Georgia',
-    fontStyle: 'italic',
+    color: '#1B5E20',
+    marginBottom: 10,
+    fontWeight: '800',
+    textAlign: 'center',
   },
   sectionText: {
     fontSize: width > 768 ? 25 : 18,
-    color: '#4CAF50',
-    fontFamily: 'serif',
-    fontStyle: 'italic',
+    color: '#388E3C',
+    textAlign: 'justify',
+    lineHeight: 24,
   },
   valuesSection: {
     marginTop: 40,
@@ -242,16 +239,14 @@ const styles = StyleSheet.create({
   valueTitle: {
     fontSize: width > 768 ? 22 : 18,
     fontWeight: 'bold',
-    color: '#2E7D32',
+    color: '#1B5E20',
     marginBottom: 5,
-    fontFamily: 'Georgia',
-    fontStyle: 'italic',
   },
   valueDescription: {
     fontSize: width > 768 ? 18 : 14,
-    color: '#4CAF50',
-    textAlign: 'center',
-    fontFamily: 'serif',
+    color: '#388E3C',
+    textAlign: 'justify',
+    lineHeight: 20,
   },
   mobileMainLayout: {
     flexDirection: 'column',

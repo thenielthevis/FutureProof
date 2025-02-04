@@ -3,6 +3,8 @@ import { View, Text, TextInput, Button, StyleSheet, ScrollView, Image, Dimension
 import { Checkbox } from 'react-native-paper';
 import { LinearGradient } from 'expo-linear-gradient'; // Import LinearGradient
 import { registerUser } from '../API/api';
+import Toastify from 'toastify-js';
+import "toastify-js/src/toastify.css";
 
 const { width } = Dimensions.get('window');
 
@@ -33,8 +35,49 @@ const Register = ({ navigation }) => {
     setState(state.includes(option) ? state.filter(item => item !== option) : [...state, option]);
   };
 
+  const showToast = (message, type) => {
+      const backgroundColors = {
+        success: 'green',
+        warning: 'yellow',
+        error: 'red',
+      };
+    
+      const icons = {
+        success: '✅', // Check mark for success
+        warning: '⚠️', // Warning sign
+        error: '❌', // Cross mark for error
+      };
+    
+      Toastify({
+        text: `${icons[type] || ''} ${message}`,
+        duration: 3000,
+        gravity: "top",
+        position: "center",
+        backgroundColor: backgroundColors[type] || 'gray',
+        style: {
+          fontSize: '22px',
+          padding: '25px',
+        },
+      }).showToast();
+    };
+
   const handleRegister = async () => {
     setError(''); // Reset any previous error
+
+     const loadingToast = Toastify({
+          text: "Registering... ⏳",
+          duration: -1,
+          gravity: "top",
+          position: "center",
+          backgroundColor: "yellowgreen",
+          close: false,
+          style: {
+            fontSize: '22px',
+            padding: '25px',
+          },
+        });
+        
+        loadingToast.showToast();
 
     const updatedVices = customVice.trim() !== "" ? [...vices, customVice.trim()] : vices;
     const updatedGeneticDiseases = customGeneticDisease.trim() !== "" ? [...genetic_diseases, customGeneticDisease.trim()] : genetic_diseases;
@@ -50,11 +93,23 @@ const Register = ({ navigation }) => {
       };
       
       const response = await registerUser(userData);
-      console.log(response);
+      console.log('Register success:', response);
+
+        
+      loadingToast.hideToast();
+      showToast("Register Successful! 🎉", 'success');
+
       navigation.navigate('Login');
     } catch (error) {
-      console.error(error);
-      setError(error.detail || 'Something went wrong');
+       console.log('Register error:', error);
+      const errorMessage =
+        typeof error === 'object' && error.msg
+          ? error.msg
+          : 'Something went wrong. Please try again.';
+      setError(errorMessage);
+  
+      loadingToast.hideToast();
+      showToast(errorMessage, 'error');
     }
   };
 
@@ -389,7 +444,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 15,
     borderWidth: 3,
-    borderColor: '#000000',
+    borderColor: '#1B5E20',
     borderRadius: 50,
     paddingHorizontal: 10,
     backgroundColor: '#f9f9f9',
@@ -413,8 +468,6 @@ const styles = StyleSheet.create({
     borderRadius: 50,
     alignItems: 'center',
     marginTop: 10,
-    borderWidth: 3,
-    borderColor: '#000000',
   },
   mobileButton: {
     paddingVertical: 8,

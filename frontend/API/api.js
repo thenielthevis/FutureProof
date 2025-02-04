@@ -1,12 +1,17 @@
 import axios from 'axios';
 import { Platform } from 'react-native';
+import { NetworkInfo } from 'react-native-network-info';
 
 // Get the correct API base URL
-const getApiUrl = () => {
+const getApiUrl = async () => {
   if (Platform.OS === 'android') {
     return 'http://10.0.2.2:8000';  // Android Emulator
+  } else if (Platform.OS === 'ios') {
+    return 'http://localhost:8000';  // iOS Simulator
+  } else {
+    const ipAddress = await NetworkInfo.getIPAddress();
+    return `http://${ipAddress}:8000`;  // Physical Device
   }
-  return 'http://localhost:8000';  // Web (React Web & iOS Simulator)
 };
 
 // Use the dynamic API URL

@@ -74,18 +74,21 @@ const Features = () => {
 
   return (
     <LinearGradient colors={['#E8F5E9', '#72f2b8']} style={styles.container}>
-      <ScrollView contentContainerStyle={styles.scrollContainer}>
+           <ScrollView 
+        contentContainerStyle={[styles.scrollViewContent, { minHeight: height }]}
+        showsVerticalScrollIndicator={false}
+      >
         {/* Background Icons */}
         <View style={styles.backgroundIcons}>
-          <FontAwesome name="leaf" size={150} color="#4CAF50" style={styles.iconBackground} />
-          <FontAwesome name="leaf" size={150} color="#4CAF50" style={[styles.iconBackground, { top: 100, left: 50 }]} />
-          <FontAwesome name="leaf" size={150} color="#4CAF50" style={[styles.iconBackground, { top: 200, left: 100 }]} />
-          <FontAwesome name="leaf" size={150} color="#4CAF50" style={[styles.iconBackground, { top: 300, left: 150 }]} />
-          <FontAwesome name="leaf" size={150} color="#4CAF50" style={[styles.iconBackground, { top: 100, right: 50 }]} />
-          <FontAwesome name="leaf" size={150} color="#4CAF50" style={[styles.iconBackground, { top: 220, right: 100 }]} />
-          <FontAwesome name="leaf" size={150} color="#4CAF50" style={[styles.iconBackground, { top: 350, right: 150 }]} />
-          <FontAwesome name="leaf" size={150} color="#4CAF50" style={[styles.iconBackground, { top: 350, top: 150 }]} />
-          <FontAwesome name="leaf" size={150} color="#4CAF50" style={[styles.iconBackground, { top: 500, top: 500 }]} />
+          <FontAwesome name="leaf" size={150} color="#e2f5e7" style={styles.iconBackground} />
+          <FontAwesome name="leaf" size={150} color="#e2f5e7" style={[styles.iconBackground, { top: 100, left: 50 }]} />
+          <FontAwesome name="leaf" size={150} color="#e2f5e7" style={[styles.iconBackground, { top: 200, left: 100 }]} />
+          <FontAwesome name="leaf" size={150} color="#e2f5e7" style={[styles.iconBackground, { top: 300, left: 150 }]} />
+          <FontAwesome name="leaf" size={150} color="#e2f5e7" style={[styles.iconBackground, { top: 100, right: 50 }]} />
+          <FontAwesome name="leaf" size={150} color="#e2f5e7" style={[styles.iconBackground, { top: 220, right: 100 }]} />
+          <FontAwesome name="leaf" size={150} color="#e2f5e7" style={[styles.iconBackground, { top: 350, right: 150 }]} />
+          <FontAwesome name="leaf" size={150} color="#e2f5e7" style={[styles.iconBackground, { top: 350, top: 150 }]} />
+          <FontAwesome name="leaf" size={150} color="#e2f5e7" style={[styles.iconBackground, { top: 500, top: 500 }]} />
         </View>
 
         {/* Title */}
@@ -93,14 +96,9 @@ const Features = () => {
           style={[
             styles.featureTitle,
             {
-              fontSize: fontSizeAnime,
-              fontStyle: 'italic',
               fontWeight: 'bold',
               textAlign: 'center',
-              color: '#2E7D32',
-              textShadowColor: '#2E7D32',
-              textShadowOffset: { width: 0, height: 0 },
-              textShadowRadius: 15,
+              color: '#1B5E20',
               marginTop: 30,
             },
           ]}
@@ -118,11 +116,10 @@ const Features = () => {
                   styles.featureTitle,
                   {
                     fontSize: fontSizeAnim,
-                    fontStyle: 'italic',
                     fontWeight: 'bold',
                     color: fontColorAnim.interpolate({
                       inputRange: [0, 1],
-                      outputRange: ['#2E7D32', '#000'],
+                      outputRange: ['#388E3C', '#388E3C'],
                     }),
                   },
                 ]}
@@ -156,11 +153,10 @@ const Features = () => {
                   styles.featureTitle,
                   {
                     fontSize: fontSizeAnim,
-                    fontStyle: 'italic',
                     fontWeight: 'bold',
                     color: fontColorAnim.interpolate({
                       inputRange: [0, 1],
-                      outputRange: ['#2E7D32', '#000'],
+                      outputRange: ['#388E3C', '#388E3C'],
                     }),
                   },
                 ]}
@@ -194,11 +190,10 @@ const Features = () => {
                   styles.featureTitle,
                   {
                     fontSize: fontSizeAnim,
-                    fontStyle: 'italic',
                     fontWeight: 'bold',
                     color: fontColorAnim.interpolate({
                       inputRange: [0, 1],
-                      outputRange: ['#2E7D32', '#000'],
+                      outputRange: ['#388E3C', '#388E3C'],
                     }),
                   },
                 ]}
@@ -284,25 +279,26 @@ const styles = StyleSheet.create({
     width: isMobile ? 120 : 200,
     height: isMobile ? 120 : 200,
     borderWidth: 5,
-    borderColor: '#4CAF50',
+    borderColor: '#388E3C',
     borderRadius: 15,
     padding: 5,
   },
   featureTitle: {
     fontSize: isMobile ? 24 : 50,
     fontWeight: 'bold',
-    color: '#2E7D32',
+    color: '#388E3C',
     textAlign: isMobile ? 'center' : 'left',
     marginBottom: 5,
   },
   featureDescription: {
     fontSize: isMobile ? 14 : 20,
-    color: '#2A3D3A',
-    textAlign: isMobile ? 'center' : 'left',
+    color: '#388E3C',
+    textAlign: 'justify',
+    padding: 16,
   },
   separator: {
     height: 2,
-    backgroundColor: '#4CAF50',
+    backgroundColor: '#388E3C',
     width: '80%',
     marginVertical: 20, // Adjust spacing as needed
   },
