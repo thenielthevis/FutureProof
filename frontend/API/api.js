@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_URL = 'http://192.168.1.21:8000';  // Your FastAPI backend URL
+const API_URL = 'http://localhost:8000';  // Your FastAPI backend URL
 
 // Register a new user
 export const registerUser = async (userData) => {
