@@ -33,7 +33,7 @@ const Contacts = ({ navigation }) => {
         <View style={styles.content}>
           {/* Header Section */}
           <View style={styles.header}>
-            <Text style={styles.title}>Contact Us</Text>
+            <Text style={styles.title}>For Any Concerns or Inquiries</Text>
             <Text style={styles.subtitle}>
               Have questions or need assistance? Get in touch with us today!
             </Text>
@@ -57,7 +57,7 @@ const Contacts = ({ navigation }) => {
                 />
                 <View style={styles.textContainer}>
                   <Text style={styles.detailTitle}>Email Us</Text>
-                  <Text style={styles.detailText}>support@example.com</Text>
+                  <Text style={styles.detailText}>FutureProof@gmail.com</Text>
                 </View>
               </View>
               <View style={styles.detailBox}>
