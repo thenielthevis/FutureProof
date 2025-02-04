@@ -16,7 +16,10 @@ const { width, height } = Dimensions.get('window');
 
 const Contacts = ({ navigation }) => {
   return (
-    <ScrollView contentContainerStyle={styles.scrollContainer}>
+    <ScrollView 
+    contentContainerStyle={[styles.scrollViewContent, { minHeight: height }]}
+    showsVerticalScrollIndicator={false}
+  >
       <View style={styles.container}>
         {/* Background Section */}
         <View style={styles.slantedBackground}>
@@ -140,7 +143,7 @@ const styles = StyleSheet.create({
     marginBottom: 20, // Increased margin to move subtitle down
   },
   contactButton: {
-    backgroundColor: '#4CAF50',
+    backgroundColor: '#388E3C',
     paddingVertical: 12,
     paddingHorizontal: 24,
     borderRadius: 20,
@@ -162,7 +165,7 @@ const styles = StyleSheet.create({
     marginRight: Platform.OS === 'web' && width > 768 ? 20 : 0, // Reduced margin to bring the details section closer to the image
   },
   detailBox: {
-    backgroundColor: '#72f2b8',
+    backgroundColor: '#75f2b9',
     padding: Platform.OS === 'web' ? 15 : 25,
     marginBottom: 20,
     borderRadius: 15,

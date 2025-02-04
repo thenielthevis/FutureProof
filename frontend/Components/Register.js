@@ -389,7 +389,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 15,
     borderWidth: 3,
-    borderColor: '#000000',
+    borderColor: '#1B5E20',
     borderRadius: 50,
     paddingHorizontal: 10,
     backgroundColor: '#f9f9f9',
@@ -413,8 +413,6 @@ const styles = StyleSheet.create({
     borderRadius: 50,
     alignItems: 'center',
     marginTop: 10,
-    borderWidth: 3,
-    borderColor: '#000000',
   },
   mobileButton: {
     paddingVertical: 8,

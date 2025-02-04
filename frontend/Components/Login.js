@@ -164,9 +164,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 15,
     borderWidth: 3,
-    borderColor: '#000000',
+    borderColor: '#1B5E20',
     borderRadius: 50,
-    paddingHorizontal: 10,
     backgroundColor: '#f9f9f9',
   },
   mobileInputContainer: {
@@ -175,8 +174,8 @@ const styles = StyleSheet.create({
   iconWrapper: {
     width: 60,
     height: 50,
-    borderRadius: 50,
-    backgroundColor: '#004d00',
+    borderRadius: 70,
+    backgroundColor: '#1B5E20',
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 20,
@@ -198,8 +197,6 @@ const styles = StyleSheet.create({
     borderRadius: 50,
     alignItems: 'center',
     marginTop: 10,
-    borderWidth: 3,
-    borderColor: '#000000',
   },
   mobileButton: {
     paddingVertical: 8,

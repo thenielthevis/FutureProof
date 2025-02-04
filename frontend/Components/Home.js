@@ -136,7 +136,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: isMobile ? 10 : 0,
   },
   joinButton: {
-    backgroundColor: '#c1ff72',
+    backgroundColor: '#388E3C',
     height: 50,
     width: isMobile ? '100%' : 240,
     maxWidth: 400,
@@ -148,9 +148,10 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.2,
     shadowRadius: 4,
+    padding: 15,
   },
   joinButtonText: {
-    color: '#1B5E20',
+    color: '#ffffff',
     fontWeight: '700',
     fontSize: isMobile ? 18 : 20,
   },

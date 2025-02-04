@@ -230,7 +230,7 @@ const styles = StyleSheet.create({
     width: 143,
     height: 40,
     borderRadius: 20,
-    backgroundColor: '#E0E0E0',
+    backgroundColor: '#f0fdf7',
     position: 'relative',
     marginRight: 8,
     justifyContent: 'center',
@@ -240,7 +240,7 @@ const styles = StyleSheet.create({
     height: 36,
     borderRadius: 18,
     position: 'absolute',
-    backgroundColor: '#c1ff72',
+    backgroundColor: '#388E3C',
     top: 2,
   },
   circleLeft: {
@@ -264,6 +264,6 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   activeText: {
-    color: '#1A3B32',
+    color: '#f0fdf7',
   },
 });
