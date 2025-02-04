@@ -4,6 +4,7 @@ Developer Guide:
 *BACKEND*
 1. Go to your PC/LAPTOP FutureProof's backend folder
 2. Start the virtual environment using this command:
+    python -m venv env
     .\env\Scripts\activate
 3. Install all dependencies using this command:
     pip install -r requirements.txt
