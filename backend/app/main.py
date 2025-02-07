@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.config import get_database, print_mongo_connection_info
-from app.routes import user_routes
+from app.routes import user_routes, prediction_routes
 
 app = FastAPI()
 
@@ -21,10 +21,11 @@ app.add_middleware(
     allow_origins=["*"],  # List of allowed origins
     allow_credentials=True,
     allow_methods=["*"],  # Allows all methods (GET, POST, PUT, DELETE, etc.)
-    allow_headers=[],  # Allows all headers
+    allow_headers=["*"],  # Allows all headers
 )
 
 app.include_router(user_routes.router)
+app.include_router(prediction_routes.router)
 
 # MongoDB connection setup at startup
 @app.on_event("startup")

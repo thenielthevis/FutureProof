@@ -10,8 +10,10 @@ import About from './Components/About';
 import Login from './Components/Login';
 import Logout from './Components/Logout';
 import Register from './Components/Register';
+import Prediction from './Components/Prediction';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Toast from 'react-native-toast-message';
+import Icon from 'react-native-vector-icons/FontAwesome';
 
 const Stack = createStackNavigator();
 const { width, height } = Dimensions.get('window');
@@ -60,6 +62,15 @@ function CustomHeader({ navigation }) {
           <Text style={styles.headerTitle}>FutureProof</Text>
         </TouchableOpacity>
       </View>
+
+      {/* Show Play button when logged in */}
+      {isLoggedIn && (
+        <View style={styles.dropdownMenu}>
+          <TouchableOpacity onPress={() => navigation.navigate('Prediction')}>
+            <Icon name="gamepad" size={30} color="white" />
+          </TouchableOpacity>
+        </View>
+      )}
 
       {/* Hamburger Menu (Mobile Only) */}
       {isMobile && (
@@ -168,6 +179,7 @@ export default function App() {
               <Stack.Screen name="About" component={About} />
               <Stack.Screen name="Contacts" component={Contacts} />
               <Stack.Screen name="Features" component={Features} />
+              <Stack.Screen name="Prediction" component={Prediction} />
               <Stack.Screen name="Login" component={Login} />
               <Stack.Screen name="Logout" component={Logout} />
               <Stack.Screen name="Register" component={Register} />

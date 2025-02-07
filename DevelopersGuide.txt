@@ -12,7 +12,7 @@ Developer Guide:
     pip freeze > requirements.txt
 
 *FRONTEND*
-1. npm install
+1. npm install or npm install --legacy-peer-deps
 
 ------------------------------------------------------------------
 
