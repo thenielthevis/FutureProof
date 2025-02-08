@@ -12,7 +12,8 @@ import {
 import { getPrediction } from '../API/api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Icon from 'react-native-vector-icons/FontAwesome';
-import { BarChart } from 'react-native-chart-kit';
+import { ProgressChart } from 'react-native-chart-kit';
+
 
 const screenWidth = Dimensions.get('window').width;
 
@@ -47,50 +48,35 @@ const Prediction = ({ navigation }) => {
 
   const formatPrediction = (prediction) => {
     const diseaseLabels = prediction.predicted_diseases.map(item => item.condition);
-    const diseaseData = prediction.predicted_diseases.map(item => parseInt(item.details.match(/\d+/)[0]));
-
+    const diseaseData = prediction.predicted_diseases.map(item => parseInt(item.details.match(/\d+/)[0])) || [];
+  
     const chartData = {
-      labels: diseaseLabels,
-      datasets: [
-        {
-          data: diseaseData,
-        },
-      ],
+      labels: diseaseLabels, 
+      data: diseaseData.map(value => value / 100) // Normalizing values (should be between 0-1)
     };
-
+  
     return (
       <View>
         {step === 1 && (
           <>
             <Text style={styles.sectionHeader}>User Information</Text>
             <Text style={styles.details}>{prediction.user_info.details}</Text>
-
+  
             <Text style={styles.sectionHeader}>Predicted Diseases</Text>
-            <BarChart
+            <ProgressChart
               data={chartData}
               width={screenWidth * 0.8}
               height={220}
-              yAxisSuffix="%"
+              strokeWidth={16}
+              radius={32}
               chartConfig={{
-                backgroundColor: '#1e2923',
-                backgroundGradientFrom: '#08130d',
+                backgroundGradientFrom: '#1e2923',
                 backgroundGradientTo: '#1e2923',
-                decimalPlaces: 0,
+                decimalPlaces: 2,
                 color: (opacity = 1) => `rgba(26, 255, 146, ${opacity})`,
                 labelColor: (opacity = 1) => `rgba(255, 255, 255, ${opacity})`,
-                style: {
-                  borderRadius: 16,
-                },
-                propsForDots: {
-                  r: '6',
-                  strokeWidth: '2',
-                  stroke: '#ffa726',
-                },
               }}
-              style={{
-                marginVertical: 8,
-                borderRadius: 16,
-              }}
+              hideLegend={false}
             />
           </>
         )}
