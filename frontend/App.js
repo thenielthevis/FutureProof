@@ -10,8 +10,10 @@ import About from './Components/About';
 import Login from './Components/Login';
 import Logout from './Components/Logout';
 import Register from './Components/Register';
+import Prediction from './Components/Prediction';
 import Navbar from './Navbar';
 import Toast from 'react-native-toast-message';
+import Icon from 'react-native-vector-icons/FontAwesome';
 
 const Stack = createStackNavigator();
 const { width, height } = Dimensions.get('window');
@@ -37,6 +39,7 @@ export default function App() {
               <Stack.Screen name="About" component={About} />
               <Stack.Screen name="Contacts" component={Contacts} />
               <Stack.Screen name="Features" component={Features} />
+              <Stack.Screen name="Prediction" component={Prediction} />
               <Stack.Screen name="Login" component={Login} />
               <Stack.Screen name="Logout" component={Logout} />
               <Stack.Screen name="Register" component={Register} />

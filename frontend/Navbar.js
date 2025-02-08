@@ -3,6 +3,7 @@ import { View, Text, TouchableOpacity, StyleSheet, Image, Dimensions, Modal, Pla
 import { SafeAreaView } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Toast from 'react-native-toast-message';
+import Icon from 'react-native-vector-icons/FontAwesome';
 
 const { width } = Dimensions.get('window');
 const isMobile = width < 768;
@@ -91,9 +92,14 @@ export default function Navbar({ navigation }) {
           {/* Login/Register Toggle */}
           <View style={styles.toggleContainer}>
             {isLoggedIn ? (
-              <TouchableOpacity style={styles.logoutButton} onPress={handleLogoutPress}>
-                <Text style={styles.logoutText}>Logout</Text>
-              </TouchableOpacity>
+              <>
+                <TouchableOpacity style={styles.iconButton} onPress={() => navigation.navigate('Prediction')}>
+                  <Icon name="gamepad" size={24} color="#f0fdf7" />
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.logoutButton} onPress={handleLogoutPress}>
+                  <Text style={styles.logoutText}>Logout</Text>
+                </TouchableOpacity>
+              </>
             ) : (
               <View style={styles.toggleBackground}>
                 <TouchableOpacity
@@ -218,6 +224,9 @@ const styles = StyleSheet.create({
   },
   activeText: {
     color: '#f0fdf7',
+  },
+  iconButton: {
+    marginRight: 16,
   },
   logoutButton: {
     backgroundColor: '#388E3C',
