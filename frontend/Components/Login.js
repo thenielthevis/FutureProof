@@ -8,6 +8,7 @@ import {
   Image,
   Dimensions,
   Platform,
+  ActivityIndicator,
 } from 'react-native';
 import { loginUser } from '../API/api';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -19,35 +20,43 @@ const Login = ({ navigation }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [isLoading, setIsLoading] = useState(false); // State for loader
 
   const showToast = (message, type) => {
-    const icons = {
-      success: '✅',
-      warning: '⚠️',
-      error: '❌',
+    const backgroundColors = {
+      success: '#1B5E20', // Dark green for success
+      error: '#D32F2F', // Dark red for error
+      info: '#1B5E20', // Dark green for loading
     };
 
     Toast.show({
       type: type,
       position: 'top',
-      text1: `${icons[type] || ''} ${message}`,
-      visibilityTime: 2000,
-      autoHide: true,
+      text1: message, // Keep the original text
+      visibilityTime: type === 'info' ? 10000 : 2000, // Longer duration for loading toast
+      autoHide: type !== 'info', // Do not auto-hide loading toast
       topOffset: Platform.OS === 'android' ? 30 : 60,
+      props: {
+        style: {
+          backgroundColor: backgroundColors[type],
+          borderRadius: 8,
+          padding: 16,
+        },
+        text1Style: {
+          fontSize: 16,
+          fontWeight: 'bold',
+          color: '#ffffff', // White text
+        },
+      },
     });
   };
 
   const handleLogin = async () => {
     setError('');
+    setIsLoading(true); // Show loader
 
-    Toast.show({
-      type: 'info',
-      text1: 'Logging in... ⏳',
-      position: 'top',
-      visibilityTime: 10000,
-      autoHide: false,
-      id: 'loading',
-    });
+    // Show loading toast
+    showToast('Logging in... ⏳', 'info');
 
     try {
       const userData = { email, password };
@@ -62,12 +71,13 @@ const Login = ({ navigation }) => {
       console.log('Stored token:', token);
 
       // Hide loading toast and show success toast
-      Toast.hide('loading');
+      Toast.hide(); // Hide all toasts
       showToast('Login Successful! 🎉', 'success');
 
       // Navigate to the Home screen after 2 seconds
       setTimeout(() => {
-        navigation.navigate('Home'); // Ensure 'Home' is defined in your navigation stack
+        navigation.navigate('Home');
+        setIsLoading(false); // Hide loader after navigation
       }, 2000);
     } catch (err) {
       console.log('Login error:', err);
@@ -76,8 +86,11 @@ const Login = ({ navigation }) => {
           ? err.msg
           : 'An error occurred during login';
       setError(errorMessage);
-      Toast.hide('loading');
+
+      // Hide loading toast and show error toast
+      Toast.hide(); // Hide all toasts
       showToast(errorMessage, 'error');
+      setIsLoading(false); // Hide loader on error
     }
   };
 
@@ -142,10 +155,17 @@ const Login = ({ navigation }) => {
         <TouchableOpacity
           style={[styles.button, isMobile && styles.mobileButton]}
           onPress={handleLogin}
+          disabled={isLoading} // Disable button when loading
         >
-          <Text style={[styles.buttonText, isMobile && styles.mobileButtonText]}>
-            LOGIN
-          </Text>
+          {isLoading ? (
+            <View style={styles.loaderContainer}>
+              <ActivityIndicator size="small" color="#ffffff" />
+            </View>
+          ) : (
+            <Text style={[styles.buttonText, isMobile && styles.mobileButtonText]}>
+              LOGIN
+            </Text>
+          )}
         </TouchableOpacity>
 
         <Text style={[styles.forgotPassword, isMobile && styles.mobileForgotPassword]}>
@@ -224,6 +244,10 @@ const styles = StyleSheet.create({
     marginTop: 10,
   },
   error: { color: 'red', marginBottom: 10, textAlign: 'center' },
+  loaderContainer: {
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
 });
 
 export default Login;

@@ -1,7 +1,18 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, Button, StyleSheet, ScrollView, Image, Dimensions, TouchableOpacity, Platform } from 'react-native';
+import {
+  View,
+  Text,
+  TextInput,
+  StyleSheet,
+  ScrollView,
+  Image,
+  Dimensions,
+  TouchableOpacity,
+  Platform,
+  ActivityIndicator,
+} from 'react-native';
 import { Checkbox } from 'react-native-paper';
-import { LinearGradient } from 'expo-linear-gradient'; // Import LinearGradient
+import { LinearGradient } from 'expo-linear-gradient';
 import { registerUser } from '../API/api';
 import Toast from 'react-native-toast-message';
 
@@ -24,69 +35,87 @@ const Register = ({ navigation }) => {
   const [sleep_hours, setSleepHours] = useState('');
   const [activeness, setActiveness] = useState('');
   const [error, setError] = useState('');
+  const [isLoading, setIsLoading] = useState(false); // State for loader
 
   const [customFood, setCustomFood] = useState('');
-  const [customVice, setCustomVice] = useState("");
-  const [customGeneticDisease, setCustomGeneticDisease] = useState("");
-  const [customLifestyle, setCustomLifestyle] = useState("");
+  const [customVice, setCustomVice] = useState('');
+  const [customGeneticDisease, setCustomGeneticDisease] = useState('');
+  const [customLifestyle, setCustomLifestyle] = useState('');
 
   const handleCheckboxToggle = (option, setState, state) => {
     setState(state.includes(option) ? state.filter(item => item !== option) : [...state, option]);
   };
 
   const showToast = (message, type) => {
-    const icons = {
-      success: '✅',
-      warning: '⚠️',
-      error: '❌',
+    const backgroundColors = {
+      success: '#1B5E20', // Dark green for success
+      error: '#D32F2F', // Dark red for error
+      info: '#1B5E20', // Dark green for loading
     };
 
     Toast.show({
       type: type,
       position: 'top',
-      text1: `${icons[type] || ''} ${message}`,
-      visibilityTime: 2000,
-      autoHide: true,
+      text1: message, // Keep the original text
+      visibilityTime: type === 'info' ? 10000 : 2000, // Longer duration for loading toast
+      autoHide: type !== 'info', // Do not auto-hide loading toast
       topOffset: Platform.OS === 'android' ? 30 : 60,
+      props: {
+        style: {
+          backgroundColor: backgroundColors[type],
+          borderRadius: 8,
+          padding: 16,
+        },
+        text1Style: {
+          fontSize: 16,
+          fontWeight: 'bold',
+          color: '#ffffff', // White text
+        },
+      },
     });
   };
 
   const handleRegister = async () => {
-    setError(''); // Reset any previous error
+    setError('');
+    setIsLoading(true); // Show loader
 
     // Show loading toast
-    Toast.show({
-      type: 'info',
-      text1: 'Registering... ⏳',
-      position: 'top',
-      visibilityTime: 10000,
-      autoHide: false,
-      id: 'loading',
-    });
+    showToast('Registering... ⏳', 'info');
 
-    const updatedVices = customVice.trim() !== "" ? [...vices, customVice.trim()] : vices;
-    const updatedGeneticDiseases = customGeneticDisease.trim() !== "" ? [...genetic_diseases, customGeneticDisease.trim()] : genetic_diseases;
-    const updatedLifestyle = customLifestyle.trim() !== "" ? [...lifestyle, customLifestyle.trim()] : lifestyle;
-    const updatedFoodIntake = customFood.trim() !== "" ? [...food_intake, customFood.trim()] : food_intake;
+    const updatedVices = customVice.trim() !== '' ? [...vices, customVice.trim()] : vices;
+    const updatedGeneticDiseases = customGeneticDisease.trim() !== '' ? [...genetic_diseases, customGeneticDisease.trim()] : genetic_diseases;
+    const updatedLifestyle = customLifestyle.trim() !== '' ? [...lifestyle, customLifestyle.trim()] : lifestyle;
+    const updatedFoodIntake = customFood.trim() !== '' ? [...food_intake, customFood.trim()] : food_intake;
 
     try {
-      const userData = { 
-        username, email, password, age, gender, height, weight, environment, 
-        vices: updatedVices, genetic_diseases: updatedGeneticDiseases, 
-        lifestyle: updatedLifestyle, food_intake: updatedFoodIntake, 
-        sleep_hours, activeness 
+      const userData = {
+        username,
+        email,
+        password,
+        age,
+        gender,
+        height,
+        weight,
+        environment,
+        vices: updatedVices,
+        genetic_diseases: updatedGeneticDiseases,
+        lifestyle: updatedLifestyle,
+        food_intake: updatedFoodIntake,
+        sleep_hours,
+        activeness,
       };
-      
+
       const response = await registerUser(userData);
       console.log('Register success:', response);
 
       // Hide loading toast and show success toast
-      Toast.hide('loading');
-      showToast("Registration Successful! 🎉", 'success');
+      Toast.hide(); // Hide all toasts
+      showToast('Registration Successful! 🎉', 'success');
 
-      // Navigate to the Login screen
+      // Navigate to the Login screen after 2 seconds
       setTimeout(() => {
         navigation.navigate('Login');
+        setIsLoading(false); // Hide loader after navigation
       }, 2000);
     } catch (error) {
       console.log('Register error:', error);
@@ -97,8 +126,9 @@ const Register = ({ navigation }) => {
       setError(errorMessage);
 
       // Hide loading toast and show error toast
-      Toast.hide('loading');
+      Toast.hideAll(); // Hide all toasts
       showToast(errorMessage, 'error');
+      setIsLoading(false); // Hide loader on error
     }
   };
 
@@ -108,9 +138,9 @@ const Register = ({ navigation }) => {
     <View style={[styles.container, isMobile && styles.mobileContainer]}>
       {/* Left Section - Logo */}
       <View style={[styles.leftSection, isMobile && styles.mobileLeftSection]}>
-        <Image 
-          source={require('../assets/logo-2.png')} 
-          style={[styles.logo, isMobile && styles.mobileLogo]} 
+        <Image
+          source={require('../assets/logo-2.png')}
+          style={[styles.logo, isMobile && styles.mobileLogo]}
         />
         <Text style={[styles.logoText, isMobile && styles.mobileLogoText]}>
           FutureProof
@@ -124,10 +154,13 @@ const Register = ({ navigation }) => {
       >
         <ScrollView contentContainerStyle={styles.scrollContainer}>
           <Text style={[styles.header, isMobile && styles.mobileHeader]}>
-            {step === 1 ? "Step 1: Account Info" :
-             step === 2 ? "Step 2: BMI & Environment" :
-             step === 3 ? "Step 3: Health & Lifestyle" :
-             "Step 4: Sleep & Activeness"}
+            {step === 1
+              ? 'Step 1: Account Info'
+              : step === 2
+              ? 'Step 2: BMI & Environment'
+              : step === 3
+              ? 'Step 3: Health & Lifestyle'
+              : 'Step 4: Sleep & Activeness'}
           </Text>
 
           {step === 1 && (
@@ -157,8 +190,8 @@ const Register = ({ navigation }) => {
                   onChangeText={setPassword}
                 />
               </View>
-              <TouchableOpacity 
-                style={[styles.button, isMobile && styles.mobileButton]} 
+              <TouchableOpacity
+                style={[styles.button, isMobile && styles.mobileButton]}
                 onPress={() => setStep(2)}
               >
                 <Text style={styles.buttonText}>Next</Text>
@@ -179,10 +212,10 @@ const Register = ({ navigation }) => {
                 />
               </View>
               <Text style={styles.subHeader}>Gender</Text>
-              {["Male", "Female"].map((option) => (
+              {['Male', 'Female'].map((option) => (
                 <Checkbox.Item
                   label={option}
-                  status={gender.includes(option) ? 'checked' : 'unchecked'} 
+                  status={gender.includes(option) ? 'checked' : 'unchecked'}
                   onPress={() => setGender(option)}
                   key={option}
                 />
@@ -207,10 +240,10 @@ const Register = ({ navigation }) => {
               </View>
 
               <Text style={styles.subHeader}>Environmental Status</Text>
-              {["Hushed", "Quiet", "Moderate", "Loud", "Deafening"].map((option) => (
+              {['Hushed', 'Quiet', 'Moderate', 'Loud', 'Deafening'].map((option) => (
                 <Checkbox.Item
                   label={option}
-                  status={environment.includes(option) ? 'checked' : 'unchecked'} 
+                  status={environment.includes(option) ? 'checked' : 'unchecked'}
                   onPress={() => setEnvironment(option)}
                   key={option}
                 />
@@ -218,11 +251,11 @@ const Register = ({ navigation }) => {
 
               <Text style={styles.subHeader}>Vices / Addictions</Text>
               {['Alcoholism', 'Smoking', 'Substance Abuse', 'Digital', 'None'].map((option) => (
-                <Checkbox.Item 
-                  label={option} 
-                  status={vices.includes(option) ? 'checked' : 'unchecked'} 
-                  onPress={() => handleCheckboxToggle(option, setVices, vices)} 
-                  key={option} 
+                <Checkbox.Item
+                  label={option}
+                  status={vices.includes(option) ? 'checked' : 'unchecked'}
+                  onPress={() => handleCheckboxToggle(option, setVices, vices)}
+                  key={option}
                 />
               ))}
               <View style={[styles.inputContainer, isMobile && styles.mobileInputContainer]}>
@@ -233,14 +266,14 @@ const Register = ({ navigation }) => {
                   onChangeText={setCustomVice}
                 />
               </View>
-              <TouchableOpacity 
-                style={[styles.button, isMobile && styles.mobileButton]} 
+              <TouchableOpacity
+                style={[styles.button, isMobile && styles.mobileButton]}
                 onPress={() => setStep(1)}
               >
                 <Text style={styles.buttonText}>Back</Text>
               </TouchableOpacity>
-              <TouchableOpacity 
-                style={[styles.button, isMobile && styles.mobileButton]} 
+              <TouchableOpacity
+                style={[styles.button, isMobile && styles.mobileButton]}
                 onPress={() => setStep(3)}
               >
                 <Text style={styles.buttonText}>Next</Text>
@@ -252,15 +285,15 @@ const Register = ({ navigation }) => {
             <View>
               <Text style={styles.subHeader}>Genetic Diseases</Text>
               {[
-                "Sickle Cell Anemia",
+                'Sickle Cell Anemia',
                 "Huntington's Disease",
-                "Hemophilia",
-                "Down Syndrome",
-                "None"
+                'Hemophilia',
+                'Down Syndrome',
+                'None',
               ].map((option) => (
                 <Checkbox.Item
                   label={option}
-                  status={genetic_diseases.includes(option) ? "checked" : "unchecked"}
+                  status={genetic_diseases.includes(option) ? 'checked' : 'unchecked'}
                   onPress={() => handleCheckboxToggle(option, setGeneticDiseases, genetic_diseases)}
                   key={option}
                 />
@@ -276,15 +309,15 @@ const Register = ({ navigation }) => {
 
               <Text style={styles.subHeader}>Daily Habit / Lifestyle</Text>
               {[
-                "Physical Activity",
-                "Healthy Eating",
-                "Stress Management",
-                "Regular Check-ups",
-                "Social Interaction",
+                'Physical Activity',
+                'Healthy Eating',
+                'Stress Management',
+                'Regular Check-ups',
+                'Social Interaction',
               ].map((option) => (
                 <Checkbox.Item
                   label={option}
-                  status={lifestyle.includes(option) ? "checked" : "unchecked"}
+                  status={lifestyle.includes(option) ? 'checked' : 'unchecked'}
                   onPress={() => handleCheckboxToggle(option, setLifestyle, lifestyle)}
                   key={option}
                 />
@@ -299,10 +332,10 @@ const Register = ({ navigation }) => {
               </View>
 
               <Text style={styles.subHeader}>Daily Food Intake</Text>
-              {["Vegetables", "Fruits", "Grains", "Dairy", "Protein Foods"].map((option) => (
+              {['Vegetables', 'Fruits', 'Grains', 'Dairy', 'Protein Foods'].map((option) => (
                 <Checkbox.Item
                   label={option}
-                  status={food_intake.includes(option) ? "checked" : "unchecked"}
+                  status={food_intake.includes(option) ? 'checked' : 'unchecked'}
                   onPress={() => handleCheckboxToggle(option, setFoodIntake, food_intake)}
                   key={option}
                 />
@@ -315,14 +348,14 @@ const Register = ({ navigation }) => {
                   onChangeText={setCustomFood}
                 />
               </View>
-              <TouchableOpacity 
-                style={[styles.button, isMobile && styles.mobileButton]} 
+              <TouchableOpacity
+                style={[styles.button, isMobile && styles.mobileButton]}
                 onPress={() => setStep(2)}
               >
                 <Text style={styles.buttonText}>Back</Text>
               </TouchableOpacity>
-              <TouchableOpacity 
-                style={[styles.button, isMobile && styles.mobileButton]} 
+              <TouchableOpacity
+                style={[styles.button, isMobile && styles.mobileButton]}
                 onPress={() => setStep(4)}
               >
                 <Text style={styles.buttonText}>Next</Text>
@@ -333,35 +366,40 @@ const Register = ({ navigation }) => {
           {step === 4 && (
             <View>
               <Text style={styles.subHeader}>Daily Sleep Hours</Text>
-              {["1-2 hrs", "3-4 hrs", "5-6 hrs", "7-8 hrs", "9-10 hrs", "11-12 hrs"].map((option) => (
+              {['1-2 hrs', '3-4 hrs', '5-6 hrs', '7-8 hrs', '9-10 hrs', '11-12 hrs'].map((option) => (
                 <Checkbox.Item
                   label={option}
-                  status={sleep_hours === option ? "checked" : "unchecked"}
+                  status={sleep_hours === option ? 'checked' : 'unchecked'}
                   onPress={() => setSleepHours(option)}
                   key={option}
                 />
               ))}
 
               <Text style={styles.subHeader}>Level of Activeness</Text>
-              {["Sedentary", "Light", "Moderate", "Vigorous"].map((option) => (
+              {['Sedentary', 'Light', 'Moderate', 'Vigorous'].map((option) => (
                 <Checkbox.Item
                   label={option}
-                  status={activeness === option ? "checked" : "unchecked"}
+                  status={activeness === option ? 'checked' : 'unchecked'}
                   onPress={() => setActiveness(option)}
                   key={option}
                 />
               ))}
-              <TouchableOpacity 
-                style={[styles.button, isMobile && styles.mobileButton]} 
+              <TouchableOpacity
+                style={[styles.button, isMobile && styles.mobileButton]}
                 onPress={() => setStep(3)}
               >
                 <Text style={styles.buttonText}>Back</Text>
               </TouchableOpacity>
-              <TouchableOpacity 
-                style={[styles.button, isMobile && styles.mobileButton]} 
+              <TouchableOpacity
+                style={[styles.button, isMobile && styles.mobileButton]}
                 onPress={handleRegister}
+                disabled={isLoading} // Disable button when loading
               >
-                <Text style={styles.buttonText}>Register</Text>
+                {isLoading ? (
+                  <ActivityIndicator size="small" color="#ffffff" /> // Show loader
+                ) : (
+                  <Text style={styles.buttonText}>Register</Text>
+                )}
               </TouchableOpacity>
             </View>
           )}
