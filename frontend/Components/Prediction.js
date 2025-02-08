@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';  
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -12,8 +12,8 @@ import {
 import { getPrediction } from '../API/api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Icon from 'react-native-vector-icons/FontAwesome';
-import { LineChart } from 'react-native-chart-kit'; 
-import { ProgressChart } from 'react-native-chart-kit'; 
+import { ProgressChart } from 'react-native-chart-kit';
+
 
 const screenWidth = Dimensions.get('window').width;
 
@@ -49,71 +49,35 @@ const Prediction = ({ navigation }) => {
   const formatPrediction = (prediction) => {
     const diseaseLabels = prediction.predicted_diseases.map(item => item.condition);
     const diseaseData = prediction.predicted_diseases.map(item => parseInt(item.details.match(/\d+/)[0])) || [];
-
+  
     const chartData = {
       labels: diseaseLabels, 
-      datasets: [
-        {
-          data: diseaseData, // The actual data points
-          color: (opacity = 1) => `rgba(26, 255, 146, ${opacity})`, // Line color
-          strokeWidth: 2, // Line thickness
-        },
-      ],
+      data: diseaseData.map(value => value / 100) // Normalizing values (should be between 0-1)
     };
-
+  
     return (
-      <View style={styles.centerContent}>
+      <View>
         {step === 1 && (
           <>
             <Text style={styles.sectionHeader}>User Information</Text>
             <Text style={styles.details}>{prediction.user_info.details}</Text>
-
+  
             <Text style={styles.sectionHeader}>Predicted Diseases</Text>
-            {/* LineChart with Gradient */}
-            <LineChart
+            <ProgressChart
               data={chartData}
               width={screenWidth * 0.8}
               height={220}
+              strokeWidth={16}
+              radius={32}
               chartConfig={{
-                backgroundColor: '#1e2923',
                 backgroundGradientFrom: '#1e2923',
                 backgroundGradientTo: '#1e2923',
                 decimalPlaces: 2,
                 color: (opacity = 1) => `rgba(26, 255, 146, ${opacity})`,
                 labelColor: (opacity = 1) => `rgba(255, 255, 255, ${opacity})`,
-                fillShadowGradient: '#f6a8f0',  // Set shadow color
-                fillShadowGradientOpacity: 0.4,  // Adjust shadow opacity
               }}
-              bezier // Makes the line smooth
-              style={{
-                marginVertical: 8,
-                borderRadius: 16,
-              }}
+              hideLegend={false}
             />
-            {/* Disease Information Progress Circles */}
-            <View style={styles.circleContainer}>
-              {diseaseLabels.map((label, index) => (
-                <View key={index} style={styles.circleWrapper}>
-                  <ProgressChart
-                    data={{ data: [diseaseData[index] / 100] }} // Ensure data is between 0 and 1
-                    width={120} // Adjust the size of the progress circle
-                    height={120}
-                    strokeWidth={12}
-                    radius={50}
-                    chartConfig={{
-                      backgroundGradientFrom: '#2c3e50', // Dark background for circles
-                      backgroundGradientTo: '#2c3e50', // Dark background for circles
-                      color: (opacity = 1) => `rgba(26, 255, 146, ${opacity})`, // Progress circle color
-                      labelColor: (opacity = 1) => `rgba(255, 255, 255, ${opacity})`, // Label color
-                      strokeWidth: 2,
-                    }}
-                    hideLegend={true} // Hide the legend since it's not needed here
-                  />
-                  <Text style={styles.circleText}>{label}</Text>
-                  <Text style={styles.circleValue}>{diseaseData[index]}%</Text>
-                </View>
-              ))}
-            </View>
           </>
         )}
         {step === 2 && (
@@ -215,6 +179,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.8)',
   },
   modalView: {
     width: '90%',
@@ -265,39 +230,6 @@ const styles = StyleSheet.create({
     marginLeft: 2,
   },
   error: { color: 'red', fontSize: 18, textAlign: 'center', marginBottom: 20 },
-  centerContent: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  circleContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-around', // Adjusted to evenly distribute the circles
-    marginTop: 20,
-    width: '100%',
-    flexWrap: 'wrap',
-  },
-  circleWrapper: {
-    width: 160, // Adjusted size
-    height: 160, // Adjusted size
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-  circleText: {
-    color: '#fff',
-    fontWeight: 'bold',
-    fontSize: 14,
-    textAlign: 'center',
-  },
-  circleValue: {
-    color: '#fff',
-    marginBottom: 20,
-    fontSize: 20, // Adjusted font size
-    fontWeight: 'bold',
-    textAlign: 'center',
-    position: 'absolute',
-  },
 });
 
 export default Prediction;

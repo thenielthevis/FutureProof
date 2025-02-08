@@ -88,7 +88,7 @@ const Login = ({ navigation }) => {
       setError(errorMessage);
 
       // Hide loading toast and show error toast
-      Toast.hide(); // Hide all toasts
+      Toast.hideAll(); // Hide all toasts
       showToast(errorMessage, 'error');
       setIsLoading(false); // Hide loader on error
     }
@@ -158,9 +158,7 @@ const Login = ({ navigation }) => {
           disabled={isLoading} // Disable button when loading
         >
           {isLoading ? (
-            <View style={styles.loaderContainer}>
-              <ActivityIndicator size="small" color="#ffffff" />
-            </View>
+            <ActivityIndicator size="small" color="#ffffff" /> // Show loader
           ) : (
             <Text style={[styles.buttonText, isMobile && styles.mobileButtonText]}>
               LOGIN
@@ -180,7 +178,7 @@ const Login = ({ navigation }) => {
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, flexDirection: 'row', backgroundColor: '#f8f8f8' },
+  container: { flex: 1, flexDirection: 'row', backgroundColor: '#ffffff' },
   mobileContainer: { flexDirection: 'column' },
   leftSection: {
     flex: 1,
@@ -244,10 +242,6 @@ const styles = StyleSheet.create({
     marginTop: 10,
   },
   error: { color: 'red', marginBottom: 10, textAlign: 'center' },
-  loaderContainer: {
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
 });
 
 export default Login;
