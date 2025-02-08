@@ -64,8 +64,10 @@ const Login = ({ navigation }) => {
       // Hide loading toast and show success toast
       Toast.hide('loading');
       showToast('Login Successful! 🎉', 'success');
+
+      // Navigate to the Home screen after 2 seconds
       setTimeout(() => {
-        navigation.navigate('Home');
+        navigation.navigate('Home'); // Ensure 'Home' is defined in your navigation stack
       }, 2000);
     } catch (err) {
       console.log('Login error:', err);

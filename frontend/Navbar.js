@@ -32,6 +32,7 @@ export default function Navbar({ navigation }) {
       setIsLogin(false);
       navigation.navigate('Register');
     }
+    setIsMenuOpen(false); // Close the menu after navigation
   };
 
   const handleLogoutPress = async () => {
@@ -74,7 +75,48 @@ export default function Navbar({ navigation }) {
         </TouchableOpacity>
       </View>
 
-      {/* Navigation Links on the Right */}
+      {/* Hamburger Menu for Mobile */}
+      {isMobile && (
+        <TouchableOpacity onPress={() => setIsMenuOpen(!isMenuOpen)} style={styles.hamburgerButton}>
+          <Icon name="bars" size={24} color="#f0fdf7" />
+        </TouchableOpacity>
+      )}
+
+      {/* Dropdown Menu for Mobile */}
+      {isMobile && isMenuOpen && (
+        <View style={styles.dropdownMenu}>
+          <TouchableOpacity onPress={() => navigation.navigate('About')}>
+            <Text style={styles.dropdownMenuItem}>About</Text>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={() => navigation.navigate('Features')}>
+            <Text style={styles.dropdownMenuItem}>Features</Text>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={() => navigation.navigate('Contacts')}>
+            <Text style={styles.dropdownMenuItem}>Contact Us</Text>
+          </TouchableOpacity>
+          {isLoggedIn ? (
+            <>
+              <TouchableOpacity onPress={() => navigation.navigate('Prediction')}>
+                <Text style={styles.dropdownMenuItem}>Prediction</Text>
+              </TouchableOpacity>
+              <TouchableOpacity onPress={handleLogoutPress}>
+                <Text style={styles.dropdownMenuItem}>Logout</Text>
+              </TouchableOpacity>
+            </>
+          ) : (
+            <>
+              <TouchableOpacity onPress={() => handleTogglePress('Login')}>
+                <Text style={styles.dropdownMenuItem}>Login</Text>
+              </TouchableOpacity>
+              <TouchableOpacity onPress={() => handleTogglePress('Register')}>
+                <Text style={styles.dropdownMenuItem}>Register</Text>
+              </TouchableOpacity>
+            </>
+          )}
+        </View>
+      )}
+
+      {/* Navigation Links on the Right for Desktop */}
       {!isMobile ? (
         <View style={styles.navLinksContainer}>
           <View style={styles.navLinks}>
@@ -261,7 +303,6 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     width: '100%',
     marginTop: 20,
-    
   },
   button: {
     padding: 10,
@@ -270,12 +311,29 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     width: '48%',
   },
- 
   cancelButton: {
     backgroundColor: 'gray',
   },
   buttonText: {
     color: '#fff',
     fontWeight: '600',
+  },
+  hamburgerButton: {
+    padding: 10,
+  },
+  dropdownMenu: {
+    position: 'absolute',
+    top: 60,
+    right: 16,
+    backgroundColor: '#1A3B32',
+    borderRadius: 8,
+    padding: 10,
+    width: 150,
+    zIndex: 1000,
+  },
+  dropdownMenuItem: {
+    fontSize: 16,
+    color: '#F5F5F5',
+    paddingVertical: 8,
   },
 });
