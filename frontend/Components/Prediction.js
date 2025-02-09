@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';  
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -12,10 +12,11 @@ import {
 import { getPrediction } from '../API/api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Icon from 'react-native-vector-icons/FontAwesome';
-import { LineChart } from 'react-native-chart-kit'; 
-import { ProgressChart } from 'react-native-chart-kit'; 
+import { LineChart } from 'react-native-chart-kit';
+import { ProgressChart } from 'react-native-chart-kit';
 
 const screenWidth = Dimensions.get('window').width;
+const isMobile = screenWidth < 768; // Check if the screen width is less than 768px (mobile)
 
 const Prediction = ({ navigation }) => {
   const [prediction, setPrediction] = useState({});
@@ -47,11 +48,12 @@ const Prediction = ({ navigation }) => {
   }, []);
 
   const formatPrediction = (prediction) => {
-    const diseaseLabels = prediction.predicted_diseases.map(item => item.condition);
-    const diseaseData = prediction.predicted_diseases.map(item => parseInt(item.details.match(/\d+/)[0])) || [];
+    const diseaseLabels = prediction.predicted_diseases.map((item) => item.condition);
+    const diseaseData =
+      prediction.predicted_diseases.map((item) => parseInt(item.details.match(/\d+/)[0])) || [];
 
     const chartData = {
-      labels: diseaseLabels, 
+      labels: diseaseLabels,
       datasets: [
         {
           data: diseaseData, // The actual data points
@@ -65,78 +67,161 @@ const Prediction = ({ navigation }) => {
       <View style={styles.centerContent}>
         {step === 1 && (
           <>
+            {/* User Information Section */}
             <Text style={styles.sectionHeader}>User Information</Text>
-            <Text style={styles.details}>{prediction.user_info.details}</Text>
+            <View style={styles.userDetailsContainer}>
+              <Text style={styles.userDetailsText}>{prediction.user_info.details}</Text>
+            </View>
 
             <Text style={styles.sectionHeader}>Predicted Diseases</Text>
             {/* LineChart with Gradient */}
-            <LineChart
-              data={chartData}
-              width={screenWidth * 0.8}
-              height={220}
-              chartConfig={{
-                backgroundColor: '#1e2923',
-                backgroundGradientFrom: '#1e2923',
-                backgroundGradientTo: '#1e2923',
-                decimalPlaces: 2,
-                color: (opacity = 1) => `rgba(26, 255, 146, ${opacity})`,
-                labelColor: (opacity = 1) => `rgba(255, 255, 255, ${opacity})`,
-                fillShadowGradient: '#f6a8f0',  // Set shadow color
-                fillShadowGradientOpacity: 0.4,  // Adjust shadow opacity
-              }}
-              bezier // Makes the line smooth
-              style={{
-                marginVertical: 8,
-                borderRadius: 16,
-              }}
-            />
+            {isMobile ? (
+              <View style={styles.mobileChartContainer}>
+                <LineChart
+                  data={chartData}
+                  width={screenWidth * 0.75} // Adjust width for mobile
+                  height={20} // Adjust height for mobile
+                  chartConfig={{
+                    backgroundColor: '#2c3e50',
+                    backgroundGradientFrom: '#2c3e50',
+                    backgroundGradientTo: '#2c3e50',
+                    decimalPlaces: 2,
+                    color: (opacity = 1) => `rgba(26, 255, 146, ${opacity})`,
+                    labelColor: (opacity = 1) => `rgba(255, 255, 255, ${opacity})`, // Ensure text is visible
+                    fillShadowGradient: '#f6a8f0', // Set shadow color
+                    fillShadowGradientOpacity: 0.4, // Adjust shadow opacity
+                    withVerticalLabels: false, // Hide vertical labels
+                    propsForLabels: {
+                      rotation: -45, // Rotate labels to make them horizontal
+                      fontSize: 8, // Adjust font size for better readability
+                      fontWeight: 'bold',
+                    },
+                  }}
+                  bezier // Makes the line smooth
+                  style={{
+                    marginVertical: 8,
+                    borderRadius: 16,
+                  }}
+                />
+              </View>
+            ) : (
+              <LineChart
+                data={chartData}
+                width={screenWidth * 0.8} // Desktop width
+                height={220} // Desktop height
+                chartConfig={{
+                  backgroundColor: '#2c3e50',
+                  backgroundGradientFrom: '#2c3e50',
+                  backgroundGradientTo: '#2c3e50',
+                  decimalPlaces: 2,
+                  color: (opacity = 1) => `rgba(26, 255, 146, ${opacity})`,
+                  labelColor: (opacity = 1) => `rgba(255, 255, 255, ${opacity})`, // Ensure text is visible
+                  fillShadowGradient: '#f6a8f0', // Set shadow color
+                  fillShadowGradientOpacity: 0.4, // Adjust shadow opacity
+                }}
+                bezier // Makes the line smooth
+                style={{
+                  marginVertical: 8,
+                  borderRadius: 16,
+                }}
+              />
+            )}
             {/* Disease Information Progress Circles */}
-            <View style={styles.circleContainer}>
-              {diseaseLabels.map((label, index) => (
-                <View key={index} style={styles.circleWrapper}>
-                  <ProgressChart
-                    data={{ data: [diseaseData[index] / 100] }} // Ensure data is between 0 and 1
-                    width={120} // Adjust the size of the progress circle
-                    height={120}
-                    strokeWidth={12}
-                    radius={50}
-                    chartConfig={{
-                      backgroundGradientFrom: '#2c3e50', // Dark background for circles
-                      backgroundGradientTo: '#2c3e50', // Dark background for circles
-                      color: (opacity = 1) => `rgba(26, 255, 146, ${opacity})`, // Progress circle color
-                      labelColor: (opacity = 1) => `rgba(255, 255, 255, ${opacity})`, // Label color
-                      strokeWidth: 2,
-                    }}
-                    hideLegend={true} // Hide the legend since it's not needed here
-                  />
-                  <Text style={styles.circleText}>{label}</Text>
-                  <Text style={styles.circleValue}>{diseaseData[index]}%</Text>
+            {isMobile ? (
+              <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                <View style={styles.circleContainerMobile}>
+                  {diseaseLabels.map((label, index) => (
+                    <View key={index} style={styles.circleWrapperMobile}>
+                      <ProgressChart
+                        data={{ data: [diseaseData[index] / 100] }} // Ensure data is between 0 and 1
+                        width={100} // Adjust size for mobile
+                        height={100}
+                        strokeWidth={12}
+                        radius={40} // Adjust radius for mobile
+                        chartConfig={{
+                          backgroundGradientFrom: '#2c3e50', // Dark background for circles
+                          backgroundGradientTo: '#2c3e50', // Dark background for circles
+                          color: (opacity = 1) => `rgba(26, 255, 146, ${opacity})`, // Progress circle color
+                          labelColor: (opacity = 1) => `rgba(255, 255, 255, ${opacity})`, // Ensure text is visible
+                          strokeWidth: 2,
+                        }}
+                        hideLegend={true} // Hide the legend since it's not needed here
+                      />
+                      <Text style={styles.circleText}>{label}</Text>
+                      <Text style={styles.circleValue}>{diseaseData[index]}%</Text>
+                    </View>
+                  ))}
                 </View>
-              ))}
-            </View>
+              </ScrollView>
+            ) : (
+              <View style={styles.circleContainer}>
+                {diseaseLabels.map((label, index) => (
+                  <View key={index} style={styles.circleWrapper}>
+                    <ProgressChart
+                      data={{ data: [diseaseData[index] / 100] }} // Ensure data is between 0 and 1
+                      width={120} // Desktop size
+                      height={120}
+                      strokeWidth={12}
+                      radius={50} // Desktop radius
+                      chartConfig={{
+                        backgroundGradientFrom: '#2c3e50', // Dark background for circles
+                        backgroundGradientTo: '#2c3e50', // Dark background for circles
+                        color: (opacity = 1) => `rgba(26, 255, 146, ${opacity})`, // Progress circle color
+                        labelColor: (opacity = 1) => `rgba(255, 255, 255, ${opacity})`, // Ensure text is visible
+                        strokeWidth: 2,
+                      }}
+                      hideLegend={true} // Hide the legend since it's not needed here
+                    />
+                    <Text style={styles.circleText}>{label}</Text>
+                    <Text style={styles.circleValue}>{diseaseData[index]}%</Text>
+                  </View>
+                ))}
+              </View>
+            )}
           </>
         )}
         {step === 2 && (
           <>
-            <Text style={styles.sectionHeader}>Positive Habits</Text>
-            <View style={styles.bulletedList}>
-              {prediction.positive_habits.map((item, index) => (
-                <Text key={index} style={styles.bulletPoint}>• {item}</Text>
-              ))}
-            </View>
+            {/* Positive Habits, Areas for Improvement, and Recommendations in Columns */}
+            <View style={isMobile ? styles.columnsContainerMobile : styles.columnsContainer}>
+              {/* Positive Habits Column */}
+              <View style={styles.column}>
+                <Text style={styles.sectionHeader}>Positive Habits</Text>
+                <View style={styles.bulletedList}>
+                  {prediction.positive_habits.map((item, index) => (
+                    <View key={index} style={styles.listItem}>
+                      <Icon name="check-circle" size={18} color="#27ae60" style={styles.bulletIcon} />
+                      <Text style={styles.bulletPoint}>{item}</Text>
+                    </View>
+                  ))}
+                </View>
+              </View>
 
-            <Text style={styles.sectionHeader}>Areas for Improvement</Text>
-            <View style={styles.bulletedList}>
-              {prediction.areas_for_improvement.map((item, index) => (
-                <Text key={index} style={styles.bulletPoint}>• {item}</Text>
-              ))}
-            </View>
+              {/* Areas for Improvement Column */}
+              <View style={styles.column}>
+                <Text style={styles.sectionHeader}>Areas for Improvement</Text>
+                <View style={styles.bulletedList}>
+                  {prediction.areas_for_improvement.map((item, index) => (
+                    <View key={index} style={styles.listItem}>
+                      <Icon name="exclamation-circle" size={18} color="#e67e22" style={styles.bulletIcon} />
+                      <Text style={styles.bulletPoint}>{item}</Text>
+                    </View>
+                  ))}
+                </View>
+              </View>
 
-            <Text style={styles.sectionHeader}>Recommendations</Text>
-            <View style={styles.bulletedList}>
-              {prediction.recommendations.map((item, index) => (
-                <Text key={index} style={styles.bulletPoint}>• {item}</Text>
-              ))}
+              {/* Recommendations Column */}
+              <View style={styles.column}>
+                <Text style={styles.sectionHeader}>Recommendations</Text>
+                <View style={styles.bulletedList}>
+                  {prediction.recommendations.map((item, index) => (
+                    <View key={index} style={styles.listItem}>
+                      <Icon name="lightbulb-o" size={18} color="#3498db" style={styles.bulletIcon} />
+                      <Text style={styles.bulletPoint}>{item}</Text>
+                    </View>
+                  ))}
+                </View>
+              </View>
             </View>
           </>
         )}
@@ -167,41 +252,43 @@ const Prediction = ({ navigation }) => {
         }}
       >
         <View style={styles.modalContainer}>
-          <View style={styles.modalView}>
+          <View style={[styles.modalView, isMobile && styles.modalViewMobile]}>
+            {/* Tab Navigation at the Top - Styled Like Folder Tabs */}
+            <View style={styles.tabContainer}>
+              <TouchableOpacity
+                style={[styles.tab, step === 1 && styles.activeTab]}
+                onPress={() => setStep(1)}
+              >
+                <Text style={[styles.tabText, step === 1 && styles.activeTabText]}>User Info</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[styles.tab, step === 2 && styles.activeTab]}
+                onPress={() => setStep(2)}
+              >
+                <Text style={[styles.tabText, step === 2 && styles.activeTabText]}>Insights</Text>
+              </TouchableOpacity>
+            </View>
+
             <Text style={styles.modalHeader}>Prediction</Text>
-            <ScrollView style={styles.scrollView}>
+            <ScrollView
+              style={styles.scrollView}
+              showsVerticalScrollIndicator={false} // Hide scrollbar
+            >
               {formatPrediction(prediction)}
             </ScrollView>
-            <View style={styles.buttonContainer}>
-              {step === 1 && (
-                <TouchableOpacity
-                  style={styles.nextButton}
-                  onPress={() => setStep(2)}
-                >
-                  <Text style={styles.buttonText}>Next</Text>
-                </TouchableOpacity>
-              )}
-              {step === 2 && (
-                <>
-                  <TouchableOpacity
-                    style={styles.backButton}
-                    onPress={() => setStep(1)}
-                  >
-                    <Text style={styles.buttonText}>Back</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    style={styles.closeButton}
-                    onPress={() => {
-                      setModalVisible(!modalVisible);
-                      navigation.navigate('Home');
-                    }}
-                  >
-                    <Icon name="close" size={20} color="#fff" />
-                    <Text style={styles.buttonText}>Close</Text>
-                  </TouchableOpacity>
-                </>
-              )}
-            </View>
+
+            {/* Close Button */}
+            <TouchableOpacity
+              style={styles.closeButton}
+              onPress={() => {
+                setModalVisible(!modalVisible);
+                navigation.navigate('Home');
+              }}
+            >
+              <Icon name="close" size={20} color="#fff" />
+              <Text style={styles.buttonText}>Close</Text>
+            </TouchableOpacity>
           </View>
         </View>
       </Modal>
@@ -215,12 +302,16 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    marginTop: isMobile ? 20 : 0, // Add margin on top for mobile
   },
   modalView: {
-    width: '90%',
+    width: isMobile ? '100%' : '90%', // Full width for mobile
+    height: isMobile ? '90%' : '90%', // Slightly less height for mobile
     backgroundColor: '#2c3e50',
-    borderRadius: 20,
+    borderRadius: isMobile ? 0 : 20, // No border radius for mobile
     padding: 20,
+    marginTop: isMobile ? 20 : 50, // Add margin on top for mobile
+    marginBottom: isMobile ? 20 : 50, // Add margin at the bottom for mobile
     alignItems: 'center',
     shadowColor: '#000',
     shadowOffset: {
@@ -231,25 +322,65 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 5,
   },
+  modalViewMobile: {
+    marginTop: 40, // Additional top margin for mobile
+  },
   modalHeader: { fontSize: 28, fontWeight: 'bold', color: '#ecf0f1', marginBottom: 20 },
   scrollView: { width: '100%' },
-  sectionHeader: { fontSize: 22, fontWeight: 'bold', color: '#ecf0f1', marginTop: 20, marginBottom: 10 },
-  predictionItem: { marginBottom: 20 },
-  bulletPoint: { fontSize: 18, color: '#ecf0f1', marginBottom: 5 },
-  details: { fontSize: 18, color: '#ecf0f1', marginBottom: 5 },
-  buttonContainer: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 20 },
-  nextButton: {
-    backgroundColor: '#27ae60',
-    borderRadius: 20,
-    padding: 10,
-    elevation: 2,
+  sectionHeader: { fontSize: 20, fontWeight: 'bold', color: '#ecf0f1', marginBottom: 10, textAlign: 'center' },
+  userDetailsContainer: {
+    width: isMobile ? '100%' : '90%', // Full width for mobile
+    padding: 15,
+    backgroundColor: '#34495e',
+    borderRadius: 10,
+    marginBottom: 20,
+    borderWidth: 1,
+    borderColor: '#bdc3c7',
   },
-  backButton: {
-    backgroundColor: '#2980b9',
-    borderRadius: 20,
+  userDetailsText: {
+    fontSize: 16,
+    color: '#ecf0f1',
+    lineHeight: 24,
+  },
+  columnsContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    width: '90%',
+    marginBottom: 20,
+  },
+  columnsContainerMobile: {
+    flexDirection: 'column', // Stack columns vertically for mobile
+    width: '100%',
+    marginBottom: 20,
+  },
+  column: {
+    flex: 1,
+    marginHorizontal: isMobile ? 0 : 5, // No horizontal margin for mobile
+    marginBottom: isMobile ? 20 : 0, // Add bottom margin for mobile
+  },
+  bulletedList: {
+    marginTop: 10,
+  },
+  listItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 10,
     padding: 10,
-    elevation: 2,
+    backgroundColor: '#34495e',
+    borderRadius: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  bulletIcon: {
     marginRight: 10,
+  },
+  bulletPoint: {
+    fontSize: 16,
+    color: '#ecf0f1',
+    flexShrink: 1,
   },
   closeButton: {
     flexDirection: 'row',
@@ -258,45 +389,62 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     padding: 10,
     elevation: 2,
+    marginTop: 20,
   },
-  buttonText: {
-    color: 'white',
-    fontWeight: 'bold',
-    marginLeft: 2,
-  },
+  buttonText: { color: 'white', fontWeight: 'bold', marginLeft: 5 },
   error: { color: 'red', fontSize: 18, textAlign: 'center', marginBottom: 20 },
-  centerContent: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
+  centerContent: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   circleContainer: {
     flexDirection: 'row',
-    justifyContent: 'space-around', // Adjusted to evenly distribute the circles
+    justifyContent: 'space-around',
     marginTop: 20,
     width: '100%',
     flexWrap: 'wrap',
   },
-  circleWrapper: {
-    width: 160, // Adjusted size
-    height: 160, // Adjusted size
+  circleContainerMobile: {
+    flexDirection: 'row', // Horizontal scroll for mobile
+    marginTop: 20,
+    paddingHorizontal: 10,
+  },
+  circleWrapper: { width: 160, height: 160, justifyContent: 'center', alignItems: 'center', marginBottom: 20 },
+  circleWrapperMobile: { width: 120, height: 120, justifyContent: 'center', alignItems: 'center', marginRight: 10 },
+  circleText: { color: '#fff', fontWeight: 'bold', fontSize: 14, textAlign: 'center', marginTop: 10 },
+  circleValue: { color: '#fff', fontSize: 20, fontWeight: 'bold', textAlign: 'center', marginTop: 10 },
+  tabContainer: {
+    flexDirection: 'row',
     justifyContent: 'center',
+    width: '40%',
+    backgroundColor: '#2c3e50',
+    borderTopLeftRadius: 10,
+    borderTopRightRadius: 10,
+    position: 'absolute',
+    top: -30,
+    left: 0,
+    right: 0,
+  },
+  tab: {
+    flex: 1,
+    paddingVertical: 10,
+    alignItems: 'center',
+    backgroundColor: '#1e3a5f',
+    borderTopLeftRadius: 10,
+    borderTopRightRadius: 10,
+    marginHorizontal: 5,
+  },
+  activeTab: {
+    backgroundColor: '#4189E5',
+    borderTopLeftRadius: 10,
+    borderTopRightRadius: 10,
+    borderBottomWidth: 3,
+    borderBottomColor: '#1e3a5f',
+  },
+  tabText: { fontSize: 16, color: '#B0C4DE' },
+  activeTabText: { color: 'white', fontWeight: 'bold' },
+  mobileChartContainer: {
+    height: 300,
+    width: '100%',
     alignItems: 'center',
     marginBottom: 20,
-  },
-  circleText: {
-    color: '#fff',
-    fontWeight: 'bold',
-    fontSize: 14,
-    textAlign: 'center',
-  },
-  circleValue: {
-    color: '#fff',
-    marginBottom: 20,
-    fontSize: 20, // Adjusted font size
-    fontWeight: 'bold',
-    textAlign: 'center',
-    position: 'absolute',
   },
 });
 
