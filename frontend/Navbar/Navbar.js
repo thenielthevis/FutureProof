@@ -45,6 +45,7 @@ export default function Navbar({ navigation }) {
   const handleLogout = async () => {
     try {
       await AsyncStorage.removeItem('token');
+      setIsLoggedIn(false);
 
       // Toast message for logout success
       Toast.show({
@@ -65,6 +66,14 @@ export default function Navbar({ navigation }) {
       }, 2000);
     } catch (err) {
       console.error('Logout error:', err);
+      Toast.show({
+        type: 'error',
+        text1: 'Logout failed',
+        position: 'top',
+        visibilityTime: 3000,
+        autoHide: true,
+        topOffset: Platform.OS === 'android' ? 30 : 60,
+      });
     }
   };
 
@@ -95,6 +104,22 @@ export default function Navbar({ navigation }) {
             <TouchableOpacity onPress={() => navigation.navigate('Contacts')}>
               <Text style={styles.navLinkText}>Contact Us</Text>
             </TouchableOpacity>
+            <TouchableOpacity onPress={() => navigation.navigate('Login')}>
+              <Text style={styles.navLinkText}>Login</Text>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={() => navigation.navigate('Register')}>
+              <Text style={styles.navLinkText}>Register</Text>
+            </TouchableOpacity>
+            {isLoggedIn && (
+              <>
+                <TouchableOpacity onPress={() => navigation.navigate('Prediction')}>
+                  <Text style={styles.navLinkText}>Prediction</Text>
+                </TouchableOpacity>
+                <TouchableOpacity onPress={handleLogoutPress}>
+                  <Text style={styles.navLinkText}>Logout</Text>
+                </TouchableOpacity>
+              </>
+            )}
           </View>
 
           {/* Login/Register Toggle */}
@@ -123,6 +148,46 @@ export default function Navbar({ navigation }) {
           </View>
         </View>
       ) : null}
+
+{isMobile && (
+        <TouchableOpacity onPress={() => setIsMenuOpen(!isMenuOpen)} style={styles.hamburgerButton}>
+          <Icon name="bars" size={24} color="#f0fdf7" />
+        </TouchableOpacity>
+      )}
+
+      {/* Dropdown Menu for Mobile */}
+      {isMobile && isMenuOpen && (
+        <View style={styles.dropdownMenu}>
+          <TouchableOpacity onPress={() => navigation.navigate('About')}>
+            <Text style={styles.dropdownMenuItem}>About</Text>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={() => navigation.navigate('Features')}>
+            <Text style={styles.dropdownMenuItem}>Features</Text>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={() => navigation.navigate('Contacts')}>
+            <Text style={styles.dropdownMenuItem}>Contact Us</Text>
+          </TouchableOpacity>
+          {isLoggedIn ? (
+            <>
+              <TouchableOpacity onPress={() => navigation.navigate('Prediction')}>
+                <Text style={styles.dropdownMenuItem}>Prediction</Text>
+              </TouchableOpacity>
+              <TouchableOpacity onPress={handleLogoutPress}>
+                <Text style={styles.dropdownMenuItem}>Logout</Text>
+              </TouchableOpacity>
+            </>
+          ) : (
+            <>
+              <TouchableOpacity onPress={() => handleTogglePress('Login')}>
+                <Text style={styles.dropdownMenuItem}>Login</Text>
+              </TouchableOpacity>
+              <TouchableOpacity onPress={() => handleTogglePress('Register')}>
+                <Text style={styles.dropdownMenuItem}>Register</Text>
+              </TouchableOpacity>
+            </>
+          )}
+        </View>
+      )}
 
       {/* Logout Confirmation Popup */}
       <Modal visible={modalVisible} transparent={true} animationType="fade">
@@ -269,7 +334,6 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     width: '100%',
     marginTop: 20,
-    
   },
   button: {
     padding: 10,
@@ -278,12 +342,29 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     width: '48%',
   },
- 
   cancelButton: {
     backgroundColor: 'gray',
   },
   buttonText: {
     color: '#fff',
     fontWeight: '600',
+  },
+  hamburgerButton: {
+    padding: 10,
+  },
+  dropdownMenu: {
+    position: 'absolute',
+    top: 60,
+    right: 16,
+    backgroundColor: '#1A3B32',
+    borderRadius: 8,
+    padding: 10,
+    width: 150,
+    zIndex: 1000,
+  },
+  dropdownMenuItem: {
+    fontSize: 16,
+    color: '#F5F5F5',
+    paddingVertical: 8,
   },
 });
