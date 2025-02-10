@@ -1,5 +1,5 @@
 import React, { useState, Suspense } from 'react';
-import { Canvas } from '@react-three/fiber/native';
+import { Canvas } from '@react-three/fiber';
 import { OrbitControls, useGLTF } from '@react-three/drei/native';
 import { View, Text, TextInput, Button, StyleSheet, Alert } from 'react-native';
 import { Asset } from 'expo-asset';

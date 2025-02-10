@@ -8,7 +8,7 @@ import { useNavigationState } from '@react-navigation/native';
 import GameNavbar from './GameNavbar'; // Import GameNavbar
 
 const { width } = Dimensions.get('window');
-const isMobile = width < 768;
+const isMobile = width < 768; // Define mobile breakpoint
 
 export default function Navbar({ navigation }) {
   const [isLogin, setIsLogin] = useState(true);
@@ -81,82 +81,57 @@ export default function Navbar({ navigation }) {
     return <GameNavbar />;
   }
 
-  return (
-    <SafeAreaView style={styles.headerContainer} edges={['top']}>
-      {/* Logo */}
-      <View style={styles.logoContainer}>
-        <Image source={require('../assets/logo.png')} style={styles.logo} />
-        <TouchableOpacity onPress={() => navigation.navigate('Home')}>
-          <Text style={styles.headerTitle}>FutureProof</Text>
+  // Desktop Navigation
+  const renderDesktopNav = () => (
+    <View style={styles.navLinksContainer}>
+      <View style={styles.navLinks}>
+        <TouchableOpacity onPress={() => navigation.navigate('About')}>
+          <Text style={styles.navLinkText}>About</Text>
+        </TouchableOpacity>
+        <TouchableOpacity onPress={() => navigation.navigate('Features')}>
+          <Text style={styles.navLinkText}>Features</Text>
+        </TouchableOpacity>
+        <TouchableOpacity onPress={() => navigation.navigate('Contacts')}>
+          <Text style={styles.navLinkText}>Contact Us</Text>
         </TouchableOpacity>
       </View>
 
-      {/* Navigation Links on the Right */}
-      {!isMobile ? (
-        <View style={styles.navLinksContainer}>
-          <View style={styles.navLinks}>
-            <TouchableOpacity onPress={() => navigation.navigate('About')}>
-              <Text style={styles.navLinkText}>About</Text>
+      {/* Login/Register Toggle */}
+      <View style={styles.toggleContainer}>
+        {isLoggedIn ? (
+          <>
+            <TouchableOpacity style={styles.iconButton} onPress={() => navigation.navigate('Prediction')}>
+              <Icon name="gamepad" size={24} color="#f0fdf7" />
             </TouchableOpacity>
-            <TouchableOpacity onPress={() => navigation.navigate('Features')}>
-              <Text style={styles.navLinkText}>Features</Text>
+            <TouchableOpacity style={styles.logoutButton} onPress={handleLogoutPress}>
+              <Text style={styles.logoutText}>Logout</Text>
             </TouchableOpacity>
-            <TouchableOpacity onPress={() => navigation.navigate('Contacts')}>
-              <Text style={styles.navLinkText}>Contact Us</Text>
-            </TouchableOpacity>
-            <TouchableOpacity onPress={() => navigation.navigate('Login')}>
-              <Text style={styles.navLinkText}>Login</Text>
-            </TouchableOpacity>
-            <TouchableOpacity onPress={() => navigation.navigate('Register')}>
-              <Text style={styles.navLinkText}>Register</Text>
-            </TouchableOpacity>
-            {isLoggedIn && (
-              <>
-                <TouchableOpacity onPress={() => navigation.navigate('Prediction')}>
-                  <Text style={styles.navLinkText}>Prediction</Text>
-                </TouchableOpacity>
-                <TouchableOpacity onPress={handleLogoutPress}>
-                  <Text style={styles.navLinkText}>Logout</Text>
-                </TouchableOpacity>
-              </>
-            )}
+          </>
+        ) : (
+          <View style={styles.toggleBackground}>
+            <TouchableOpacity
+              style={[styles.toggleCircle, isLogin ? styles.circleLeft : styles.circleRight]}
+              onPress={() => handleTogglePress(isLogin ? 'Register' : 'Login')}
+            />
+            <View style={styles.toggleTextContainer}>
+              <Text style={[styles.toggleText, isLogin && styles.activeText]}>Login</Text>
+              <Text style={[styles.toggleText, !isLogin && styles.activeText]}>Register</Text>
+            </View>
           </View>
+        )}
+      </View>
+    </View>
+  );
 
-          {/* Login/Register Toggle */}
-          <View style={styles.toggleContainer}>
-            {isLoggedIn ? (
-              <>
-                <TouchableOpacity style={styles.iconButton} onPress={() => navigation.navigate('Prediction')}>
-                  <Icon name="gamepad" size={24} color="#f0fdf7" />
-                </TouchableOpacity>
-                <TouchableOpacity style={styles.logoutButton} onPress={handleLogoutPress}>
-                  <Text style={styles.logoutText}>Logout</Text>
-                </TouchableOpacity>
-              </>
-            ) : (
-              <View style={styles.toggleBackground}>
-                <TouchableOpacity
-                  style={[styles.toggleCircle, isLogin ? styles.circleLeft : styles.circleRight]}
-                  onPress={() => handleTogglePress(isLogin ? 'Register' : 'Login')}
-                />
-                <View style={styles.toggleTextContainer}>
-                  <Text style={[styles.toggleText, isLogin && styles.activeText]}>Login</Text>
-                  <Text style={[styles.toggleText, !isLogin && styles.activeText]}>Register</Text>
-                </View>
-              </View>
-            )}
-          </View>
-        </View>
-      ) : null}
-
-{isMobile && (
-        <TouchableOpacity onPress={() => setIsMenuOpen(!isMenuOpen)} style={styles.hamburgerButton}>
-          <Icon name="bars" size={24} color="#f0fdf7" />
-        </TouchableOpacity>
-      )}
+  // Mobile Navigation
+  const renderMobileNav = () => (
+    <>
+      <TouchableOpacity onPress={() => setIsMenuOpen(!isMenuOpen)} style={styles.hamburgerButton}>
+        <Icon name="bars" size={24} color="#f0fdf7" />
+      </TouchableOpacity>
 
       {/* Dropdown Menu for Mobile */}
-      {isMobile && isMenuOpen && (
+      {isMenuOpen && (
         <View style={styles.dropdownMenu}>
           <TouchableOpacity onPress={() => navigation.navigate('About')}>
             <Text style={styles.dropdownMenuItem}>About</Text>
@@ -188,6 +163,21 @@ export default function Navbar({ navigation }) {
           )}
         </View>
       )}
+    </>
+  );
+
+  return (
+    <SafeAreaView style={styles.headerContainer} edges={['top']}>
+      {/* Logo */}
+      <View style={styles.logoContainer}>
+        <Image source={require('../assets/logo.png')} style={styles.logo} />
+        <TouchableOpacity onPress={() => navigation.navigate('Home')}>
+          <Text style={styles.headerTitle}>FutureProof</Text>
+        </TouchableOpacity>
+      </View>
+
+      {/* Render Desktop or Mobile Navigation */}
+      {isMobile ? renderMobileNav() : renderDesktopNav()}
 
       {/* Logout Confirmation Popup */}
       <Modal visible={modalVisible} transparent={true} animationType="fade">
@@ -222,7 +212,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: '#1A3B32',
     padding: 16,
-    width: width,
+    width: '100%',
   },
   logoContainer: {
     flexDirection: 'row',
