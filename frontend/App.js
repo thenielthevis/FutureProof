@@ -11,7 +11,7 @@ import Login from './Components/Login';
 import Logout from './Components/Logout';
 import Register from './Components/Register';
 import Prediction from './Components/Prediction';
-import Navbar from './Navbar';
+import Navbar from './Navbar/Navbar';
 import Toast from 'react-native-toast-message';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import Game from './Components/Game';

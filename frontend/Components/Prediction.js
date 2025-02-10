@@ -283,7 +283,7 @@ const Prediction = ({ navigation }) => {
               style={styles.closeButton}
               onPress={() => {
                 setModalVisible(!modalVisible);
-                navigation.navigate('Home');
+                navigation.navigate('Game');
               }}
             >
               <Icon name="close" size={20} color="#fff" />
