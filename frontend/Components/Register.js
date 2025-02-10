@@ -23,6 +23,7 @@ const Register = ({ navigation }) => {
   const [email, setEmail] = useState('');
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState(''); // New state for confirmation password
   const [age, setAge] = useState('');
   const [gender, setGender] = useState('');
   const [height, setHeight] = useState('');
@@ -41,6 +42,18 @@ const Register = ({ navigation }) => {
   const [customVice, setCustomVice] = useState('');
   const [customGeneticDisease, setCustomGeneticDisease] = useState('');
   const [customLifestyle, setCustomLifestyle] = useState('');
+
+  const [ageError, setAgeError] = useState('');
+  const [heightError, setHeightError] = useState('');
+  const [weightError, setWeightError] = useState('');
+  const [usernameError, setUsernameError] = useState('');
+  const [emailError, setEmailError] = useState('');
+  const [passwordError, setPasswordError] = useState('');
+  const [confirmPasswordError, setConfirmPasswordError] = useState('');
+  const [customViceError, setCustomViceError] = useState('');
+  const [customGeneticDiseaseError, setCustomGeneticDiseaseError] = useState('');
+  const [customLifestyleError, setCustomLifestyleError] = useState('');
+  const [customFoodError, setCustomFoodError] = useState('');
 
   const handleCheckboxToggle = (option, setState, state) => {
     setState(state.includes(option) ? state.filter(item => item !== option) : [...state, option]);
@@ -77,7 +90,96 @@ const Register = ({ navigation }) => {
 
   const handleRegister = async () => {
     setError('');
+    setAgeError('');
+    setHeightError('');
+    setWeightError('');
+    setUsernameError('');
+    setEmailError('');
+    setPasswordError('');
+    setConfirmPasswordError('');
+    setCustomViceError('');
+    setCustomGeneticDiseaseError('');
+    setCustomLifestyleError('');
+    setCustomFoodError('');
     setIsLoading(true); // Show loader
+
+    // Validate numeric fields
+    if (!/^\d+$/.test(age)) {
+      setAgeError('Age must be a number.');
+      showToast('Age must be a number.', 'error');
+      setIsLoading(false);
+      return;
+    }
+    if (!/^\d+$/.test(height)) {
+      setHeightError('Height must be a number.');
+      showToast('Height must be a number.', 'error');
+      setIsLoading(false);
+      return;
+    }
+    if (!/^\d+$/.test(weight)) {
+      setWeightError('Weight must be a number.');
+      showToast('Weight must be a number.', 'error');
+      setIsLoading(false);
+      return;
+    }
+
+    // Validate text fields
+    if (username.trim() === '') {
+      setUsernameError('Username is required.');
+      showToast('Username is required.', 'error');
+      setIsLoading(false);
+      return;
+    }
+    if (email.trim() === '') {
+      setEmailError('Email is required.');
+      showToast('Email is required.', 'error');
+      setIsLoading(false);
+      return;
+    }
+    if (password.trim() === '') {
+      setPasswordError('Password is required.');
+      showToast('Password is required.', 'error');
+      setIsLoading(false);
+      return;
+    }
+    if (confirmPassword.trim() === '') {
+      setConfirmPasswordError('Confirm Password is required.');
+      showToast('Confirm Password is required.', 'error');
+      setIsLoading(false);
+      return;
+    }
+    if (password !== confirmPassword) {
+      setConfirmPasswordError('Passwords do not match.');
+      showToast('Passwords do not match.', 'error');
+      setIsLoading(false);
+      return;
+    }
+
+    // Validate text fields
+    if (!/^[a-zA-Z\s]*$/.test(customVice)) {
+      setCustomViceError('Other Vices must be text.');
+      showToast('Other Vices must be text.', 'error');
+      setIsLoading(false);
+      return;
+    }
+    if (!/^[a-zA-Z\s]*$/.test(customGeneticDisease)) {
+      setCustomGeneticDiseaseError('Other Genetic Diseases must be text.');
+      showToast('Other Genetic Diseases must be text.', 'error');
+      setIsLoading(false);
+      return;
+    }
+    if (!/^[a-zA-Z\s]*$/.test(customLifestyle)) {
+      setCustomLifestyleError('Other Habits must be text.');
+      showToast('Other Habits must be text.', 'error');
+      setIsLoading(false);
+      return;
+    }
+    if (!/^[a-zA-Z\s]*$/.test(customFood)) {
+      setCustomFoodError('Other Food Intake must be text.');
+      showToast('Other Food Intake must be text.', 'error');
+      setIsLoading(false);
+      return;
+    }
 
     // Show loading toast
     showToast('Registering... ⏳', 'info');
@@ -172,6 +274,7 @@ const Register = ({ navigation }) => {
                   value={username}
                   onChangeText={setUsername}
                 />
+                {usernameError ? <Text style={styles.error}>{usernameError}</Text> : null}
               </View>
               <View style={[styles.inputContainer, isMobile && styles.mobileInputContainer]}>
                 <TextInput
@@ -180,6 +283,7 @@ const Register = ({ navigation }) => {
                   value={email}
                   onChangeText={setEmail}
                 />
+                {emailError ? <Text style={styles.error}>{emailError}</Text> : null}
               </View>
               <View style={[styles.inputContainer, isMobile && styles.mobileInputContainer]}>
                 <TextInput
@@ -189,6 +293,17 @@ const Register = ({ navigation }) => {
                   value={password}
                   onChangeText={setPassword}
                 />
+                {passwordError ? <Text style={styles.error}>{passwordError}</Text> : null}
+              </View>
+              <View style={[styles.inputContainer, isMobile && styles.mobileInputContainer]}>
+                <TextInput
+                  style={[styles.input, isMobile && styles.mobileInput]}
+                  placeholder="Confirm Password"
+                  secureTextEntry
+                  value={confirmPassword}
+                  onChangeText={setConfirmPassword}
+                />
+                {confirmPasswordError ? <Text style={styles.error}>{confirmPasswordError}</Text> : null}
               </View>
               <TouchableOpacity
                 style={[styles.button, isMobile && styles.mobileButton]}
@@ -210,6 +325,7 @@ const Register = ({ navigation }) => {
                   value={age}
                   onChangeText={setAge}
                 />
+                {ageError ? <Text style={styles.error}>{ageError}</Text> : null}
               </View>
               <Text style={styles.subHeader}>Gender</Text>
               {['Male', 'Female'].map((option) => (
@@ -228,6 +344,7 @@ const Register = ({ navigation }) => {
                   value={height}
                   onChangeText={setHeight}
                 />
+                {heightError ? <Text style={styles.error}>{heightError}</Text> : null}
               </View>
               <View style={[styles.inputContainer, isMobile && styles.mobileInputContainer]}>
                 <TextInput
@@ -237,6 +354,7 @@ const Register = ({ navigation }) => {
                   value={weight}
                   onChangeText={setWeight}
                 />
+                {weightError ? <Text style={styles.error}>{weightError}</Text> : null}
               </View>
 
               <Text style={styles.subHeader}>Environmental Status</Text>
@@ -265,6 +383,7 @@ const Register = ({ navigation }) => {
                   value={customVice}
                   onChangeText={setCustomVice}
                 />
+                {customViceError ? <Text style={styles.error}>{customViceError}</Text> : null}
               </View>
               <TouchableOpacity
                 style={[styles.button, isMobile && styles.mobileButton]}
@@ -305,6 +424,7 @@ const Register = ({ navigation }) => {
                   value={customGeneticDisease}
                   onChangeText={setCustomGeneticDisease}
                 />
+                {customGeneticDiseaseError ? <Text style={styles.error}>{customGeneticDiseaseError}</Text> : null}
               </View>
 
               <Text style={styles.subHeader}>Daily Habit / Lifestyle</Text>
@@ -329,6 +449,7 @@ const Register = ({ navigation }) => {
                   value={customLifestyle}
                   onChangeText={setCustomLifestyle}
                 />
+                {customLifestyleError ? <Text style={styles.error}>{customLifestyleError}</Text> : null}
               </View>
 
               <Text style={styles.subHeader}>Daily Food Intake</Text>
@@ -347,6 +468,7 @@ const Register = ({ navigation }) => {
                   value={customFood}
                   onChangeText={setCustomFood}
                 />
+                {customFoodError ? <Text style={styles.error}>{customFoodError}</Text> : null}
               </View>
               <TouchableOpacity
                 style={[styles.button, isMobile && styles.mobileButton]}
