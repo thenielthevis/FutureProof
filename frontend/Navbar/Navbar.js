@@ -5,7 +5,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import Toast from 'react-native-toast-message';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import { useNavigationState } from '@react-navigation/native';
-import GameNavbar from './GameNavbar'; // Import GameNavbar
+import GameNavbar from './GameNavbar';
 
 const { width } = Dimensions.get('window');
 const isMobile = width < 768; // Define mobile breakpoint
@@ -108,15 +108,19 @@ export default function Navbar({ navigation }) {
             </TouchableOpacity>
           </>
         ) : (
-          <View style={styles.toggleBackground}>
+          <View style={styles.segmentedControl}>
             <TouchableOpacity
-              style={[styles.toggleCircle, isLogin ? styles.circleLeft : styles.circleRight]}
-              onPress={() => handleTogglePress(isLogin ? 'Register' : 'Login')}
-            />
-            <View style={styles.toggleTextContainer}>
-              <Text style={[styles.toggleText, isLogin && styles.activeText]}>Login</Text>
-              <Text style={[styles.toggleText, !isLogin && styles.activeText]}>Register</Text>
-            </View>
+              style={[styles.segmentButton, isLogin && styles.activeSegment]}
+              onPress={() => handleTogglePress('Login')}
+            >
+              <Text style={[styles.segmentText, isLogin && styles.activeSegmentText]}>Login</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.segmentButton, !isLogin && styles.activeSegment]}
+              onPress={() => handleTogglePress('Register')}
+            >
+              <Text style={[styles.segmentText, !isLogin && styles.activeSegmentText]}>Register</Text>
+            </TouchableOpacity>
           </View>
         )}
       </View>
@@ -248,44 +252,29 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginLeft: 600, // Adjusted spacing for logout/login button
   },
-  toggleBackground: {
-    width: 143,
-    height: 40,
-    borderRadius: 20,
+  segmentedControl: {
+    flexDirection: 'row',
     backgroundColor: '#f0fdf7',
-    position: 'relative',
+    borderRadius: 20,
+    padding: 4,
+  },
+  segmentButton: {
+    flex: 1,
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 16,
+    alignItems: 'center',
     justifyContent: 'center',
   },
-  toggleCircle: {
-    width: 72,
-    height: 36,
-    borderRadius: 18,
-    position: 'absolute',
+  activeSegment: {
     backgroundColor: '#388E3C',
-    top: 2,
   },
-  circleLeft: {
-    left: 2,
-  },
-  circleRight: {
-    left: 70,
-  },
-  toggleTextContainer: {
-    position: 'absolute',
-    top: 8,
-    left: 0,
-    right: 0,
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    alignItems: 'center',
-    width: '100%',
-  },
-  toggleText: {
+  segmentText: {
     fontSize: 16,
     color: '#1A3B32',
     fontWeight: '600',
   },
-  activeText: {
+  activeSegmentText: {
     color: '#f0fdf7',
   },
   iconButton: {

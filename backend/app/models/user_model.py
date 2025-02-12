@@ -18,6 +18,7 @@ class UserCreate(BaseModel):
     username: str
     email: EmailStr
     password: str
+    role: str = "user"
     age: int
     gender: str
     height: float
@@ -30,11 +31,18 @@ class UserCreate(BaseModel):
     sleep_hours: str
     activeness: str
 
+    class Config:
+        json_encoders = {
+            ObjectId: str_objectid
+        }
+        arbitrary_types_allowed = True
+
 # This model is for internal representation in the database (MongoDB)
 class UserInDB(ObjectIdModel):
     username: str
     email: EmailStr
     hashed_password: str
+    role: str
     age: int
     gender: str
     height: float
@@ -46,6 +54,8 @@ class UserInDB(ObjectIdModel):
     food_intake: List[str] = []
     sleep_hours: str
     activeness: str
+    avatars: List[ObjectId] = []  # List of image URLs
+    default_avatar: Optional[ObjectId] = None  # Reference to the avatar's ObjectID
 
     class Config:
         json_encoders = {

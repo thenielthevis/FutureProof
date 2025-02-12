@@ -116,4 +116,8 @@ const styles = StyleSheet.create({
   },
 });
 
+<<<<<<< HEAD
 export default GameNavbar;
+=======
+export default GameNavbar;
+>>>>>>> a14dd794329a12c38f7564397c97a7cbe6c5eaf2

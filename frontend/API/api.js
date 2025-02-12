@@ -1,29 +1,10 @@
 import axios from 'axios';
 import { Platform } from 'react-native';
-import { NetworkInfo } from 'react-native-network-info';
 
-// Get the correct API base URL
-const getApiUrl = async () => {
-  if (Platform.OS === 'android') {
-    return 'http://10.0.2.2:8000';  // Android Emulator
-  } else if (Platform.OS === 'ios') {
-    return 'http://localhost:8000';  // iOS Simulator
-  } else {
-    try {
-      const ipAddress = await NetworkInfo.getIPAddress();
-      return `http://${ipAddress}:8000`;  // Physical Device
-    } catch (error) {
-      console.error('Error getting IP address:', error);
-      return 'http://localhost:8000';  // Fallback for web
-    }
-  }
-};
-
-// Use the dynamic API URL
-let API_URL;
-(async () => {
-  API_URL = await getApiUrl();
-})();
+// Set the API base URL based on the platform
+const API_URL = Platform.OS === 'android' 
+  ? 'http://192.168.1.4:8000'  // Android Emulator
+  : 'http://localhost:8000';  // iOS Simulator and Web
 
 // Register a new user
 export const registerUser = async (userData) => {
@@ -77,5 +58,61 @@ export const getPrediction = async (token) => {
       console.error('Error:', error.message);
       throw { detail: error.message };
     }
+  }
+};
+
+// Get user information
+export const getUser = async (token) => {
+  try {
+    const response = await axios.get(`${API_URL}/user`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    return response.data;
+  } catch (error) {
+    if (error.response) {
+      throw error.response.data;
+    } else if (error.request) {
+      console.error('No response received:', error.request);
+      throw { detail: 'No response from server' };
+    } else {
+      console.error('Error:', error.message);
+      throw { detail: error.message };
+    }
+  }
+};
+
+// Update user information
+export const updateUser = async (token, userData) => {
+  try {
+    const response = await axios.put(`${API_URL}/user`, userData, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    return response.data;
+  } catch (error) {
+    if (error.response) {
+      throw error.response.data;
+    } else if (error.request) {
+      console.error('No response received:', error.request);
+      throw { detail: 'No response from server' };
+    } else {
+      console.error('Error:', error.message);
+      throw { detail: error.message };
+    }
+  }
+};
+
+export const getAvatar = async (avatarId) => {
+  try {
+    console.log(`Fetching avatar with ID: ${avatarId}`); // Debug log
+    const response = await axios.get(`${API_URL}/avatars/${avatarId}`);
+    console.log('Avatar fetched successfully:', response.data); // Debug log
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching avatar:', error.response ? error.response.data : error); // Debug log
+    throw error.response ? error.response.data : { detail: 'An error occurred' };
   }
 };

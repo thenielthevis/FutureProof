@@ -1,8 +1,10 @@
-import React, { useState, Suspense } from 'react';
+import React, { useEffect, useState, Suspense } from 'react';
 import { Canvas } from '@react-three/fiber';
-import { OrbitControls, useGLTF } from '@react-three/drei/native';
+import { OrbitControls, useGLTF } from '@react-three/drei';
 import { View, StyleSheet, Alert, TouchableOpacity } from 'react-native';
 import { Asset } from 'expo-asset';
+import { useLoader } from '@react-three/fiber';
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
 import Icon from 'react-native-vector-icons/FontAwesome'; // Use vector icons from react-native-vector-icons
 import { FaShoppingCart, FaClipboardCheck, FaHome } from 'react-icons/fa'; // Import additional icons
 import { useNavigation } from '@react-navigation/native';
@@ -10,7 +12,13 @@ import { useNavigation } from '@react-navigation/native';
 // Function to load the GLB model
 function Model({ scale }) {
   const modelUri = Asset.fromModule(require('../assets/tao.glb')).uri;
+  console.log('Model URI:', modelUri);
   const { scene } = useGLTF(modelUri);
+  if (!scene) {
+    console.error('Scene is undefined');
+    return null; // Defensive check
+  }
+  console.log('Scene:', scene);
   scene.scale.set(scale.x, scale.y, scale.z);
   return <primitive object={scene} />;
 }
@@ -88,7 +96,7 @@ export default function Prediction() {
           <Suspense fallback={null}>
             <Model scale={scale} />
           </Suspense>
-          <OrbitControls enableDamping maxPolarAngle={Math.PI} minDistance={5} maxDistance={15} /> {/* Adjust OrbitControls */}
+          <OrbitControls enableDamping maxPolarAngle={Math.PI} minDistance={5} maxDistance={15} />
         </Canvas>
       </View>
 
