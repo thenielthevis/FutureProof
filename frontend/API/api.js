@@ -5,7 +5,7 @@ import { NetworkInfo } from 'react-native-network-info';
 // Get the correct API base URL
 const getApiUrl = async () => {
   if (Platform.OS === 'android') {
-    return 'http://10.0.2.2:8000';  // Android Emulator
+    return 'http://192.168.1.143:8000';  // Android Emulator
   } else if (Platform.OS === 'ios') {
     return 'http://localhost:8000';  // iOS Simulator
   } else {

@@ -203,7 +203,7 @@ const styles = StyleSheet.create({
     fontSize: 55,
     fontWeight: 'bold',
     color: '#333',
-    marginBottom: 60,
+    marginBottom: 70,
     textAlign: 'center',
   },
   mobileHeader: { fontSize: 32, marginBottom: 30 },
@@ -226,7 +226,7 @@ const styles = StyleSheet.create({
     marginRight: 20,
     alignSelf: 'center',
   },
-  input: { flex: 1, height: 40, fontSize: 16, color: '#333' },
+  input: { flex: 1, height: 40, fontSize: 16, },
   button: {
     backgroundColor: '#004d00',
     paddingVertical: 10,

@@ -76,11 +76,11 @@ const Prediction = ({ navigation }) => {
             <Text style={styles.sectionHeader}>Predicted Diseases</Text>
             {/* LineChart with Gradient */}
             {isMobile ? (
-              <View style={styles.mobileChartContainer}>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false}>
                 <LineChart
                   data={chartData}
-                  width={screenWidth * 0.75} // Adjust width for mobile
-                  height={20} // Adjust height for mobile
+                  width={screenWidth * 1.5} // Make the chart wider for scrolling
+                  height={350} // Increased height to accommodate labels
                   chartConfig={{
                     backgroundColor: '#2c3e50',
                     backgroundGradientFrom: '#2c3e50',
@@ -90,25 +90,29 @@ const Prediction = ({ navigation }) => {
                     labelColor: (opacity = 1) => `rgba(255, 255, 255, ${opacity})`, // Ensure text is visible
                     fillShadowGradient: '#f6a8f0', // Set shadow color
                     fillShadowGradientOpacity: 0.4, // Adjust shadow opacity
-                    withVerticalLabels: false, // Hide vertical labels
                     propsForLabels: {
                       rotation: -45, // Rotate labels to make them horizontal
-                      fontSize: 8, // Adjust font size for better readability
+                      fontSize: 10, // Increase font size for better readability
                       fontWeight: 'bold',
+                      dx: 8, // Add padding to prevent clipping
+                      dy: 1, // Add padding to prevent clipping
+                      textAnchor: 'middle', // Center the text
+                      wordWrap: 'break-word', // Break long labels
                     },
-                  }}
-                  bezier // Makes the line smooth
+                    }}
+                    bezier // Makes the line smooth
                   style={{
-                    marginVertical: 8,
+                    marginVertical: 15,
                     borderRadius: 16,
+                    paddingRight: 20, // Add padding to prevent clipping
                   }}
                 />
-              </View>
+              </ScrollView>
             ) : (
               <LineChart
                 data={chartData}
-                width={screenWidth * 0.8} // Desktop width
-                height={220} // Desktop height
+                width={screenWidth * 0.6} // Desktop width
+                height={300} // Increased height to accommodate labels
                 chartConfig={{
                   backgroundColor: '#2c3e50',
                   backgroundGradientFrom: '#2c3e50',
@@ -118,41 +122,48 @@ const Prediction = ({ navigation }) => {
                   labelColor: (opacity = 1) => `rgba(255, 255, 255, ${opacity})`, // Ensure text is visible
                   fillShadowGradient: '#f6a8f0', // Set shadow color
                   fillShadowGradientOpacity: 0.4, // Adjust shadow opacity
+                  propsForLabels: {
+                    rotation: -45, // Rotate labels to make them horizontal
+                    fontSize: 12, // Increase font size for better readability
+                    fontWeight: 'bold',
+                    dx: 10, // Add padding to prevent clipping
+                    dy: 10, // Add padding to prevent clipping
+                  },
                 }}
                 bezier // Makes the line smooth
                 style={{
                   marginVertical: 8,
                   borderRadius: 16,
+                  paddingRight: 20, // Add padding to prevent clipping
                 }}
               />
             )}
             {/* Disease Information Progress Circles */}
             {isMobile ? (
-              <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-                <View style={styles.circleContainerMobile}>
-                  {diseaseLabels.map((label, index) => (
-                    <View key={index} style={styles.circleWrapperMobile}>
-                      <ProgressChart
-                        data={{ data: [diseaseData[index] / 100] }} // Ensure data is between 0 and 1
-                        width={100} // Adjust size for mobile
-                        height={100}
-                        strokeWidth={12}
-                        radius={40} // Adjust radius for mobile
-                        chartConfig={{
-                          backgroundGradientFrom: '#2c3e50', // Dark background for circles
-                          backgroundGradientTo: '#2c3e50', // Dark background for circles
-                          color: (opacity = 1) => `rgba(26, 255, 146, ${opacity})`, // Progress circle color
-                          labelColor: (opacity = 1) => `rgba(255, 255, 255, ${opacity})`, // Ensure text is visible
-                          strokeWidth: 2,
-                        }}
-                        hideLegend={true} // Hide the legend since it's not needed here
-                      />
-                      <Text style={styles.circleText}>{label}</Text>
-                      <Text style={styles.circleValue}>{diseaseData[index]}%</Text>
-                    </View>
-                  ))}
-                </View>
-              </ScrollView>
+              <View style={styles.circleContainerMobile}>
+                {diseaseLabels.map((label, index) => (
+                  <View key={index} style={styles.circleWrapperMobile}>
+                    <ProgressChart
+                      data={{ data: [diseaseData[index] / 100] }} // Ensure data is between 0 and 1
+                      width={100} // Adjust size for mobile
+                      height={100}
+                      strokeWidth={12}
+                      radius={40} // Adjust radius for mobile
+                      chartConfig={{
+                        backgroundGradientFrom: '#2c3e50', // Dark background for circles
+                        backgroundGradientTo: '#2c3e50', // Dark background for circles
+                        color: (opacity = 1) => `rgba(26, 255, 146, ${opacity})`, // Progress circle color
+                        labelColor: (opacity = 1) => `rgba(255, 255, 255, ${opacity})`, // Ensure text is visible
+                        strokeWidth: 2,
+                      }}
+                      hideLegend={true} // Hide the legend since it's not needed here
+                    />
+                    <Text style={styles.circleText} numberOfLines={3} ellipsizeMode="tail">
+                      {label}
+                    </Text>
+                  </View>
+                ))}
+              </View>
             ) : (
               <View style={styles.circleContainer}>
                 {diseaseLabels.map((label, index) => (
@@ -172,7 +183,9 @@ const Prediction = ({ navigation }) => {
                       }}
                       hideLegend={true} // Hide the legend since it's not needed here
                     />
-                    <Text style={styles.circleText}>{label}</Text>
+                    <Text style={styles.circleText} numberOfLines={2} ellipsizeMode="tail">
+                      {label}
+                    </Text>
                     <Text style={styles.circleValue}>{diseaseData[index]}%</Text>
                   </View>
                 ))}
@@ -305,8 +318,8 @@ const styles = StyleSheet.create({
     marginTop: isMobile ? 20 : 0, // Add margin on top for mobile
   },
   modalView: {
-    width: isMobile ? '100%' : '90%', // Full width for mobile
-    height: isMobile ? '90%' : '90%', // Slightly less height for mobile
+    width: isMobile ? '100%' : '70%', // Full width for mobile, smaller for desktop
+    height: isMobile ? '90%' : '70%', // Slightly less height for mobile, smaller for desktop
     backgroundColor: '#2c3e50',
     borderRadius: isMobile ? 0 : 20, // No border radius for mobile
     padding: 20,
@@ -402,18 +415,33 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
   },
   circleContainerMobile: {
-    flexDirection: 'row', // Horizontal scroll for mobile
-    marginTop: 20,
+    flexDirection: 'column', // Stack circles vertically for mobile
+    marginTop: 80,
     paddingHorizontal: 10,
   },
   circleWrapper: { width: 160, height: 160, justifyContent: 'center', alignItems: 'center', marginBottom: 20 },
-  circleWrapperMobile: { width: 120, height: 120, justifyContent: 'center', alignItems: 'center', marginRight: 10 },
-  circleText: { color: '#fff', fontWeight: 'bold', fontSize: 14, textAlign: 'center', marginTop: 10 },
+  circleWrapperMobile: {
+    width: 120,
+    height: 120,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 30,
+    marginHorizontal: 10, // Add horizontal margin for mobile
+  },
+  circleText: {
+    color: '#fff',
+    fontWeight: 'bold',
+    fontSize: 12,
+    textAlign: 'center',
+    marginTop: 10,
+    marginBottom: 15,
+    width: 100, // Fixed width to ensure text wraps properly
+  },
   circleValue: { color: '#fff', fontSize: 20, fontWeight: 'bold', textAlign: 'center', marginTop: 10 },
   tabContainer: {
     flexDirection: 'row',
     justifyContent: 'center',
-    width: '40%',
+    width: isMobile ? '60%' : '40%', // Make the tab longer on mobile
     backgroundColor: '#2c3e50',
     borderTopLeftRadius: 10,
     borderTopRightRadius: 10,
@@ -444,7 +472,7 @@ const styles = StyleSheet.create({
     height: 300,
     width: '100%',
     alignItems: 'center',
-    marginBottom: 20,
+    marginBottom: 60,
   },
 });
 
