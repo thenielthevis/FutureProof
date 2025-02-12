@@ -109,34 +109,28 @@ const Prediction = ({ navigation }) => {
                 />
               </ScrollView>
             ) : (
+               <ScrollView horizontal >
               <LineChart
-                data={chartData}
-                width={screenWidth * 0.6} // Desktop width
-                height={300} // Increased height to accommodate labels
-                chartConfig={{
-                  backgroundColor: '#2c3e50',
-                  backgroundGradientFrom: '#2c3e50',
-                  backgroundGradientTo: '#2c3e50',
-                  decimalPlaces: 2,
-                  color: (opacity = 1) => `rgba(26, 255, 146, ${opacity})`,
-                  labelColor: (opacity = 1) => `rgba(255, 255, 255, ${opacity})`, // Ensure text is visible
-                  fillShadowGradient: '#f6a8f0', // Set shadow color
-                  fillShadowGradientOpacity: 0.4, // Adjust shadow opacity
-                  propsForLabels: {
-                    rotation: -45, // Rotate labels to make them horizontal
-                    fontSize: 12, // Increase font size for better readability
-                    fontWeight: 'bold',
-                    dx: 10, // Add padding to prevent clipping
-                    dy: 10, // Add padding to prevent clipping
-                  },
-                }}
-                bezier // Makes the line smooth
-                style={{
-                  marginVertical: 8,
-                  borderRadius: 16,
-                  paddingRight: 20, // Add padding to prevent clipping
-                }}
-              />
+              data={chartData}
+              width={screenWidth * 0.6}
+              height={220}
+              chartConfig={{
+                backgroundColor: '#2c3e50',
+                backgroundGradientFrom: '#2c3e50',
+                backgroundGradientTo: '#2c3e50',
+                decimalPlaces: 2,
+                color: (opacity = 1) => `rgba(26, 255, 146, ${opacity})`,
+                labelColor: (opacity = 1) => `rgba(255, 255, 255, ${opacity})`, // Ensure text is visible
+                fillShadowGradient: '#f6a8f0', // Set shadow color
+                fillShadowGradientOpacity: 0.4, // Adjust shadow opacity
+              }}
+              bezier // Makes the line smooth
+              style={{
+                marginVertical: 8,
+                borderRadius: 16,
+              }}
+            />
+            </ScrollView>
             )}
             {/* Disease Information Progress Circles */}
             {isMobile ? (
@@ -183,7 +177,7 @@ const Prediction = ({ navigation }) => {
                       }}
                       hideLegend={true} // Hide the legend since it's not needed here
                     />
-                    <Text style={styles.circleText} numberOfLines={2} ellipsizeMode="tail">
+                    <Text style={styles.circleText} >
                       {label}
                     </Text>
                     <Text style={styles.circleValue}>{diseaseData[index]}%</Text>
