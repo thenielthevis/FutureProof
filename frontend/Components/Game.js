@@ -1,10 +1,13 @@
 import React, { useEffect, useState, Suspense } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls, useGLTF } from '@react-three/drei';
-import { View, Text, TextInput, Button, StyleSheet, Alert } from 'react-native';
+import { View, StyleSheet, Alert, TouchableOpacity } from 'react-native';
 import { Asset } from 'expo-asset';
 import { useLoader } from '@react-three/fiber';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
+import Icon from 'react-native-vector-icons/FontAwesome'; // Use vector icons from react-native-vector-icons
+import { FaShoppingCart, FaClipboardCheck, FaHome } from 'react-icons/fa'; // Import additional icons
+import { useNavigation } from '@react-navigation/native';
 
 // Function to load the GLB model
 function Model({ scale }) {
@@ -21,10 +24,13 @@ function Model({ scale }) {
 }
 
 export default function Prediction() {
+  const navigation = useNavigation();  // Ensure useNavigation is called inside the component
   const [heightCm, setHeightCm] = useState(170);
   const [weight, setWeight] = useState(70);
   const [bmi, setBmi] = useState(0);
   const [bmiCategory, setBmiCategory] = useState('');
+  const [currentIconIndex, setCurrentIconIndex] = useState(0); // State to track the current icon index
+  const icons = ['Home', 'shoppingCart', 'clipboardCheck']; // Array of icons to cycle through
 
   const calculateBmi = () => {
     if (!heightCm || !weight) {
@@ -53,40 +59,38 @@ export default function Prediction() {
 
   const scale = getScaleByBMI(bmi);
 
+  const handleNextPress = () => {
+    // Cycle to the next icon
+    setCurrentIconIndex((prevIndex) => (prevIndex + 1) % icons.length);
+  };
+
+  const handleHomePress = () => {
+    navigation.navigate('Home');
+  };
+
+  const renderAdditionalIcon = () => {
+    const icon = icons[currentIconIndex];
+    switch (icon) {
+      case 'Home':
+        return (
+          <TouchableOpacity style={styles.iconButton} onPress={handleHomePress}>
+            <FaHome style={styles.additionalIconStyle} />
+          </TouchableOpacity>
+        );
+      case 'shoppingCart':
+        return <FaShoppingCart style={styles.additionalIconStyle} />;
+      case 'clipboardCheck':
+        return <FaClipboardCheck style={styles.additionalIconStyle} />;
+      default:
+        return null;
+    }
+  };
+
   return (
     <View style={[styles.container, { paddingTop: 60 }]}>
-      {/* <Text style={styles.title}>BMI Calculator</Text>
-
-      <View style={styles.inputContainer}>
-        <Text>Height (cm):</Text>
-        <TextInput
-          style={styles.input}
-          keyboardType="numeric"
-          value={heightCm.toString()}
-          onChangeText={(value) => setHeightCm(parseFloat(value) || 0)}
-        />
-      </View>
-
-      <View style={styles.inputContainer}>
-        <Text>Weight (kg):</Text>
-        <TextInput
-          style={styles.input}
-          keyboardType="numeric"
-          value={weight.toString()}
-          onChangeText={(value) => setWeight(parseFloat(value) || 0)}
-        />
-      </View>
-
-      <Button title="Calculate BMI" onPress={calculateBmi} color="#27ae60" />
-
-      <View style={styles.resultContainer}>
-        <Text style={styles.resultText}>BMI: {bmi}</Text>
-        <Text style={styles.resultText}>Category: {bmiCategory}</Text>
-      </View> */}
-
       {/* 3D Scene */}
-      <View style={{ minHeight: 500, width: '100%' }}>
-        <Canvas camera={{ position: [0, 0, 7] }}>
+      <View style={styles.sceneContainer}>
+        <Canvas camera={{ position: [0, 0, 7] }}> {/* Adjust camera position */}
           <ambientLight intensity={0.7} />
           <pointLight position={[10, 10, 10]} />
           <Suspense fallback={null}>
@@ -94,6 +98,19 @@ export default function Prediction() {
           </Suspense>
           <OrbitControls enableDamping maxPolarAngle={Math.PI} minDistance={5} maxDistance={15} />
         </Canvas>
+      </View>
+
+      {/* Navigation Bar Below Character */}
+      <View style={styles.navContainer}>
+        <TouchableOpacity style={styles.iconButton} onPress={handleNextPress}>
+          <Icon name="arrow-left" style={styles.iconStyle} />
+        </TouchableOpacity>
+        <View style={styles.additionalIconsContainer}>
+          {renderAdditionalIcon()}
+        </View>
+        <TouchableOpacity style={styles.iconButton} onPress={handleNextPress}>
+          <Icon name="arrow-right" style={styles.iconStyle} />
+        </TouchableOpacity>
       </View>
     </View>
   );
@@ -106,6 +123,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: '#f0f9f7',
     padding: 16,
+  },
+  sceneContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    width: '100%',
+    height: '100%',
   },
   title: {
     fontSize: 24,
@@ -130,5 +154,37 @@ const styles = StyleSheet.create({
   resultText: {
     fontSize: 16,
     fontWeight: '500',
+  },
+  navContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    width: '100%',
+    marginTop: 20, // Added top margin for spacing below the 3D scene
+    marginBottom: 40, // Adjusted margin for bottom space
+  },
+  iconButton: {
+    background: 'transparent',
+    border: 'none',
+    cursor: 'pointer',
+    fontSize: '1.5rem',
+    color: '#000', // Changed color to black for better visibility
+    marginLeft: 16,
+  },
+  iconStyle: {
+    fontSize: 50, // Adjusted icon size for better visibility
+    color: '#ADFF2F', // Changed color to yellow-green
+    textShadow: '2px 2px 4px #000000', // Added black shadow
+  },
+  additionalIconsContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 10,
+  },
+  additionalIconStyle: {
+    fontSize: 50,
+    color: '#000', // Changed color to black
+    marginLeft: 16,
   },
 });

@@ -3,7 +3,7 @@ import { Platform } from 'react-native';
 
 // Set the API base URL based on the platform
 const API_URL = Platform.OS === 'android' 
-  ? 'http://192.168.1.8:8000'  // Android Emulator
+  ? 'http://192.168.1.4:8000'  // Android Emulator
   : 'http://localhost:8000';  // iOS Simulator and Web
 
 // Register a new user

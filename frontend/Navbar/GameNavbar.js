@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, TouchableOpacity, StyleSheet, Image } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import { FontAwesome } from '@expo/vector-icons';
+import { FontAwesome, FontAwesome5 } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getUser, getAvatar } from '../API/api';
 import Profile from '../Components/Profile';
@@ -75,6 +75,9 @@ const GameNavbar = () => {
         </TouchableOpacity>
         <TouchableOpacity style={styles.iconButton} onPress={() => handleNavigation('Prediction')}>
           <FontAwesome name="line-chart" size={20} color="#F5F5F5" />
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.iconButton}>
+          <FontAwesome5 name="coins" size={20} color="#F5F5F5" />
         </TouchableOpacity>
       </View>
 

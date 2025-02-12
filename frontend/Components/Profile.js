@@ -85,9 +85,9 @@ const Profile = ({ visible, onClose }) => {
   };
 
   const getBMIStatus = (bmi) => {
-    if (bmi < 18.5) return 'Underweight';
-    if (bmi >= 18.5 && bmi < 24.9) return 'Normal weight';
-    if (bmi >= 25 && bmi < 29.9) return 'Overweight';
+    if (bmi < 18.5) return 'underweight';
+    if (bmi >= 18.5 && bmi < 24.9) return 'normal weight';
+    if (bmi >= 25 && bmi < 29.9) return 'overweight';
     return 'obese';
   };
 
@@ -109,22 +109,22 @@ const Profile = ({ visible, onClose }) => {
                 ) : (
                   <Text>No Avatar</Text>
                 )}
-                <Text style={styles.infoText}>{user.username}</Text>
-                <Text style={styles.infoText}>{user.age}</Text>
-                <Text style={styles.infoText}>{user.gender}</Text>
-                <Text style={styles.infoText}>{user.email}</Text>
+                <Text style={styles.infoText}>Username: {user.username}</Text>
+                <Text style={styles.infoText}>Age: {user.age}</Text>
+                <Text style={styles.infoText}>Gender: {user.gender}</Text>
+                <Text style={styles.infoText}>Email: {user.email}</Text>
               </View>
 
               {/* Box 2: Daily Habits/Lifestyle */}
               <View style={styles.box}>
                 <Text style={styles.boxHeader}>Daily Habits/Lifestyle</Text>
-                <Text style={styles.infoText}>{user.lifestyle}</Text>
+                <Text style={styles.infoText}>Lifestyle: {user.lifestyle}</Text>
               </View>
 
               {/* Box 3: Calories/Food Intake */}
               <View style={styles.box}>
                 <Text style={styles.boxHeader}>Calories/Food Intake</Text>
-                <Text style={styles.infoText}>{user.food_intake}</Text>
+                <Text style={styles.infoText}>Food Intake: {user.food_intake}</Text>
               </View>
 
               {/* Box 4: Body Mass Index */}
@@ -132,38 +132,38 @@ const Profile = ({ visible, onClose }) => {
                 <Text style={styles.boxHeader}>Body Mass Index</Text>
                 <Text style={styles.infoText}>Height: {user.height} cm</Text>
                 <Text style={styles.infoText}>Weight: {user.weight} kg</Text>
-                <Text style={styles.bmiResult}>BMI: {bmi}</Text>
+                <Text style={styles.bmiResult}>BMI Result: {bmi}</Text>
                 <Text style={styles.bmiStatus}>You are currently {bmiStatus}</Text>
               </View>
 
               {/* Box 5: Environmental Status */}
               <View style={styles.box}>
                 <Text style={styles.boxHeader}>Environmental Status</Text>
-                <Text style={styles.infoText}>{user.environment}</Text>
+                <Text style={styles.infoText}>Environment: {user.environment}</Text>
               </View>
 
               {/* Box 6: Vices/Addiction */}
               <View style={styles.box}>
                 <Text style={styles.boxHeader}>Vices/Addiction</Text>
-                <Text style={styles.infoText}>{user.vices}</Text>
+                <Text style={styles.infoText}>Vices: {user.vices}</Text>
               </View>
 
               {/* Box 7: Genetical Disease */}
               <View style={styles.box}>
                 <Text style={styles.boxHeader}>Genetical Disease</Text>
-                <Text style={styles.infoText}>{user.genetic_diseases}</Text>
+                <Text style={styles.infoText}>Genetic Diseases: {user.genetic_diseases}</Text>
               </View>
 
               {/* Box 8: Daily Sleep */}
               <View style={styles.box}>
                 <Text style={styles.boxHeader}>Daily Sleep</Text>
-                <Text style={styles.infoText}>{user.sleep_hours}</Text>
+                <Text style={styles.infoText}>Sleep Hours: {user.sleep_hours}</Text>
               </View>
 
               {/* Box 9: Activeness */}
               <View style={styles.box}>
                 <Text style={styles.boxHeader}>Activeness</Text>
-                <Text style={styles.infoText}>{user.activeness}</Text>
+                <Text style={styles.infoText}>Activeness: {user.activeness}</Text>
               </View>
             </View>
 
