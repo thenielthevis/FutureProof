@@ -5,7 +5,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import Toast from 'react-native-toast-message';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import { useNavigationState } from '@react-navigation/native';
-import GameNavbar from './GameNavbar'; // Import GameNavbar
+import GameNavbar from './GameNavbar';
 
 const { width } = Dimensions.get('window');
 const isMobile = width < 768; // Define mobile breakpoint

@@ -55,6 +55,9 @@ async def register_user(user: UserCreate):
         food_intake=user.food_intake,
         sleep_hours=user.sleep_hours,
         activeness=user.activeness,
+        role="user",
+        avatars=[],  # Set avatars to an empty list
+        default_avatar=None,  # Set default avatar to None
         id=ObjectId()  # MongoDB ObjectId
     )
     await db.users.insert_one(user_in_db.dict(exclude={"id"}))
@@ -67,14 +70,17 @@ async def authenticate_user(email: str, password: str):
     return UserInDB(**user)
 
 async def login_user(user: UserLogin):
-    authenticated_user = await authenticate_user(user.email, user.password)
-    if not authenticated_user:
+    user_in_db = await db.users.find_one({"email": user.email})
+    if not user_in_db:
+        return None
+    user_in_db = UserInDB(**user_in_db)
+    if not verify_password(user.password, user_in_db.hashed_password):
         return None
     access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     access_token = create_access_token(
         data={"sub": user.email}, expires_delta=access_token_expires
     )
-    return access_token
+    return {"access_token": access_token, "role": user_in_db.role}
 
 # Function to get user by token
 async def get_user_by_token(token: str) -> UserInDB:

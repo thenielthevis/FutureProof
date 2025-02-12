@@ -1,13 +1,21 @@
-import React, { useState, Suspense } from 'react';
+import React, { useEffect, useState, Suspense } from 'react';
 import { Canvas } from '@react-three/fiber';
-import { OrbitControls, useGLTF } from '@react-three/drei/native';
+import { OrbitControls, useGLTF } from '@react-three/drei';
 import { View, Text, TextInput, Button, StyleSheet, Alert } from 'react-native';
 import { Asset } from 'expo-asset';
+import { useLoader } from '@react-three/fiber';
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
 
 // Function to load the GLB model
 function Model({ scale }) {
   const modelUri = Asset.fromModule(require('../assets/tao.glb')).uri;
+  console.log('Model URI:', modelUri);
   const { scene } = useGLTF(modelUri);
+  if (!scene) {
+    console.error('Scene is undefined');
+    return null; // Defensive check
+  }
+  console.log('Scene:', scene);
   scene.scale.set(scale.x, scale.y, scale.z);
   return <primitive object={scene} />;
 }
@@ -78,13 +86,13 @@ export default function Prediction() {
 
       {/* 3D Scene */}
       <View style={{ minHeight: 500, width: '100%' }}>
-        <Canvas camera={{ position: [0, 0, 7] }}> {/* Adjust camera position */}
+        <Canvas camera={{ position: [0, 0, 7] }}>
           <ambientLight intensity={0.7} />
           <pointLight position={[10, 10, 10]} />
           <Suspense fallback={null}>
             <Model scale={scale} />
           </Suspense>
-          <OrbitControls enableDamping maxPolarAngle={Math.PI} minDistance={5} maxDistance={15} /> {/* Adjust OrbitControls */}
+          <OrbitControls enableDamping maxPolarAngle={Math.PI} minDistance={5} maxDistance={15} />
         </Canvas>
       </View>
     </View>

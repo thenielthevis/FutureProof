@@ -13,6 +13,7 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 class Token(BaseModel):
     access_token: str
     token_type: str
+    role: str
 
 @router.post("/register")
 async def register(user: UserCreate):
@@ -25,11 +26,12 @@ async def register(user: UserCreate):
 @router.post("/login", response_model=Token)
 async def login(user: UserLogin):
     print("Received user data:", user.dict())
-    access_token = await login_user(user)
-    if not access_token:
+    result = await login_user(user)
+    if not result:
         raise HTTPException(status_code=401, detail="Invalid credentials")
-    print("Generated token:", access_token)
-    return {"access_token": access_token, "token_type": "bearer"}
+    print("Generated token:", result["access_token"])
+    print("User role:", result["role"])
+    return {"access_token": result["access_token"], "token_type": "bearer", "role": result["role"]}
 
 @router.get("/user", response_model=UserInDB)
 async def get_user(token: str = Depends(oauth2_scheme)):

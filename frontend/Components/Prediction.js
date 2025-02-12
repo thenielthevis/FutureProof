@@ -48,9 +48,8 @@ const Prediction = ({ navigation }) => {
   }, []);
 
   const formatPrediction = (prediction) => {
-    const diseaseLabels = prediction.predicted_diseases.map((item) => item.condition);
-    const diseaseData =
-      prediction.predicted_diseases.map((item) => parseInt(item.details.match(/\d+/)[0])) || [];
+    const diseaseLabels = prediction.predicted_diseases?.map((item) => item.condition) || [];
+    const diseaseData = prediction.predicted_diseases?.map((item) => parseInt(item.details.match(/\d+/)?.[0] || 0)) || [];
 
     const chartData = {
       labels: diseaseLabels,
@@ -70,7 +69,7 @@ const Prediction = ({ navigation }) => {
             {/* User Information Section */}
             <Text style={styles.sectionHeader}>User Information</Text>
             <View style={styles.userDetailsContainer}>
-              <Text style={styles.userDetailsText}>{prediction.user_info.details}</Text>
+              <Text style={styles.userDetailsText}>{prediction.user_info?.details || 'No details available'}</Text>
             </View>
 
             <Text style={styles.sectionHeader}>Predicted Diseases</Text>
@@ -80,7 +79,7 @@ const Prediction = ({ navigation }) => {
                 <LineChart
                   data={chartData}
                   width={screenWidth * 0.75} // Adjust width for mobile
-                  height={20} // Adjust height for mobile
+                  height={220} // Adjust height for mobile
                   chartConfig={{
                     backgroundColor: '#2c3e50',
                     backgroundGradientFrom: '#2c3e50',
@@ -188,7 +187,7 @@ const Prediction = ({ navigation }) => {
               <View style={styles.column}>
                 <Text style={styles.sectionHeader}>Positive Habits</Text>
                 <View style={styles.bulletedList}>
-                  {prediction.positive_habits.map((item, index) => (
+                  {prediction.positive_habits?.map((item, index) => (
                     <View key={index} style={styles.listItem}>
                       <Icon name="check-circle" size={18} color="#27ae60" style={styles.bulletIcon} />
                       <Text style={styles.bulletPoint}>{item}</Text>
@@ -201,7 +200,7 @@ const Prediction = ({ navigation }) => {
               <View style={styles.column}>
                 <Text style={styles.sectionHeader}>Areas for Improvement</Text>
                 <View style={styles.bulletedList}>
-                  {prediction.areas_for_improvement.map((item, index) => (
+                  {prediction.areas_for_improvement?.map((item, index) => (
                     <View key={index} style={styles.listItem}>
                       <Icon name="exclamation-circle" size={18} color="#e67e22" style={styles.bulletIcon} />
                       <Text style={styles.bulletPoint}>{item}</Text>
@@ -214,7 +213,7 @@ const Prediction = ({ navigation }) => {
               <View style={styles.column}>
                 <Text style={styles.sectionHeader}>Recommendations</Text>
                 <View style={styles.bulletedList}>
-                  {prediction.recommendations.map((item, index) => (
+                  {prediction.recommendations?.map((item, index) => (
                     <View key={index} style={styles.listItem}>
                       <Icon name="lightbulb-o" size={18} color="#3498db" style={styles.bulletIcon} />
                       <Text style={styles.bulletPoint}>{item}</Text>
