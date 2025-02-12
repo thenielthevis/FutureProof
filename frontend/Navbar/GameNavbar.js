@@ -50,35 +50,37 @@ const GameNavbar = () => {
 
   return (
     <View style={styles.navbar}>
-      {/* Home Icon Button */}
-      <TouchableOpacity onPress={() => handleNavigation('Home')} style={styles.iconButton}>
-        <FontAwesome name="home" size={24} color="#F5F5F5" />
-      </TouchableOpacity>
-
-      {/* Navbar Icons */}
       <View style={styles.iconContainer}>
-        <TouchableOpacity style={styles.iconButton} onPress={handleProfilePress}>
-          {avatarUrl ? (
-            <Image source={{ uri: avatarUrl }} style={styles.avatar} />
-          ) : (
-            <FontAwesome name="user" size={20} color="#F5F5F5" />
-          )}
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.iconButton}>
-          <FontAwesome name="battery-half" size={20} color="#F5F5F5" />
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.iconButton}>
-          <FontAwesome name="shopping-cart" size={20} color="#F5F5F5" />
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.iconButton}>
-          <FontAwesome name="clipboard" size={20} color="#F5F5F5" />
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.iconButton} onPress={() => handleNavigation('Prediction')}>
-          <FontAwesome name="line-chart" size={20} color="#F5F5F5" />
-        </TouchableOpacity>
+        {/* Left Icons */}
+        <View style={styles.leftIcons}>
         <TouchableOpacity style={styles.iconButton}>
           <FontAwesome5 name="coins" size={20} color="#F5F5F5" />
         </TouchableOpacity>
+          <TouchableOpacity style={styles.iconButton}>
+            <FontAwesome name="line-chart" size={20} color="#F5F5F5" />
+          </TouchableOpacity>
+        </View>
+
+        {/* Center Icon */}
+        <View style={styles.centerIcon}>
+          <TouchableOpacity style={styles.iconButton}>
+            <FontAwesome name="battery-half" size={20} color="#F5F5F5" />
+          </TouchableOpacity>
+        </View>
+
+        {/* Right Icons */}
+        <View style={styles.rightIcons}>
+          <TouchableOpacity style={styles.iconButton} onPress={handleProfilePress}>
+            {avatarUrl ? (
+              <Image source={{ uri: avatarUrl }} style={styles.avatar} />
+            ) : (
+              <FontAwesome name="user" size={20} color="#F5F5F5" />
+            )}
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.iconButton} onPress={() => handleNavigation('Prediction')}>
+            <FontAwesome name="clipboard" size={20} color="#F5F5F5" />
+          </TouchableOpacity>
+        </View>
       </View>
 
       {/* Profile Modal */}
@@ -102,6 +104,19 @@ const styles = StyleSheet.create({
   },
   iconContainer: {
     flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    width: '100%',
+  },
+  leftIcons: {
+    flexDirection: 'row',
+    gap: 15,
+  },
+  centerIcon: {
+    alignItems: 'center',
+  },
+  rightIcons: {
+    flexDirection: 'row',
     gap: 15,
   },
   iconButton: {
@@ -112,12 +127,8 @@ const styles = StyleSheet.create({
     height: 24,
     borderRadius: 12,
     borderColor: '#F5F5F5',
-    borderWidth: 2, 
+    borderWidth: 2,
   },
 });
 
-<<<<<<< HEAD
 export default GameNavbar;
-=======
-export default GameNavbar;
->>>>>>> a14dd794329a12c38f7564397c97a7cbe6c5eaf2
