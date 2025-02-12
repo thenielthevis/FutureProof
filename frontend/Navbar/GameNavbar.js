@@ -1,5 +1,5 @@
 import React from 'react';
-import { FaUser, FaBatteryHalf, FaShoppingCart, FaTasks, FaClipboardCheck, FaHome, FaChartLine } from 'react-icons/fa';
+import { FaUser, FaBatteryHalf, FaShoppingCart, FaHome, FaCoins, FaChartLine, FaTasks } from 'react-icons/fa';
 import { useNavigation } from '@react-navigation/native';
 
 const GameNavbar = () => {
@@ -14,7 +14,7 @@ const GameNavbar = () => {
         width: '100%',
         background: '#1A3B32',
         color: '#F5F5F5',
-        padding: '20px 20px',
+        padding: '25px',
         display: 'flex',
         justifyContent: 'space-between',
         alignItems: 'center',
@@ -22,42 +22,36 @@ const GameNavbar = () => {
         zIndex: 10,
       }}
     >
-      {/* Home Icon Button */}
-      <button
-        style={{
-          background: 'transparent',
-          border: 'none',
-          cursor: 'pointer',
-          fontSize: '1.5rem',
-          color: '#F5F5F5',
-          marginRight: '16px',
-        }}
-        onClick={() => navigation.navigate('Home')}
-      >
-        <FaHome />
-      </button>
+ 
+ <div style={{ display: 'flex', gap: '20px', marginLeft: '16px' }}>
+         <FaCoins />
+         <FaChartLine />
+      </div>
 
-      {/* Navbar Icons */}
-      <ul style={{ display: 'flex', gap: '15px', listStyle: 'none', margin: 0 }}>
-        <li style={{ cursor: 'pointer', marginRight: '50px' }}>
-          <FaUser />
-        </li>
-        <li style={{ cursor: 'pointer', marginRight: '50px' }}>
+      {/* Centered Navbar Icons */}
+      <ul
+        style={{
+          display: 'flex',
+          gap: '20px',
+          listStyle: 'none',
+          margin: 0,
+          alignItems: 'center',
+          justifyContent: 'center',
+          flex: 1,
+        }}
+      >
+    
+        <li style={{ cursor: 'pointer', fontSize: '1.8rem' }}>
           <FaBatteryHalf />
         </li>
-        <li style={{ cursor: 'pointer', marginRight: '50px' }}>
-          <FaShoppingCart />
-        </li>
-        <li style={{ cursor: 'pointer', marginRight: '50px' }}>
-          <FaTasks />
-        </li>
-        <li style={{ cursor: 'pointer', marginRight: '50px' }}>
-          <FaClipboardCheck />
-        </li>
-        <li style={{ cursor: 'pointer', marginRight: '50px' }} onClick={() => navigation.navigate('Prediction')}>
-          <FaChartLine />
-        </li>
+     
       </ul>
+
+      {/* Right side: User & Settings Icon */}
+      <div style={{ display: 'flex', gap: '25px', marginRight: '60px' }}>
+        <FaUser />
+        <FaTasks />
+      </div>
     </nav>
   );
 };
