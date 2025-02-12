@@ -19,6 +19,7 @@ import Toast from 'react-native-toast-message';
 const Login = ({ navigation }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false); // State for password visibility
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false); // State for loader
 
@@ -144,10 +145,13 @@ const Login = ({ navigation }) => {
             style={[styles.input, isMobile && styles.mobileInput]}
             placeholder="Password"
             placeholderTextColor="#aaa"
-            secureTextEntry
+            secureTextEntry={!showPassword} // Use showPassword state
             value={password}
             onChangeText={setPassword}
           />
+          <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
+            <Icon name={showPassword ? 'visibility' : 'visibility-off'} size={30} color="#333" />
+          </TouchableOpacity>
         </View>
 
         {error ? <Text style={styles.error}>{error}</Text> : null}

@@ -15,6 +15,7 @@ import { Checkbox } from 'react-native-paper';
 import { LinearGradient } from 'expo-linear-gradient';
 import { registerUser } from '../API/api';
 import Toast from 'react-native-toast-message';
+import Icon from 'react-native-vector-icons/FontAwesome';
 
 const { width } = Dimensions.get('window');
 
@@ -54,6 +55,9 @@ const Register = ({ navigation }) => {
   const [customGeneticDiseaseError, setCustomGeneticDiseaseError] = useState('');
   const [customLifestyleError, setCustomLifestyleError] = useState('');
   const [customFoodError, setCustomFoodError] = useState('');
+
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const handleCheckboxToggle = (option, setState, state) => {
     setState(state.includes(option) ? state.filter(item => item !== option) : [...state, option]);
@@ -289,20 +293,26 @@ const Register = ({ navigation }) => {
                 <TextInput
                   style={[styles.input, isMobile && styles.mobileInput]}
                   placeholder="Password"
-                  secureTextEntry
+                  secureTextEntry={!showPassword}
                   value={password}
                   onChangeText={setPassword}
                 />
+                <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
+                  <Icon name={showPassword ? 'eye' : 'eye-slash'} size={20} color="#333" />
+                </TouchableOpacity>
                 {passwordError ? <Text style={styles.error}>{passwordError}</Text> : null}
               </View>
               <View style={[styles.inputContainer, isMobile && styles.mobileInputContainer]}>
                 <TextInput
                   style={[styles.input, isMobile && styles.mobileInput]}
                   placeholder="Confirm Password"
-                  secureTextEntry
+                  secureTextEntry={!showConfirmPassword}
                   value={confirmPassword}
                   onChangeText={setConfirmPassword}
                 />
+                <TouchableOpacity onPress={() => setShowConfirmPassword(!showConfirmPassword)}>
+                  <Icon name={showConfirmPassword ? 'eye' : 'eye-slash'} size={20} color="#333" />
+                </TouchableOpacity>
                 {confirmPasswordError ? <Text style={styles.error}>{confirmPasswordError}</Text> : null}
               </View>
               <TouchableOpacity
