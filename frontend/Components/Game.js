@@ -1,12 +1,13 @@
 import React, { useState, Suspense } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls, useGLTF } from '@react-three/drei/native';
-import { View, Text, TouchableOpacity, StyleSheet, Modal, TextInput } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Modal, TextInput, ScrollView } from 'react-native';
 import { Asset } from 'expo-asset';
 import * as THREE from 'three';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import { FaShoppingCart, FaClipboardCheck, FaHome } from 'react-icons/fa';
 import { useNavigation } from '@react-navigation/native';
+import { LinearGradient } from 'expo-linear-gradient';
 
 // Reusable Model Component with Color
 function Model({ scale, uri, position, color }) {
@@ -25,14 +26,24 @@ function Model({ scale, uri, position, color }) {
   return <primitive object={scene} />;
 }
 
-// Reusable Option Button Component
-function OptionButton({ label, onPress, isSelected, color }) {
+// Reusable Option Button Component with Preview
+function OptionButton({ label, onPress, isSelected, color, uri }) {
   return (
     <TouchableOpacity
-      style={[styles.optionButton, { backgroundColor: isSelected ? color : '#ddd' }]}
+      style={[styles.optionButton, { backgroundColor: isSelected ? color : '#f0f0f0' }]}
       onPress={onPress}
     >
-      <Text style={styles.optionButtonText}>{label}</Text>
+      <Text style={[styles.optionButtonText, { color: isSelected ? '#fff' : '#333' }]}>{label}</Text>
+      <View style={styles.previewContainer}>
+        <Canvas camera={{ position: [0, 0, 5], fov: 25 }}>
+          <ambientLight intensity={0.7} />
+          <pointLight position={[10, 10, 10]} />
+          <Suspense fallback={null}>
+            <Model scale={{ x: 1.5, y: 1.5, z: 1.5 }} uri={uri} position={{ x: 0, y: -1, z: 0 }} color={color} />
+          </Suspense>
+          <OrbitControls enableDamping maxPolarAngle={Math.PI} minDistance={3} maxDistance={10} />
+        </Canvas>
+      </View>
     </TouchableOpacity>
   );
 }
@@ -58,17 +69,17 @@ export default function Prediction() {
   };
 
   const hairOptions = [
-    { id: 1, label: "Hair 001", uri: Asset.fromModule(require('../assets/Hair.001.glb')).uri },
-    { id: 2, label: "Hair 002", uri: Asset.fromModule(require('../assets/Hair.002.glb')).uri },
-    { id: 3, label: "Hair 003", uri: Asset.fromModule(require('../assets/Hair.003.glb')).uri },
-    { id: 4, label: "Hair 004", uri: Asset.fromModule(require('../assets/Hair.004.glb')).uri },
-    { id: 5, label: "Hair 005", uri: Asset.fromModule(require('../assets/Hair.005.glb')).uri },
-    { id: 6, label: "Hair 006", uri: Asset.fromModule(require('../assets/Hair.006.glb')).uri },
-    { id: 7, label: "Hair 007", uri: Asset.fromModule(require('../assets/Hair.007.glb')).uri },
-    { id: 8, label: "Hair 008", uri: Asset.fromModule(require('../assets/Hair.008.glb')).uri },
-    { id: 9, label: "Hair 009", uri: Asset.fromModule(require('../assets/Hair.009.glb')).uri },
-    { id: 10, label: "Hair 010", uri: Asset.fromModule(require('../assets/Hair.010.glb')).uri },
-    { id: 11, label: "Hair 011", uri: Asset.fromModule(require('../assets/Hair.011.glb')).uri },
+    { id: 1, label: "Hair 001", uri: Asset.fromModule(require('../assets/Game/Hair.001.glb')).uri },
+    { id: 2, label: "Hair 002", uri: Asset.fromModule(require('../assets/Game/Hair.002.glb')).uri },
+    { id: 3, label: "Hair 003", uri: Asset.fromModule(require('../assets/Game/Hair.003.glb')).uri },
+    { id: 4, label: "Hair 004", uri: Asset.fromModule(require('../assets/Game/Hair.004.glb')).uri },
+    { id: 5, label: "Hair 005", uri: Asset.fromModule(require('../assets/Game/Hair.005.glb')).uri },
+    { id: 6, label: "Hair 006", uri: Asset.fromModule(require('../assets/Game/Hair.006.glb')).uri },
+    { id: 7, label: "Hair 007", uri: Asset.fromModule(require('../assets/Game/Hair.007.glb')).uri },
+    { id: 8, label: "Hair 008", uri: Asset.fromModule(require('../assets/Game/Hair.008.glb')).uri },
+    { id: 9, label: "Hair 009", uri: Asset.fromModule(require('../assets/Game/Hair.009.glb')).uri },
+    { id: 10, label: "Hair 010", uri: Asset.fromModule(require('../assets/Game/Hair.010.glb')).uri },
+    { id: 11, label: "Hair 011", uri: Asset.fromModule(require('../assets/Game/Hair.011.glb')).uri },
   ];
 
   const topOptions = [
@@ -143,25 +154,25 @@ export default function Prediction() {
   };
 
   return (
-    <View style={[styles.container, { paddingTop: 60 }]}>
+    <LinearGradient colors={['#f5f5f5', '#8fe0c1']} style={styles.container}>
       {/* 3D Scene */}
-      <View style={styles.sceneContainer}>
-        <Canvas camera={{ position: [0, 0, 10] }}>
-          <ambientLight intensity={0.7} />
-          <pointLight position={[10, 10, 10]} />
-          <Suspense fallback={null}>
-            <Model scale={modelScale} uri={Asset.fromModule(require('../assets/Game/NakedFullBody.glb')).uri} position={modelPosition} />
-            <Model scale={modelScale} uri={Asset.fromModule(require('../assets/Game/Head.001.glb')).uri} position={modelPosition} />
-            {selectedHair && <Model scale={modelScale} uri={selectedHair} position={modelPosition} color={colors.hair} />}
-            {selectedTop && <Model scale={modelScale} uri={selectedTop} position={modelPosition} color={colors.top} />}
-            {selectedBottom && <Model scale={modelScale} uri={selectedBottom} position={modelPosition} color={colors.bottom} />}
-            {selectedShoes && <Model scale={modelScale} uri={selectedShoes} position={modelPosition} color={colors.shoes} />}
-          </Suspense>
-          <OrbitControls enableDamping maxPolarAngle={Math.PI} minDistance={5} maxDistance={15} />
-        </Canvas>
-      </View>
+        <View style={styles.sceneContainer}>
+          <Canvas camera={{ position: [0, 0, 10] }}>
+            <ambientLight intensity={0.7} />
+            <pointLight position={[10, 10, 10]} />
+            <Suspense fallback={null}>
+          <Model scale={modelScale} uri={Asset.fromModule(require('../assets/Game/NakedFullBody.glb')).uri} position={modelPosition} />
+          <Model scale={modelScale} uri={Asset.fromModule(require('../assets/Game/Head.001.glb')).uri} position={modelPosition} />
+          {selectedHair && <Model scale={modelScale} uri={selectedHair} position={modelPosition} color="#7f59b0" />}
+          {selectedTop && <Model scale={modelScale} uri={selectedTop} position={modelPosition} color="#63c5ea" />}
+          {selectedBottom && <Model scale={modelScale} uri={selectedBottom} position={modelPosition} color="#ea4b8b" />}
+          {selectedShoes && <Model scale={modelScale} uri={selectedShoes} position={modelPosition} color="#fcb424" />}
+            </Suspense>
+            <OrbitControls enableDamping maxPolarAngle={Math.PI} minDistance={5} maxDistance={15} />
+          </Canvas>
+        </View>
 
-      {/* Navigation Bar Below Character */}
+        {/* Navigation Bar Below Character */}
       <View style={styles.navContainer}>
         <TouchableOpacity style={styles.iconButton} onPress={handleNextPress}>
           <Icon name="arrow-left" style={styles.iconStyle} />
@@ -204,37 +215,39 @@ export default function Prediction() {
       
       {/* Modal for Customization */}
       <Modal visible={modalVisible} animationType="slide" transparent>
-        <View style={styles.modalContainer}>
+        <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <Text style={styles.modalTitle}>Customize Your Character</Text>
             
-            <Text style={styles.sectionTitle}>Hair</Text>
-            <View style={styles.optionsRow}>
-              {hairOptions.map((hair) => (
-                <OptionButton key={hair.id} label={hair.label} onPress={() => setSelectedHair(hair.uri)} isSelected={hair.uri === selectedHair} color="#27ae60" />
-              ))}
-            </View>
+            <ScrollView contentContainerStyle={styles.scrollViewContent} showsVerticalScrollIndicator={false}>
+              <Text style={styles.sectionTitle}>Hair</Text>
+              <View style={styles.optionsRow}>
+                {hairOptions.map((hair) => (
+                  <OptionButton key={hair.id} label={hair.label} onPress={() => setSelectedHair(hair.uri)} isSelected={hair.uri === selectedHair} color="#ffffff" uri={hair.uri} />
+                ))}
+              </View>
 
-            <Text style={styles.sectionTitle}>Top</Text>
-            <View style={styles.optionsRow}>
-              {topOptions.map((top) => (
-                <OptionButton key={top.id} label={top.label} onPress={() => setSelectedTop(top.uri)} isSelected={top.uri === selectedTop} color="#3498db" />
-              ))}
-            </View>
+              <Text style={styles.sectionTitle}>Top</Text>
+              <View style={styles.optionsRow}>
+                {topOptions.map((top) => (
+                  <OptionButton key={top.id} label={top.label} onPress={() => setSelectedTop(top.uri)} isSelected={top.uri === selectedTop} color="#ffffff" uri={top.uri} />
+                ))}
+              </View>
 
-            <Text style={styles.sectionTitle}>Bottom</Text>
-            <View style={styles.optionsRow}>
-              {bottomOptions.map((bottom) => (
-                <OptionButton key={bottom.id} label={bottom.label} onPress={() => setSelectedBottom(bottom.uri)} isSelected={bottom.uri === selectedBottom} color="#e74c3c" />
-              ))}
-            </View>
+              <Text style={styles.sectionTitle}>Bottom</Text>
+              <View style={styles.optionsRow}>
+                {bottomOptions.map((bottom) => (
+                  <OptionButton key={bottom.id} label={bottom.label} onPress={() => setSelectedBottom(bottom.uri)} isSelected={bottom.uri === selectedBottom} color="#ffffff" uri={bottom.uri} />
+                ))}
+              </View>
 
-            <Text style={styles.sectionTitle}>Shoes</Text>
-            <View style={styles.optionsRow}>
-              {shoesOptions.map((shoes) => (
-                <OptionButton key={shoes.id} label={shoes.label} onPress={() => setSelectedShoes(shoes.uri)} isSelected={shoes.uri === selectedShoes} color="#f39c12" />
-              ))}
-            </View>
+              <Text style={styles.sectionTitle}>Shoes</Text>
+              <View style={styles.optionsRow}>
+                {shoesOptions.map((shoes) => (
+                  <OptionButton key={shoes.id} label={shoes.label} onPress={() => setSelectedShoes(shoes.uri)} isSelected={shoes.uri === selectedShoes} color="#ffffff" uri={shoes.uri} />
+                ))}
+              </View>
+            </ScrollView>
             
             <TouchableOpacity style={styles.closeButton} onPress={() => setModalVisible(false)}>
               <Text style={styles.buttonText}>Close</Text>
@@ -242,7 +255,7 @@ export default function Prediction() {
           </View>
         </View>
       </Modal>
-    </View>
+    </LinearGradient>
   );
 }
 
@@ -251,7 +264,6 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#f0f9f7',
     padding: 16,
   },
   sceneContainer: {
@@ -260,6 +272,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     width: '100%',
     height: '100%',
+    elevation: 10,
   },
   navContainer: {
     flexDirection: 'row',
@@ -278,9 +291,9 @@ const styles = StyleSheet.create({
     marginLeft: 16,
   },
   iconStyle: {
-    fontSize: 50,
-    color: '#ADFF2F',
-    textShadow: '2px 2px 4px #000000',
+    fontSize: 40,
+    color: '#1ccb5b',
+    textShadow: '2px 2px 4px #1a3b32',
   },
   additionalIconsContainer: {
     flexDirection: 'row',
@@ -297,11 +310,16 @@ const styles = StyleSheet.create({
     position: 'absolute',
     right: 16,
     top: 100,
-    width: '30%',
+    width: '25F%',
     zIndex: 10,
     backgroundColor: 'rgba(255, 255, 255, 0.9)',
-    padding: 10,
-    borderRadius: 8,
+    padding: 20,
+    borderRadius: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 6,
+    elevation: 10,
   },
   customizeButton: {
     backgroundColor: '#2ecc71',
@@ -309,32 +327,46 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     alignItems: 'center',
     marginBottom: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 5,
   },
   buttonText: {
     color: '#fff',
     fontSize: 16,
+    fontWeight: 'bold',
   },
-  modalContainer: {
+  modalOverlay: {
     flex: 1,
     justifyContent: 'center',
-    alignItems: 'flex-end',
+    alignItems: 'center',
     backgroundColor: 'rgba(0,0,0,0.5)',
   },
   modalContent: {
-    width: 300,
-    backgroundColor: '#fff',
+    width: '80%',
+    maxHeight: '80%',
+    backgroundColor: '#8fe0c1',
     padding: 20,
-    borderRadius: 10,
+    borderRadius: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 6,
+    elevation: 10,
   },
   modalTitle: {
     fontSize: 20,
     fontWeight: 'bold',
     marginBottom: 10,
+    color: '#333',
   },
   sectionTitle: {
     fontSize: 16,
     fontWeight: 'bold',
     marginTop: 10,
+    color: '#555',
   },
   optionsRow: {
     flexDirection: 'row',
@@ -345,9 +377,15 @@ const styles = StyleSheet.create({
     padding: 10,
     margin: 5,
     borderRadius: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 5,
   },
   optionButtonText: {
-    color: '#000',
+    fontSize: 14,
+    fontWeight: '500',
   },
   closeButton: {
     backgroundColor: '#e74c3c',
@@ -355,12 +393,11 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     alignItems: 'center',
     marginTop: 10,
-  },
-  canvasContainer: {
-    flex: 1,
-    height: '70%',
-    width: '70%',
-    marginTop: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 5,
   },
   inputContainer: {
     marginBottom: 20,
@@ -372,16 +409,28 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     paddingHorizontal: 10,
     marginBottom: 10,
+    backgroundColor: '#fff',
   },
   calculateButton: {
     backgroundColor: '#3498db',
     padding: 12,
     borderRadius: 8,
     alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 5,
   },
   bmiText: {
     fontSize: 16,
     textAlign: 'center',
+    marginTop: 10,
+    color: '#333',
+  },
+  previewContainer: {
+    width: 150,
+    height: 150,
     marginTop: 10,
   },
 });

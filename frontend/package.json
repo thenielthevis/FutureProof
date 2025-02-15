@@ -10,6 +10,7 @@
     "web": "expo start --web"
   },
   "dependencies": {
+    "@babel/runtime": "^7.26.9",
     "@expo/metro-runtime": "~4.0.1",
     "@react-native-async-storage/async-storage": "^1.23.1",
     "@react-navigation/native": "^7.0.14",
@@ -21,8 +22,10 @@
     "chart.js": "^4.4.7",
     "d3-shape": "^3.2.0",
     "expo": "~52.0.27",
+    "expo-gl": "~15.0.4",
     "expo-linear-gradient": "^14.0.2",
     "expo-status-bar": "~2.0.1",
+    "expo-three": "^8.0.0",
     "react": "18.3.1",
     "react-chartjs-2": "^5.3.0",
     "react-dom": "18.3.1",
@@ -45,11 +48,12 @@
     "react-navigation": "^4.4.4",
     "react-navigation-stack": "^2.10.4",
     "react-toastify": "^11.0.3",
-    "toastify-js": "^1.12.0",
-    "expo-gl": "~15.0.4"
+    "three": "^0.173.0",
+    "toastify-js": "^1.12.0"
   },
   "devDependencies": {
-    "@babel/core": "^7.20.0"
+    "@babel/core": "^7.20.0",
+    "@babel/plugin-transform-runtime": "^7.26.9"
   },
   "private": true
 }
