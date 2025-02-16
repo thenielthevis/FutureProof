@@ -54,8 +54,11 @@ class UserInDB(ObjectIdModel):
     food_intake: List[str] = []
     sleep_hours: str
     activeness: str
-    avatars: List[ObjectId] = []  # List of image URLs
-    default_avatar: Optional[ObjectId] = None  # Reference to the avatar's ObjectID
+    avatars: List[ObjectId] = []
+    default_avatar: Optional[ObjectId] = None
+    coins: int = 0
+    level: int = 1
+    xp: int = 0
 
     class Config:
         json_encoders = {

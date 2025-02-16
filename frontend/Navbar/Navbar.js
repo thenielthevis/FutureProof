@@ -6,6 +6,7 @@ import Toast from 'react-native-toast-message';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import { useNavigationState } from '@react-navigation/native';
 import GameNavbar from './GameNavbar';
+import { getUser } from '../API/api';
 
 const { width } = Dimensions.get('window');
 const isMobile = width < 768; // Define mobile breakpoint
@@ -15,6 +16,7 @@ export default function Navbar({ navigation }) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [modalVisible, setModalVisible] = useState(false); // Controls Logout Popup
+  const [userRole, setUserRole] = useState('');
 
   const currentRoute = useNavigationState(state => state.routes[state.index].name);
 
@@ -23,6 +25,8 @@ export default function Navbar({ navigation }) {
       const token = await AsyncStorage.getItem('token');
       if (token) {
         setIsLoggedIn(true);
+        const userData = await getUser(token);
+        setUserRole(userData.role);
       }
     };
     checkToken();
@@ -100,6 +104,11 @@ export default function Navbar({ navigation }) {
       <View style={styles.toggleContainer}>
         {isLoggedIn ? (
           <>
+            {userRole === 'admin' && (
+              <TouchableOpacity style={styles.iconButton} onPress={() => navigation.navigate('Admin')}>
+                <Icon name="cogs" size={24} color="#f0fdf7" />
+              </TouchableOpacity>
+            )}
             <TouchableOpacity style={styles.iconButton} onPress={() => navigation.navigate('Prediction')}>
               <Icon name="gamepad" size={24} color="#f0fdf7" />
             </TouchableOpacity>
@@ -148,6 +157,11 @@ export default function Navbar({ navigation }) {
           </TouchableOpacity>
           {isLoggedIn ? (
             <>
+              {userRole === 'admin' && (
+                <TouchableOpacity onPress={() => navigation.navigate('Admin')}>
+                  <Text style={styles.dropdownMenuItem}>Admin</Text>
+                </TouchableOpacity>
+              )}
               <TouchableOpacity onPress={() => navigation.navigate('Prediction')}>
                 <Text style={styles.dropdownMenuItem}>Prediction</Text>
               </TouchableOpacity>

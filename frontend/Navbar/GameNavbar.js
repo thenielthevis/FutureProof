@@ -1,35 +1,39 @@
 import React, { useState, useEffect } from 'react';
-import { View, TouchableOpacity, StyleSheet, Image } from 'react-native';
+import { View, TouchableOpacity, StyleSheet, Image, Text } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { FontAwesome, FontAwesome5 } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getUser, getAvatar } from '../API/api';
 import Profile from '../Components/Profile';
+import DailyRewards from '../Components/DailyRewards'; // Import the DailyRewards component
 
 const GameNavbar = () => {
   const navigation = useNavigation();
   const [profileVisible, setProfileVisible] = useState(false);
+  const [rewardsVisible, setRewardsVisible] = useState(false); // State for Daily Rewards modal
   const [avatarUrl, setAvatarUrl] = useState('');
+  const [user, setUser] = useState({ coins: 0, level: 1, xp: 0 });
 
   useEffect(() => {
-    const fetchAvatar = async () => {
+    const fetchUserData = async () => {
       try {
         const token = await AsyncStorage.getItem('token');
         if (!token) {
           console.error('No token found');
           return;
         }
-        const user = await getUser(token);
-        if (user.default_avatar) {
-          const avatarResponse = await getAvatar(user.default_avatar);
+        const userData = await getUser(token);
+        setUser(userData);
+        if (userData.default_avatar) {
+          const avatarResponse = await getAvatar(userData.default_avatar);
           setAvatarUrl(avatarResponse.url);
         }
       } catch (error) {
-        console.error('Error fetching avatar:', error);
+        console.error('Error fetching user data:', error);
       }
     };
 
-    fetchAvatar();
+    fetchUserData();
   }, []);
 
   const handleNavigation = (route) => {
@@ -53,23 +57,36 @@ const GameNavbar = () => {
       <View style={styles.iconContainer}>
         {/* Left Icons */}
         <View style={styles.leftIcons}>
-        <TouchableOpacity style={styles.iconButton}>
-          <FontAwesome5 name="coins" size={20} color="#F5F5F5" />
-        </TouchableOpacity>
-          <TouchableOpacity style={styles.iconButton}>
+          <TouchableOpacity style={styles.iconButton} onPress={() => handleNavigation('Prediction')}>
             <FontAwesome name="line-chart" size={20} color="#F5F5F5" />
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.iconButton} onPress={() => setRewardsVisible(true)}>
+            <FontAwesome name="clipboard" size={20} color="#F5F5F5" />
           </TouchableOpacity>
         </View>
 
         {/* Center Icon */}
         <View style={styles.centerIcon}>
+
+        </View>
           <TouchableOpacity style={styles.iconButton}>
             <FontAwesome name="battery-half" size={20} color="#F5F5F5" />
           </TouchableOpacity>
-        </View>
 
         {/* Right Icons */}
         <View style={styles.rightIcons}>
+        <View style={styles.iconWithText}>
+            <FontAwesome5 name="coins" size={20} color="gold" />
+            <Text style={styles.userInfoText}>{user.coins}</Text>
+          </View>
+          <View style={styles.iconWithText}>
+            <FontAwesome5 name="star" size={20} color="#f1c40f" />
+            <Text style={styles.userInfoText}>{user.xp}</Text>
+          </View>
+          <View style={styles.iconWithText}>
+            <FontAwesome5 name="level-up-alt" size={20} color="#3498db" />
+            <Text style={styles.userInfoText}>{user.level}</Text>
+          </View>
           <TouchableOpacity style={styles.iconButton} onPress={handleProfilePress}>
             {avatarUrl ? (
               <Image source={{ uri: avatarUrl }} style={styles.avatar} />
@@ -77,14 +94,14 @@ const GameNavbar = () => {
               <FontAwesome name="user" size={20} color="#F5F5F5" />
             )}
           </TouchableOpacity>
-          <TouchableOpacity style={styles.iconButton} onPress={() => handleNavigation('Prediction')}>
-            <FontAwesome name="clipboard" size={20} color="#F5F5F5" />
-          </TouchableOpacity>
         </View>
       </View>
 
       {/* Profile Modal */}
       <Profile visible={profileVisible} onClose={handleCloseProfile} />
+
+      {/* Daily Rewards Modal */}
+      <DailyRewards visible={rewardsVisible} onClose={() => setRewardsVisible(false)} />
     </View>
   );
 };
@@ -121,6 +138,12 @@ const styles = StyleSheet.create({
   },
   iconButton: {
     marginRight: 10,
+    alignItems: 'center',
+  },
+  iconWithText: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginRight: 15,
   },
   avatar: {
     width: 24,
@@ -128,6 +151,11 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     borderColor: '#F5F5F5',
     borderWidth: 2,
+  },
+  userInfoText: {
+    color: '#F5F5F5',
+    fontSize: 12,
+    marginLeft: 10,
   },
 });
 

@@ -15,6 +15,9 @@ import Navbar from './Navbar/Navbar';
 import Toast from 'react-native-toast-message';
 import Game from './Components/Game';
 import Profile from './Components/Profile';
+import Admin from './Pages/Admin';
+import AvatarCRUD from './Pages/AvatarCRUD';
+import DailyRewardsCRUD from './Pages/DailyRewardsCRUD';
 
 const Stack = createStackNavigator();
 const { width, height } = Dimensions.get('window');
@@ -46,6 +49,9 @@ export default function App() {
               <Stack.Screen name="Login" component={Login} />
               <Stack.Screen name="Logout" component={Logout} />
               <Stack.Screen name="Register" component={Register} />
+              <Stack.Screen name="Admin" component={Admin} />
+              <Stack.Screen name="AvatarCRUD" component={AvatarCRUD} />
+              <Stack.Screen name="DailyRewardsCRUD" component={DailyRewardsCRUD} />
             </Stack.Navigator>
           </NavigationContainer>
         </ScrollView>

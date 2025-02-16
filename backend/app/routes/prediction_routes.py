@@ -20,5 +20,5 @@ async def predict(token: str = Depends(oauth2_scheme)):
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     predicted_diseases = await predict_disease(user)  # Ensure this is awaited
-    print("Prediction response:", predicted_diseases)  # Add this line to log the response
+    # print("Prediction response:", predicted_diseases)  # Add this line to log the response
     return predicted_diseases
