@@ -1,4 +1,4 @@
-import React, { useState, Suspense } from 'react';
+import React, { useState, Suspense } from 'react';  
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls, useGLTF } from '@react-three/drei/native';
 import { View, Text, TouchableOpacity, StyleSheet, Modal, TextInput, ScrollView } from 'react-native';
@@ -27,10 +27,11 @@ function Model({ scale, uri, position, color }) {
 }
 
 // Reusable Option Button Component with Preview
-function OptionButton({ label, onPress, isSelected, color, uri }) {
+function OptionButton({ label, onPress, isSelected, buttonColor, uri }) {
   return (
     <TouchableOpacity
-      style={[styles.optionButton, { backgroundColor: isSelected ? color : '#f0f0f0' }]}
+      style={[styles.optionButton, { backgroundColor: isSelected ? buttonColor : '#f0f0f0' }]}
+
       onPress={onPress}
     >
       <Text style={[styles.optionButtonText, { color: isSelected ? '#fff' : '#333' }]}>{label}</Text>
@@ -39,7 +40,7 @@ function OptionButton({ label, onPress, isSelected, color, uri }) {
           <ambientLight intensity={0.7} />
           <pointLight position={[10, 10, 10]} />
           <Suspense fallback={null}>
-            <Model scale={{ x: 1.5, y: 1.5, z: 1.5 }} uri={uri} position={{ x: 0, y: -1, z: 0 }} color={color} />
+            <Model scale={{ x: 1.5, y: 1.5, z: 1.5 }} uri={uri} position={{ x: 0, y: -1, z: 0 }} />
           </Suspense>
           <OrbitControls enableDamping maxPolarAngle={Math.PI} minDistance={3} maxDistance={10} />
         </Canvas>
@@ -60,12 +61,15 @@ export default function Prediction() {
   const [bmi, setBmi] = useState(null);
   const [bmiCategory, setBmiCategory] = useState(null);
   const [currentIconIndex, setCurrentIconIndex] = useState(0);
+  const [activeButton, setActiveButton] = useState(null);
+
   const icons = ['Home', 'shoppingCart', 'clipboardCheck'];
 
   const colors = {
     hair: "#000000",
-    bottom: "#0000ff",
-    shoes: "#000000",
+    top: "#63c5ea",
+    bottom: "#ea4b8b",
+    shoes: "#fcb424",
   };
 
   const hairOptions = [
@@ -154,7 +158,7 @@ export default function Prediction() {
   };
 
   return (
-    <LinearGradient colors={['#f5f5f5', '#8fe0c1']} style={styles.container}>
+    <LinearGradient colors={['#ffffff', '#72f2b8']} style={styles.container}>
       {/* 3D Scene */}
         <View style={styles.sceneContainer}>
           <Canvas camera={{ position: [0, 0, 10] }}>
@@ -163,10 +167,10 @@ export default function Prediction() {
             <Suspense fallback={null}>
           <Model scale={modelScale} uri={Asset.fromModule(require('../assets/Game/NakedFullBody.glb')).uri} position={modelPosition} />
           <Model scale={modelScale} uri={Asset.fromModule(require('../assets/Game/Head.001.glb')).uri} position={modelPosition} />
-          {selectedHair && <Model scale={modelScale} uri={selectedHair} position={modelPosition} color="#7f59b0" />}
-          {selectedTop && <Model scale={modelScale} uri={selectedTop} position={modelPosition} color="#63c5ea" />}
-          {selectedBottom && <Model scale={modelScale} uri={selectedBottom} position={modelPosition} color="#ea4b8b" />}
-          {selectedShoes && <Model scale={modelScale} uri={selectedShoes} position={modelPosition} color="#fcb424" />}
+          {selectedHair && <Model scale={modelScale} uri={selectedHair} position={modelPosition} color={colors.hair} />}
+          {selectedTop && <Model scale={modelScale} uri={selectedTop} position={modelPosition} color={colors.top} />}
+          {selectedBottom && <Model scale={modelScale} uri={selectedBottom} position={modelPosition} color={colors.bottom} />}
+          {selectedShoes && <Model scale={modelScale} uri={selectedShoes} position={modelPosition} color={colors.shoes} />}
             </Suspense>
             <OrbitControls enableDamping maxPolarAngle={Math.PI} minDistance={5} maxDistance={15} />
           </Canvas>
@@ -223,28 +227,68 @@ export default function Prediction() {
               <Text style={styles.sectionTitle}>Hair</Text>
               <View style={styles.optionsRow}>
                 {hairOptions.map((hair) => (
-                  <OptionButton key={hair.id} label={hair.label} onPress={() => setSelectedHair(hair.uri)} isSelected={hair.uri === selectedHair} color="#ffffff" uri={hair.uri} />
+                  <OptionButton
+                    key={hair.id}
+                    label={hair.label}
+                    onPress={() => {
+                      setSelectedHair(hair.uri);
+                      setActiveButton('hair');
+                    }}
+                    isSelected={activeButton === 'hair' && hair.uri === selectedHair} 
+                    buttonColor={activeButton === 'hair' ? '#e74c3c' : '#f0f0f0'}
+                    uri={hair.uri}
+                  />
                 ))}
               </View>
 
               <Text style={styles.sectionTitle}>Top</Text>
               <View style={styles.optionsRow}>
                 {topOptions.map((top) => (
-                  <OptionButton key={top.id} label={top.label} onPress={() => setSelectedTop(top.uri)} isSelected={top.uri === selectedTop} color="#ffffff" uri={top.uri} />
+                  <OptionButton
+                    key={top.id}
+                    label={top.label}
+                    onPress={() => {
+                      setSelectedTop(top.uri);
+                      setActiveButton('top');
+                    }}
+                    isSelected={activeButton === 'top' && top.uri === selectedTop}
+                    buttonColor={activeButton === 'top' ? '#3498db' : '#f0f0f0'}
+                    uri={top.uri}
+                  />
                 ))}
               </View>
 
               <Text style={styles.sectionTitle}>Bottom</Text>
               <View style={styles.optionsRow}>
                 {bottomOptions.map((bottom) => (
-                  <OptionButton key={bottom.id} label={bottom.label} onPress={() => setSelectedBottom(bottom.uri)} isSelected={bottom.uri === selectedBottom} color="#ffffff" uri={bottom.uri} />
+                  <OptionButton
+                    key={bottom.id}
+                    label={bottom.label}
+                    onPress={() => {
+                      setSelectedBottom(bottom.uri);
+                      setActiveButton('bottom');
+                    }}
+                    isSelected={activeButton === 'bottom' && bottom.uri === selectedBottom}
+                    buttonColor={activeButton === 'bottom' ? '#2ecc71' : '#f0f0f0'}
+                    uri={bottom.uri}
+                  />
                 ))}
               </View>
 
               <Text style={styles.sectionTitle}>Shoes</Text>
               <View style={styles.optionsRow}>
                 {shoesOptions.map((shoes) => (
-                  <OptionButton key={shoes.id} label={shoes.label} onPress={() => setSelectedShoes(shoes.uri)} isSelected={shoes.uri === selectedShoes} color="#ffffff" uri={shoes.uri} />
+                  <OptionButton
+                    key={shoes.id}
+                    label={shoes.label}
+                    onPress={() => {
+                      setSelectedShoes(shoes.uri);
+                      setActiveButton('shoes');
+                    }}
+                    isSelected={activeButton === 'shoes' && shoes.uri === selectedShoes}
+                    buttonColor={activeButton === 'shoes' ? '#f39c12' : '#f0f0f0'}
+                    uri={shoes.uri}
+                  />
                 ))}
               </View>
             </ScrollView>
@@ -310,7 +354,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     right: 16,
     top: 100,
-    width: '25F%',
+    width: '25%',
     zIndex: 10,
     backgroundColor: 'rgba(255, 255, 255, 0.9)',
     padding: 20,
