@@ -1,8 +1,0 @@
-MONGO_URI=mongodb+srv://<username>:<password>@clusterfutureproof.ecsac.mongodb.net/?retryWrites=true&w=majority&appName=Clusterfutureproof
-SECRET_KEY=ZLgwvB2x28VpadY6MErD7xYI4FtKJmV557RUFLUrzlk=
-ACCESS_TOKEN_EXPIRE_MINUTES=300
-ALGORITHM=HS256
-GROQCLOUD_API_KEY=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
-CLOUDINARY_NAME=
-CLOUDINARY_API_KEY=
-CLOUDINARY_API_SECRET=

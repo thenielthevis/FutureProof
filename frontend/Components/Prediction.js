@@ -14,6 +14,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import { LineChart } from 'react-native-chart-kit';
 import { ProgressChart } from 'react-native-chart-kit';
+import { LinearGradient } from 'expo-linear-gradient'; // Import LinearGradient
 
 const screenWidth = Dimensions.get('window').width;
 const isMobile = screenWidth < 768; // Check if the screen width is less than 768px (mobile)
@@ -98,8 +99,8 @@ const Prediction = ({ navigation }) => {
                       textAnchor: 'middle', // Center the text
                       wordWrap: 'break-word', // Break long labels
                     },
-                    }}
-                    bezier // Makes the line smooth
+                  }}
+                  bezier // Makes the line smooth
                   style={{
                     marginVertical: 15,
                     borderRadius: 16,
@@ -236,7 +237,11 @@ const Prediction = ({ navigation }) => {
   };
 
   if (loading) {
-    return <ActivityIndicator size="large" color="#0000ff" />;
+    return (
+      <LinearGradient colors={['#ffffff', '#72f2b8']} style={styles.loadingContainer}> {/* Added Gradient for Loading */}
+        <ActivityIndicator size="large" color="black" /> {/* Changed ActivityIndicator color to white */}
+      </LinearGradient>
+    );
   }
 
   if (error) {
@@ -248,7 +253,7 @@ const Prediction = ({ navigation }) => {
   }
 
   return (
-    <View style={styles.container}>
+    <LinearGradient colors={['#ffffff', '#72f2b8']} style={styles.container}> {/* Added Linear Gradient here */}
       <Modal
         animationType="slide"
         transparent={true}
@@ -298,18 +303,20 @@ const Prediction = ({ navigation }) => {
           </View>
         </View>
       </Modal>
-    </View>
+    </LinearGradient>
   );
 };
 
 const styles = StyleSheet.create({
   container: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 16 },
+  loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 16 }, // Gradient Loading style
   modalContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
     marginTop: isMobile ? 20 : 0, // Add margin on top for mobile
   },
+  
   modalView: {
     width: isMobile ? '100%' : '70%', // Full width for mobile, smaller for desktop
     height: isMobile ? '90%' : '85%', // Slightly less height for mobile, smaller for desktop
