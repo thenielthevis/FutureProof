@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, TextInput, FlatList, Picker } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, TextInput, FlatList, Image, Picker } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import { createDailyReward, readDailyRewards, updateDailyReward, deleteDailyReward, readAvatars } from '../API/api';
+import { createDailyReward, readDailyRewards, updateDailyReward, deleteDailyReward, readAvatars, getAvatar } from '../API/api';
+import { FontAwesome, FontAwesome5 } from '@expo/vector-icons';
 
 const DailyRewardsCRUD = () => {
   const navigation = useNavigation();
@@ -14,6 +15,7 @@ const DailyRewardsCRUD = () => {
   const [shoes, setShoes] = useState('');
   const [editingReward, setEditingReward] = useState(null);
   const [avatars, setAvatars] = useState([]);
+  const [avatarImages, setAvatarImages] = useState({});
 
   useEffect(() => {
     const fetchRewards = async () => {
@@ -37,6 +39,25 @@ const DailyRewardsCRUD = () => {
     fetchRewards();
     fetchAvatars();
   }, []);
+
+  useEffect(() => {
+    const fetchAvatarImages = async () => {
+      try {
+        const images = {};
+        for (const reward of rewards) {
+          if (reward.avatar) {
+            const avatarData = await getAvatar(reward.avatar);
+            images[reward.avatar] = avatarData.url;
+          }
+        }
+        setAvatarImages(images);
+      } catch (error) {
+        console.error('Error fetching avatar images:', error);
+      }
+    };
+
+    fetchAvatarImages();
+  }, [rewards]);
 
   const handleCreateReward = async () => {
     try {
@@ -157,8 +178,15 @@ const DailyRewardsCRUD = () => {
           renderItem={({ item }) => (
             <View style={styles.rewardItem}>
               <Text style={styles.rewardText}>Day: {item.day}</Text>
-              <Text style={styles.rewardText}>Coins: {item.coins}</Text>
-              <Text style={styles.rewardText}>Avatar ID: {item.avatar}</Text>
+              <View style={styles.rewardText}>
+                <FontAwesome5 name="coins" size={14} color="gold" />
+                <Text> {item.coins}</Text>
+              </View>
+              {item.avatar && avatarImages[item.avatar] ? (
+                <Image source={{ uri: avatarImages[item.avatar] }} style={styles.avatarImage} />
+              ) : (
+                <Text style={styles.rewardText}>No Avatar</Text>
+              )}
               <Text style={styles.rewardText}>Top ID: {item.top}</Text>
               <Text style={styles.rewardText}>Bottom ID: {item.bottom}</Text>
               <Text style={styles.rewardText}>Shoes ID: {item.shoes}</Text>
@@ -236,6 +264,12 @@ const styles = StyleSheet.create({
   rewardText: {
     fontSize: 14,
     flex: 1,
+  },
+  avatarImage: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    marginRight: 10,
   },
   editButton: {
     backgroundColor: '#3498db',

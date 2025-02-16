@@ -8,6 +8,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 const DailyRewards = ({ visible, onClose }) => {
   const [rewards, setRewards] = useState([]);
   const [avatarIcons, setAvatarIcons] = useState({});
+  const [error, setError] = useState('');
 
   useEffect(() => {
     const fetchRewards = async () => {
@@ -16,6 +17,7 @@ const DailyRewards = ({ visible, onClose }) => {
         setRewards(rewardsData);
       } catch (error) {
         console.error('Error fetching daily rewards:', error);
+        setError('Error fetching daily rewards');
       }
     };
 
@@ -35,6 +37,7 @@ const DailyRewards = ({ visible, onClose }) => {
         setAvatarIcons(icons);
       } catch (error) {
         console.error('Error fetching avatar icons:', error);
+        setError('Error fetching avatar icons');
       }
     };
 
@@ -53,6 +56,7 @@ const DailyRewards = ({ visible, onClose }) => {
         })));
       } catch (error) {
         console.error('Error fetching user avatars:', error);
+        setError('Error fetching user avatars');
       }
     };
 
@@ -68,6 +72,7 @@ const DailyRewards = ({ visible, onClose }) => {
         await claimAvatar(avatarId);
       } catch (error) {
         console.error('Error claiming avatar:', error);
+        setError('Error claiming avatar');
       }
     }
     // Add logic to update user's coins and achievements in the backend
@@ -78,6 +83,7 @@ const DailyRewards = ({ visible, onClose }) => {
       <View style={styles.modalOverlay}>
         <View style={styles.modalContent}>
           <Text style={styles.modalHeader}>Daily Rewards</Text>
+          {error ? <Text style={styles.errorText}>{error}</Text> : null}
           <ScrollView contentContainerStyle={styles.scrollViewContent}>
             <View style={styles.rewardsRow}>
               {rewards.map((reward) => (
@@ -247,6 +253,11 @@ const styles = StyleSheet.create({
   },
   stepperLineRight: {
     right: 0,
+  },
+  errorText: {
+    color: 'red',
+    textAlign: 'center',
+    marginBottom: 10,
   },
 });
 

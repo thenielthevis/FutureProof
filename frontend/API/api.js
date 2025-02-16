@@ -90,11 +90,10 @@ export const getAvatar = async (avatarId) => {
   }
 };
 
-// Get avatar icon by name
-export const getAchievementIcon = async (avatarName) => {
+// Get avatar icon by ID
+export const getAchievementIcon = async (avatarId) => {
   try {
-    const encodedAvatarName = encodeURIComponent(avatarName); // URL-encode the avatar name
-    const response = await axios.get(`${API_URL}/avatars/icon/${encodedAvatarName}`);
+    const response = await axios.get(`${API_URL}/avatars/${avatarId}`);
     return response.data;
   } catch (error) {
     console.error('Error fetching avatar icon:', error.response ? error.response.data : error);
@@ -187,25 +186,52 @@ export const readAvatars = async () => {
 };
 
 // Update an avatar
+// Update an avatar
 export const updateAvatar = async (avatarId, avatarData) => {
   try {
     const token = await AsyncStorage.getItem('token');
     const formData = new FormData();
+
+    // Append text fields
     if (avatarData.name) formData.append('name', avatarData.name);
     if (avatarData.description) formData.append('description', avatarData.description);
+
+    // Handle file upload (Check if file exists)
     if (avatarData.file) {
-      formData.append('file', {
-        uri: avatarData.file.uri,
-        type: avatarData.file.type,
-        name: avatarData.file.name,
+      console.log('File before upload:', avatarData.file); // Debugging
+
+      let fileToUpload = avatarData.file;
+
+      if (Platform.OS === 'web') {
+        // Convert to Blob for web uploads
+        const response = await fetch(avatarData.file.uri);
+        const blob = await response.blob();
+        fileToUpload = {
+          uri: avatarData.file.uri,
+          type: avatarData.file.type,
+          name: avatarData.file.name,
+          blob, // Append the Blob
+        };
+      }
+
+      // Append file to FormData
+      formData.append('file', fileToUpload.blob || {
+        uri: fileToUpload.uri,
+        type: fileToUpload.type,
+        name: fileToUpload.name,
       });
     }
+
+    console.log('FormData before sending:', formData); // Debugging
+
     const response = await axios.put(`${API_URL}/update/avatar/${avatarId}`, formData, {
       headers: {
         Authorization: `Bearer ${token}`,
-        'Content-Type': 'multipart/form-data',
+        'Content-Type': 'multipart/form-data', // Let Axios handle boundaries
       },
     });
+
+    console.log('Avatar updated:', response.data);
     return response.data;
   } catch (error) {
     console.error('Error updating avatar:', error.response ? error.response.data : error);
