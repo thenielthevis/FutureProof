@@ -1,12 +1,13 @@
 import React, { useState, Suspense } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls, useGLTF } from '@react-three/drei/native';
-import { View, Text, TouchableOpacity, StyleSheet, Modal, TextInput } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Modal, TextInput, Image, ScrollView } from 'react-native';
 import { Asset } from 'expo-asset';
 import * as THREE from 'three';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import { FaShoppingCart, FaClipboardCheck, FaHome } from 'react-icons/fa';
 import { useNavigation } from '@react-navigation/native';
+import { LinearGradient } from 'expo-linear-gradient';
 
 // Reusable Model Component with Color
 function Model({ scale, uri, position, color }) {
@@ -26,12 +27,13 @@ function Model({ scale, uri, position, color }) {
 }
 
 // Reusable Option Button Component
-function OptionButton({ label, onPress, isSelected, color }) {
+function OptionButton({ label, onPress, isSelected, color, preview }) {
   return (
     <TouchableOpacity
       style={[styles.optionButton, { backgroundColor: isSelected ? color : '#ddd' }]}
       onPress={onPress}
     >
+      <Image source={preview} style={styles.previewImage} />
       <Text style={styles.optionButtonText}>{label}</Text>
     </TouchableOpacity>
   );
@@ -49,6 +51,7 @@ export default function Prediction() {
   const [bmi, setBmi] = useState(null);
   const [bmiCategory, setBmiCategory] = useState(null);
   const [currentIconIndex, setCurrentIconIndex] = useState(0);
+  const [activeTab, setActiveTab] = useState('hair');
   const icons = ['Home', 'shoppingCart', 'clipboardCheck'];
 
   const colors = {
@@ -58,32 +61,32 @@ export default function Prediction() {
   };
 
   const hairOptions = [
-    { id: 1, label: "Hair 001", uri: Asset.fromModule(require('../assets/Game/Hair.001.glb')).uri },
-    { id: 2, label: "Hair 002", uri: Asset.fromModule(require('../assets/Game/Hair.002.glb')).uri },
-    { id: 3, label: "Hair 003", uri: Asset.fromModule(require('../assets/Game/Hair.003.glb')).uri },
-    { id: 4, label: "Hair 004", uri: Asset.fromModule(require('../assets/Game/Hair.004.glb')).uri },
-    { id: 5, label: "Hair 005", uri: Asset.fromModule(require('../assets/Game/Hair.005.glb')).uri },
-    { id: 6, label: "Hair 006", uri: Asset.fromModule(require('../assets/Game/Hair.006.glb')).uri },
-    { id: 7, label: "Hair 007", uri: Asset.fromModule(require('../assets/Game/Hair.007.glb')).uri },
-    { id: 8, label: "Hair 008", uri: Asset.fromModule(require('../assets/Game/Hair.008.glb')).uri },
-    { id: 9, label: "Hair 009", uri: Asset.fromModule(require('../assets/Game/Hair.009.glb')).uri },
-    { id: 10, label: "Hair 010", uri: Asset.fromModule(require('../assets/Game/Hair.010.glb')).uri },
-    { id: 11, label: "Hair 011", uri: Asset.fromModule(require('../assets/Game/Hair.011.glb')).uri },
+    { id: 1, label: "Hair 001", uri: Asset.fromModule(require('../assets/Game/Hair.001.glb')).uri, preview: require('../assets/preview/hair001.png') },
+    { id: 2, label: "Hair 002", uri: Asset.fromModule(require('../assets/Game/Hair.002.glb')).uri, preview: require('../assets/preview/hair002.png') },
+    { id: 3, label: "Hair 003", uri: Asset.fromModule(require('../assets/Game/Hair.003.glb')).uri, preview: require('../assets/preview/hair003.png') },
+    { id: 4, label: "Hair 004", uri: Asset.fromModule(require('../assets/Game/Hair.004.glb')).uri, preview: require('../assets/preview/hair004.png') },
+    { id: 5, label: "Hair 005", uri: Asset.fromModule(require('../assets/Game/Hair.005.glb')).uri, preview: require('../assets/preview/hair005.png') },
+    { id: 6, label: "Hair 006", uri: Asset.fromModule(require('../assets/Game/Hair.006.glb')).uri, preview: require('../assets/preview/hair006.png') },
+    { id: 7, label: "Hair 007", uri: Asset.fromModule(require('../assets/Game/Hair.007.glb')).uri, preview: require('../assets/preview/hair007.png') },
+    { id: 8, label: "Hair 008", uri: Asset.fromModule(require('../assets/Game/Hair.008.glb')).uri, preview: require('../assets/preview/hair008.png') },
+    { id: 9, label: "Hair 009", uri: Asset.fromModule(require('../assets/Game/Hair.009.glb')).uri, preview: require('../assets/preview/hair009.png') },
+    { id: 10, label: "Hair 010", uri: Asset.fromModule(require('../assets/Game/Hair.010.glb')).uri, preview: require('../assets/preview/hair010.png') },
+    { id: 11, label: "Hair 011", uri: Asset.fromModule(require('../assets/Game/Hair.011.glb')).uri, preview: require('../assets/preview/hair011.png') },
   ];
 
   const topOptions = [
-    { id: 1, label: "Top 001", uri: Asset.fromModule(require('../assets/Game/Top.001.glb')).uri },
-    { id: 2, label: "Top 002", uri: Asset.fromModule(require('../assets/Game/Top.002.glb')).uri }
+    { id: 1, label: "Top 001", uri: Asset.fromModule(require('../assets/Game/Top.001.glb')).uri, preview: require('../assets/preview/top001.png') },
+    { id: 2, label: "Top 002", uri: Asset.fromModule(require('../assets/Game/Top.002.glb')).uri, preview: require('../assets/preview/top002.png') }
   ];
 
   const bottomOptions = [
-    { id: 1, label: "Bottom 001", uri: Asset.fromModule(require('../assets/Game/Bottom.001.glb')).uri },
-    { id: 2, label: "Bottom 002", uri: Asset.fromModule(require('../assets/Game/Bottom.002.glb')).uri }
+    { id: 1, label: "Bottom 001", uri: Asset.fromModule(require('../assets/Game/Bottom.001.glb')).uri, preview: require('../assets/preview/bottom001.png') },
+    { id: 2, label: "Bottom 002", uri: Asset.fromModule(require('../assets/Game/Bottom.002.glb')).uri, preview: require('../assets/preview/bottom002.png') }
   ];
 
   const shoesOptions = [
-    { id: 1, label: "Shoes 001", uri: Asset.fromModule(require('../assets/Game/Shoes.001.glb')).uri },
-    { id: 2, label: "Shoes 002", uri: Asset.fromModule(require('../assets/Game/Shoes.002.glb')).uri }
+    { id: 1, label: "Shoes 001", uri: Asset.fromModule(require('../assets/Game/Shoes.001.glb')).uri, preview: require('../assets/preview/shoes001.png') },
+    { id: 2, label: "Shoes 002", uri: Asset.fromModule(require('../assets/Game/Shoes.002.glb')).uri, preview: require('../assets/preview/shoes002.png') }
   ];
 
   const calculateBmi = () => {
@@ -114,7 +117,7 @@ export default function Prediction() {
   };
 
   const modelScale = getModelScale();
-  const modelPosition = { x: 0, y: -1.5, z: 0 };
+  const modelPosition = { x: 0, y: -2.5, z: 0 }; // Adjusted position to move the model downwards
 
   const handleNextPress = () => {
     setCurrentIconIndex((prevIndex) => (prevIndex + 1) % icons.length);
@@ -142,8 +145,31 @@ export default function Prediction() {
     }
   };
 
+  const renderOptions = () => {
+    switch (activeTab) {
+      case 'hair':
+        return hairOptions.map((hair) => (
+          <OptionButton key={hair.id} label={hair.label} onPress={() => setSelectedHair(hair.uri)} isSelected={hair.uri === selectedHair} color="#27ae60" preview={hair.preview} />
+        ));
+      case 'top':
+        return topOptions.map((top) => (
+          <OptionButton key={top.id} label={top.label} onPress={() => setSelectedTop(top.uri)} isSelected={top.uri === selectedTop} color="#3498db" preview={top.preview} />
+        ));
+      case 'bottom':
+        return bottomOptions.map((bottom) => (
+          <OptionButton key={bottom.id} label={bottom.label} onPress={() => setSelectedBottom(bottom.uri)} isSelected={bottom.uri === selectedBottom} color="#e74c3c" preview={bottom.preview} />
+        ));
+      case 'shoes':
+        return shoesOptions.map((shoes) => (
+          <OptionButton key={shoes.id} label={shoes.label} onPress={() => setSelectedShoes(shoes.uri)} isSelected={shoes.uri === selectedShoes} color="#f39c12" preview={shoes.preview} />
+        ));
+      default:
+        return null;
+    }
+  };
+
   return (
-    <View style={[styles.container, { paddingTop: 60 }]}>
+    <LinearGradient colors={['#ffffff', '#77f3bb']} style={styles.container}>
       {/* 3D Scene */}
       <View style={styles.sceneContainer}>
         <Canvas camera={{ position: [0, 0, 10] }}>
@@ -208,33 +234,26 @@ export default function Prediction() {
           <View style={styles.modalContent}>
             <Text style={styles.modalTitle}>Customize Your Character</Text>
             
-            <Text style={styles.sectionTitle}>Hair</Text>
-            <View style={styles.optionsRow}>
-              {hairOptions.map((hair) => (
-                <OptionButton key={hair.id} label={hair.label} onPress={() => setSelectedHair(hair.uri)} isSelected={hair.uri === selectedHair} color="#27ae60" />
-              ))}
+            {/* Tab Navigation */}
+            <View style={styles.tabContainer}>
+              <TouchableOpacity style={[styles.tabButton, activeTab === 'hair' && styles.activeTab]} onPress={() => setActiveTab('hair')}>
+                <Text style={styles.tabText}>Hair</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={[styles.tabButton, activeTab === 'top' && styles.activeTab]} onPress={() => setActiveTab('top')}>
+                <Text style={styles.tabText}>Top</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={[styles.tabButton, activeTab === 'bottom' && styles.activeTab]} onPress={() => setActiveTab('bottom')}>
+                <Text style={styles.tabText}>Bottom</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={[styles.tabButton, activeTab === 'shoes' && styles.activeTab]} onPress={() => setActiveTab('shoes')}>
+                <Text style={styles.tabText}>Shoes</Text>
+              </TouchableOpacity>
             </View>
 
-            <Text style={styles.sectionTitle}>Top</Text>
-            <View style={styles.optionsRow}>
-              {topOptions.map((top) => (
-                <OptionButton key={top.id} label={top.label} onPress={() => setSelectedTop(top.uri)} isSelected={top.uri === selectedTop} color="#3498db" />
-              ))}
-            </View>
-
-            <Text style={styles.sectionTitle}>Bottom</Text>
-            <View style={styles.optionsRow}>
-              {bottomOptions.map((bottom) => (
-                <OptionButton key={bottom.id} label={bottom.label} onPress={() => setSelectedBottom(bottom.uri)} isSelected={bottom.uri === selectedBottom} color="#e74c3c" />
-              ))}
-            </View>
-
-            <Text style={styles.sectionTitle}>Shoes</Text>
-            <View style={styles.optionsRow}>
-              {shoesOptions.map((shoes) => (
-                <OptionButton key={shoes.id} label={shoes.label} onPress={() => setSelectedShoes(shoes.uri)} isSelected={shoes.uri === selectedShoes} color="#f39c12" />
-              ))}
-            </View>
+            {/* Horizontal Scrollable Options */}
+            <ScrollView horizontal style={styles.optionsContainer}>
+              {renderOptions()}
+            </ScrollView>
             
             <TouchableOpacity style={styles.closeButton} onPress={() => setModalVisible(false)}>
               <Text style={styles.buttonText}>Close</Text>
@@ -242,7 +261,7 @@ export default function Prediction() {
           </View>
         </View>
       </Modal>
-    </View>
+    </LinearGradient>
   );
 }
 
@@ -251,7 +270,6 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#f0f9f7',
     padding: 16,
   },
   sceneContainer: {
@@ -260,6 +278,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     width: '100%',
     height: '100%',
+    marginTop: 15,
   },
   navContainer: {
     flexDirection: 'row',
@@ -279,7 +298,7 @@ const styles = StyleSheet.create({
   },
   iconStyle: {
     fontSize: 50,
-    color: '#ADFF2F',
+    color: '#2ecc71',
     textShadow: '2px 2px 4px #000000',
   },
   additionalIconsContainer: {
@@ -297,11 +316,17 @@ const styles = StyleSheet.create({
     position: 'absolute',
     right: 16,
     top: 100,
-    width: '30%',
+    width: '20%',
     zIndex: 10,
-    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    backgroundColor: 'rgba(255, 255, 255, 0.5)',
     padding: 10,
     borderRadius: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.8,
+    shadowRadius: 2,
+    borderWidth: 1,
+    borderColor: '#ccc',
   },
   customizeButton: {
     backgroundColor: '#2ecc71',
@@ -316,38 +341,64 @@ const styles = StyleSheet.create({
   },
   modalContainer: {
     flex: 1,
+    position: 'absolute',
+    right: 275,
+    left: 275,
+    bottom: 20,
     justifyContent: 'center',
     alignItems: 'flex-end',
-    backgroundColor: 'rgba(0,0,0,0.5)',
   },
   modalContent: {
-    width: 300,
-    backgroundColor: '#fff',
+    height: '80%',
+    width: '100%',
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
     padding: 20,
     borderRadius: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.8,
+    shadowRadius: 2,
+    borderWidth: 1,
+    borderColor: '#ccc',
   },
   modalTitle: {
     fontSize: 20,
     fontWeight: 'bold',
     marginBottom: 10,
   },
-  sectionTitle: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    marginTop: 10,
-  },
-  optionsRow: {
+  tabContainer: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
+    justifyContent: 'space-around',
+    marginBottom: 10,
+  },
+  tabButton: {
+    padding: 10,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  activeTab: {
+    backgroundColor: '#3498db',
+  },
+  tabText: {
+    color: '#000',
+  },
+  optionsContainer: {
+    flexDirection: 'row',
     marginBottom: 10,
   },
   optionButton: {
     padding: 10,
     margin: 5,
     borderRadius: 8,
+    alignItems: 'center',
   },
   optionButtonText: {
     color: '#000',
+  },
+  previewImage: {
+    width: 50,
+    height: 50,
+    marginBottom: 5,
   },
   closeButton: {
     backgroundColor: '#e74c3c',
@@ -355,6 +406,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     alignItems: 'center',
     marginTop: 10,
+    shadowColor: '#000',
   },
   canvasContainer: {
     flex: 1,
@@ -385,4 +437,3 @@ const styles = StyleSheet.create({
     marginTop: 10,
   },
 });
-////
