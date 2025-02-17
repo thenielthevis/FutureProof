@@ -4,7 +4,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // Set the API base URL based on the platform
 const API_URL = Platform.OS === 'android' 
-  ? 'http://192.168.1.143:8000'  // Android Emulator
+  ? 'http://192.168.68.65:8000'  // Android Emulator
   : 'http://localhost:8000';  // iOS Simulator and Web
 
 // Register a new user

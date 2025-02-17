@@ -83,8 +83,8 @@ const Prediction = ({ navigation }) => {
                   height={350} // Increased height to accommodate labels
                   chartConfig={{
                     backgroundColor: '#2c3e50',
-                    backgroundGradientFrom: '#00FF00', // Green
-                    backgroundGradientTo: '#FF0000', // Red
+                    backgroundGradientFrom: '#2c3e50',
+                    backgroundGradientTo: '#2c3e50',
                     decimalPlaces: 2,
                     color: (opacity = 1) => `rgba(255, 0, 0, ${opacity})`, // Line color (red)
                     labelColor: (opacity = 1) => `rgba(255, 255, 255, ${opacity})`, // Ensure text is visible
@@ -171,7 +171,7 @@ const Prediction = ({ navigation }) => {
                       chartConfig={{
                         backgroundGradientFrom: '#2c3e50', // Dark background for circles
                         backgroundGradientTo: '#2c3e50', // Dark background for circles
-                        color: (opacity = 1) => `rgba(26, 255, 146, ${opacity})`, // Progress circle color
+                        color: (opacity = 1) => `rgba(255, 150, 150, ${opacity})`, // Progress circle color
                         labelColor: (opacity = 1) => `rgba(255, 255, 255, ${opacity})`, // Ensure text is visible
                         strokeWidth: 2,
                       }}
@@ -323,7 +323,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#2c3e50',
     borderRadius: isMobile ? 0 : 20, // No border radius for mobile
     padding: 20,
-    marginTop: isMobile ? 20 : 150, // Add margin on top for mobile
+    marginTop: isMobile ? 20 : 120, // Add margin on top for mobile
     marginBottom: isMobile ? 20 : 50, // Add margin at the bottom for mobile
     alignItems: 'center',
     shadowColor: '#000',

@@ -278,7 +278,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     width: '100%',
     height: '100%',
-    marginTop: 15,
+    marginTop: 150,
   },
   navContainer: {
     flexDirection: 'row',
