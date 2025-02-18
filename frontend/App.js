@@ -36,7 +36,7 @@ export default function App() {
             <Stack.Navigator
               initialRouteName="Home"
               screenOptions={{
-                header: ({ navigation }) => <Navbar navigation={navigation} />, // Use Navbar here
+                headerShown: false, // Disable the header to use the Navbar from Home.js
               }}
             >
               <Stack.Screen name="Home" component={Home} />

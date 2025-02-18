@@ -270,59 +270,64 @@ const Register = ({ navigation }) => {
           </Text>
 
           {step === 1 && (
-            <View>
-              <View style={[styles.inputContainer, isMobile && styles.mobileInputContainer]}>
-                <TextInput
-                  style={[styles.input, isMobile && styles.mobileInput]}
-                  placeholder="Username"
-                  value={username}
-                  onChangeText={setUsername}
-                />
-                {usernameError ? <Text style={styles.error}>{usernameError}</Text> : null}
-              </View>
-              <View style={[styles.inputContainer, isMobile && styles.mobileInputContainer]}>
-                <TextInput
-                  style={[styles.input, isMobile && styles.mobileInput]}
-                  placeholder="Email"
-                  value={email}
-                  onChangeText={setEmail}
-                />
-                {emailError ? <Text style={styles.error}>{emailError}</Text> : null}
-              </View>
-              <View style={[styles.inputContainer, isMobile && styles.mobileInputContainer]}>
-                <TextInput
-                  style={[styles.input, isMobile && styles.mobileInput]}
-                  placeholder="Password"
-                  secureTextEntry={!showPassword}
-                  value={password}
-                  onChangeText={setPassword}
-                />
-                <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
-                  <Icon name={showPassword ? 'eye' : 'eye-slash'} size={20} color="#333" />
-                </TouchableOpacity>
-                {passwordError ? <Text style={styles.error}>{passwordError}</Text> : null}
-              </View>
-              <View style={[styles.inputContainer, isMobile && styles.mobileInputContainer]}>
-                <TextInput
-                  style={[styles.input, isMobile && styles.mobileInput]}
-                  placeholder="Confirm Password"
-                  secureTextEntry={!showConfirmPassword}
-                  value={confirmPassword}
-                  onChangeText={setConfirmPassword}
-                />
-                <TouchableOpacity onPress={() => setShowConfirmPassword(!showConfirmPassword)}>
-                  <Icon name={showConfirmPassword ? 'eye' : 'eye-slash'} size={20} color="#333" />
-                </TouchableOpacity>
-                {confirmPasswordError ? <Text style={styles.error}>{confirmPasswordError}</Text> : null}
-              </View>
-              <TouchableOpacity
-                style={[styles.button, isMobile && styles.mobileButton]}
-                onPress={() => setStep(2)}
-              >
-                <Text style={styles.buttonText}>Next</Text>
-              </TouchableOpacity>
-            </View>
-          )}
+                      <View>
+                        <View style={[styles.inputContainer, isMobile && styles.mobileInputContainer]}>
+                          <TextInput
+                            style={[styles.input, isMobile && styles.mobileInput]}
+                            placeholder="Username"
+                            value={username}
+                            onChangeText={setUsername}
+                          />
+                          {usernameError ? <Text style={styles.error}>{usernameError}</Text> : null}
+                        </View>
+                        <View style={[styles.inputContainer, isMobile && styles.mobileInputContainer]}>
+                          <TextInput
+                            style={[styles.input, isMobile && styles.mobileInput]}
+                            placeholder="Email"
+                            value={email}
+                            onChangeText={setEmail}
+                          />
+                          {emailError ? <Text style={styles.error}>{emailError}</Text> : null}
+                        </View>
+                        <View style={[styles.inputContainer, isMobile && styles.mobileInputContainer]}>
+                          <TextInput
+                            style={[styles.input, isMobile && styles.mobileInput]}
+                            placeholder="Password"
+                            secureTextEntry={!showPassword}
+                            value={password}
+                            onChangeText={setPassword}
+                          />
+                          <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
+                            <Icon name={showPassword ? 'eye' : 'eye-slash'} size={20} color="#333" />
+                          </TouchableOpacity>
+                          {passwordError ? <Text style={styles.error}>{passwordError}</Text> : null}
+                        </View>
+                        <View style={[styles.inputContainer, isMobile && styles.mobileInputContainer]}>
+                          <TextInput
+                            style={[styles.input, isMobile && styles.mobileInput]}
+                            placeholder="Confirm Password"
+                            secureTextEntry={!showConfirmPassword}
+                            value={confirmPassword}
+                            onChangeText={setConfirmPassword}
+                          />
+                          <TouchableOpacity onPress={() => setShowConfirmPassword(!showConfirmPassword)}>
+                            <Icon name={showConfirmPassword ? 'eye' : 'eye-slash'} size={20} color="#333" />
+                          </TouchableOpacity>
+                          {confirmPasswordError ? <Text style={styles.error}>{confirmPasswordError}</Text> : null}
+                        </View>
+                        <TouchableOpacity
+                          style={[styles.button, isMobile && styles.mobileButton]}
+                          onPress={() => setStep(2)}
+                        >
+                          <Text style={styles.buttonText}>Next</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity onPress={() => navigation.navigate('Login')}>
+                          <Text style={[styles.forgotPassword, isMobile && styles.mobileForgotPassword]}>
+                            I already have an account
+                          </Text>
+                        </TouchableOpacity>
+                      </View>
+                    )}
 
           {step === 2 && (
             <View>
@@ -532,6 +537,12 @@ const Register = ({ navigation }) => {
                 ) : (
                   <Text style={styles.buttonText}>Register</Text>
                 )}
+              </TouchableOpacity>
+
+                     <TouchableOpacity onPress={() => navigation.navigate('Login')}>
+                <Text style={[styles.forgotPassword, isMobile && styles.mobileForgotPassword]}>
+                  I don't have an account
+                </Text>
               </TouchableOpacity>
             </View>
           )}

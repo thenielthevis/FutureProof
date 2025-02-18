@@ -170,9 +170,11 @@ const Login = ({ navigation }) => {
           )}
         </TouchableOpacity>
 
-        <Text style={[styles.forgotPassword, isMobile && styles.mobileForgotPassword]}>
-          Forgot Password?
-        </Text>
+       <TouchableOpacity onPress={() => navigation.navigate('Register')}>
+  <Text style={[styles.forgotPassword, isMobile && styles.mobileForgotPassword]}>
+    I don't have an account
+  </Text>
+</TouchableOpacity>
       </LinearGradient>
 
       {/* Toast component */}
