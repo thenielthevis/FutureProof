@@ -59,7 +59,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'white',
     padding: 30, // Increased padding for bigger popup
     borderRadius: 10,
-    width: 350, // Increased width
+    width: 200, // Increased width
     alignItems: 'center',
   },
   header: {

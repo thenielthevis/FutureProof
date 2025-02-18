@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, TextInput, FlatList, Image, Picker } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { createDailyReward, readDailyRewards, updateDailyReward, deleteDailyReward, readAvatars, getAvatar } from '../API/api';
-import { FontAwesome, FontAwesome5 } from '@expo/vector-icons';
+import { FontAwesome5 } from '@expo/vector-icons';
 
 const DailyRewardsCRUD = () => {
   const navigation = useNavigation();
@@ -111,6 +111,7 @@ const DailyRewardsCRUD = () => {
 
   return (
     <View style={styles.container}>
+      {/* Sidebar */}
       <View style={styles.sidebar}>
         <TouchableOpacity style={styles.sidebarItem} onPress={() => navigation.navigate('Admin')}>
           <Text style={styles.sidebarText}>Home</Text>
@@ -122,8 +123,12 @@ const DailyRewardsCRUD = () => {
           <Text style={styles.sidebarText}>Daily Rewards</Text>
         </TouchableOpacity>
       </View>
+
+      {/* Main Content */}
       <View style={styles.content}>
-        <Text style={styles.contentText}>Daily Rewards Management</Text>
+        <Text style={styles.header}>Daily Rewards Management</Text>
+
+        {/* Form */}
         <View style={styles.form}>
           <TextInput
             style={styles.input}
@@ -166,12 +171,14 @@ const DailyRewardsCRUD = () => {
             onChangeText={setShoes}
           />
           <TouchableOpacity
-            style={styles.button}
+            style={styles.buttonPrimary}
             onPress={editingReward ? handleUpdateReward : handleCreateReward}
           >
             <Text style={styles.buttonText}>{editingReward ? 'Update Reward' : 'Create Reward'}</Text>
           </TouchableOpacity>
         </View>
+
+        {/* Reward List */}
         <FlatList
           data={rewards}
           keyExtractor={(item) => item._id}
@@ -190,12 +197,14 @@ const DailyRewardsCRUD = () => {
               <Text style={styles.rewardText}>Top ID: {item.top}</Text>
               <Text style={styles.rewardText}>Bottom ID: {item.bottom}</Text>
               <Text style={styles.rewardText}>Shoes ID: {item.shoes}</Text>
-              <TouchableOpacity style={styles.editButton} onPress={() => handleEditReward(item)}>
-                <Text style={styles.buttonText}>Edit</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.deleteButton} onPress={() => handleDeleteReward(item._id)}>
-                <Text style={styles.buttonText}>Delete</Text>
-              </TouchableOpacity>
+              <View style={styles.rewardActions}>
+                <TouchableOpacity style={styles.buttonEdit} onPress={() => handleEditReward(item)}>
+                  <Text style={styles.buttonText}>Edit</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.buttonDelete} onPress={() => handleDeleteReward(item._id)}>
+                  <Text style={styles.buttonText}>Delete</Text>
+                </TouchableOpacity>
+              </View>
             </View>
           )}
         />
@@ -208,6 +217,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     flexDirection: 'row',
+    backgroundColor: '#F5F5F5',
   },
   sidebar: {
     width: '20%',
@@ -225,10 +235,11 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 20,
   },
-  contentText: {
+  header: {
     fontSize: 24,
     fontWeight: 'bold',
     marginBottom: 20,
+    color: '#1A3B32',
   },
   form: {
     marginBottom: 20,
@@ -239,14 +250,16 @@ const styles = StyleSheet.create({
     borderRadius: 5,
     padding: 10,
     marginBottom: 10,
+    backgroundColor: '#fff',
   },
   picker: {
     height: 50,
     width: '100%',
     marginBottom: 10,
+    backgroundColor: '#fff',
   },
-  button: {
-    backgroundColor: '#2E7D32',
+  buttonPrimary: {
+    backgroundColor: '#1A3B32',
     padding: 10,
     borderRadius: 5,
     alignItems: 'center',
@@ -257,27 +270,37 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   rewardItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    backgroundColor: '#fff',
+    padding: 15,
+    borderRadius: 5,
     marginBottom: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 5,
+    elevation: 2,
   },
   rewardText: {
     fontSize: 14,
-    flex: 1,
+    marginBottom: 5,
   },
   avatarImage: {
     width: 50,
     height: 50,
     borderRadius: 25,
-    marginRight: 10,
+    marginBottom: 10,
   },
-  editButton: {
+  rewardActions: {
+    flexDirection: 'row',
+    marginTop: 10,
+  },
+  buttonEdit: {
     backgroundColor: '#3498db',
     padding: 5,
     borderRadius: 5,
     marginRight: 5,
   },
-  deleteButton: {
+  buttonDelete: {
     backgroundColor: '#e74c3c',
     padding: 5,
     borderRadius: 5,

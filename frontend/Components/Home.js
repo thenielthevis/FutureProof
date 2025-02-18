@@ -65,8 +65,8 @@ const Home = ({ navigation }) => {
     });
   };
 
-  const modelScale = { x: 1.5, y: 1.5, z: 1.5 };
-  const modelPosition = { x: 0, y: -2.5, z: 0 }; // Adjusted position to move the model downwards
+  const modelScale = { x: 3, y: 3, z: 3 };
+  const modelPosition = { x: 0, y: 0.5, z: 0 }; // Adjusted position to move the model downwards
 
   // Navbar component
   const Navbar = ({ navigation }) => {
@@ -299,13 +299,18 @@ const Home = ({ navigation }) => {
 
           {/* 3D Model */}
           <View style={styles.sceneContainer}>
-            <Canvas camera={{ position: [0, 0, 10] }}>
-              <ambientLight intensity={0.7} />
-              <pointLight position={[10, 10, 10]} />
+            <Canvas camera={{ position: [50, 0, 0] }}>
+              <ambientLight intensity={2} />
+              <pointLight position={[0, 5, 10]} />
               <Suspense fallback={null}>
                 <Model scale={modelScale} uri={Asset.fromModule(require('../assets/a.glb')).uri} position={modelPosition} />
               </Suspense>
-              <OrbitControls enableDamping maxPolarAngle={Math.PI} minDistance={1} maxDistance={3} />
+              <OrbitControls 
+                enableDamping 
+                maxPolarAngle={Math.PI / 1.5} // Limit rotation to 240 degrees
+                minDistance={3} // Disable zooming in
+                maxDistance={3} // Disable zooming out
+              />
             </Canvas>
           </View>
         </View>
@@ -321,7 +326,7 @@ const Home = ({ navigation }) => {
                   Engage in a fun, interactive experience that turns health goals into rewarding challenges, making wellness enjoyable and motivating.
                 </Text>
               </View>
-              <Image source={require('../assets/gamified.png')} style={styles.featureImage} />
+              <Image source={require('../assets/gamified.gif')} style={styles.featureImage} />
             </View>
 
             {/* Feature 2 */}
@@ -332,7 +337,7 @@ const Home = ({ navigation }) => {
                   Easily track your daily food intake and gain valuable insights into your nutrition to help you make healthier choices.
                 </Text>
               </View>
-              <Image source={require('../assets/nutrition.png')} style={styles.featureImage} />
+              <Image source={require('../assets/nutrition.gif')} style={styles.featureImage} />
             </View>
 
             {/* Feature 3 */}
@@ -343,7 +348,7 @@ const Home = ({ navigation }) => {
                   Receive personalized daily assessments to monitor your progress, identify health trends, and optimize your wellness journey.
                 </Text>
               </View>
-              <Image source={require('../assets/assessment.png')} style={styles.featureImage} />
+              <Image source={require('../assets/assessment.gif')} style={styles.featureImage} />
             </View>
           </View>
         </View>
@@ -451,7 +456,7 @@ const styles = StyleSheet.create({
     flex: isMobile ? 0 : 1,
     width: isMobile ? '100%' : '30%',
     minWidth: 300,
-    backgroundColor: '#C8E6C9',
+    backgroundColor: '#ffffff',
     padding: 25,
     borderRadius: 30,
     borderColor: '#1B5E20',
@@ -563,9 +568,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     height: 100,
-    // Removed borderRadius for less "boxy" appearance
-    borderRadius: 5, // Or remove this line entirely for no radius
-    borderWidth: 0, // Removed the border
+    borderRadius: 5,
+    borderWidth: 0,
   },
   icon: {
     marginRight: 15,
@@ -642,7 +646,6 @@ const styles = StyleSheet.create({
     height: isMobile ? 120 : 200,
     borderWidth: 5,
     borderColor: '#388E3C',
-
     padding: 5,
   },
   featureTitle: {
@@ -662,7 +665,7 @@ const styles = StyleSheet.create({
     height: 2,
     backgroundColor: '#388E3C',
     width: '80%',
-    marginVertical: 20, // Adjust spacing as needed
+    marginVertical: 20,
   },
   headerContainer: {
     flexDirection: 'row',
@@ -670,19 +673,25 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 20,
     paddingVertical: 10,
-    backgroundColor: '#14243b',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 5,
   },
   logoContainer: {
     flexDirection: 'row',
     alignItems: 'center',
+    marginLeft: 10,
   },
   logo: {
-    width: 40,
-    height: 40,
+    width: 80,
+    height: 80,
+    resizeMode: 'contain',
     marginRight: 10,
   },
   headerTitle: {
-    fontSize: 24,
+    fontSize: 30,
     fontWeight: 'bold',
     color: '#f0fdf7',
   },
@@ -695,9 +704,10 @@ const styles = StyleSheet.create({
     marginRight: 20,
   },
   navLinkText: {
-    fontSize: 16,
+    fontSize: 20,
     color: '#f0fdf7',
     marginHorizontal: 10,
+    fontWeight: '600'
   },
   toggleContainer: {
     flexDirection: 'row',
@@ -727,14 +737,19 @@ const styles = StyleSheet.create({
     marginHorizontal: 10,
   },
   logoutButton: {
-    backgroundColor: '#f0fdf7',
+    backgroundColor: '#f00',
     paddingVertical: 5,
     paddingHorizontal: 10,
-    borderRadius: 5,
+    marginHorizontal: 10,
+    height: 50,
+    justifyContent: 'center',
+    alignItems: 'center',
+    width: 100,
+    borderRadius: 10,
   },
   logoutText: {
-    fontSize: 16,
-    color: '#14243b',
+    fontSize: 20,
+    color: '#ffffff',
   },
   hamburgerButton: {
     padding: 10,
@@ -747,11 +762,17 @@ const styles = StyleSheet.create({
     borderRadius: 5,
     padding: 10,
     zIndex: 1,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 5,
   },
   dropdownMenuItem: {
     fontSize: 16,
     color: '#f0fdf7',
     paddingVertical: 5,
+    fontWeight: '600',
   },
   modalOverlay: {
     flex: 1,
@@ -763,8 +784,13 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     padding: 20,
     borderRadius: 10,
-    width: '80%',
+    width: '25%',
     alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 5,
   },
   modalHeader: {
     fontSize: 18,
@@ -784,20 +810,9 @@ const styles = StyleSheet.create({
   cancelButton: {
     backgroundColor: '#ccc',
   },
-  logoutButton: {
-    backgroundColor: '#f00',
-  },
   buttonText: {
     fontSize: 16,
     color: '#fff',
-  },
-  headerContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    backgroundColor: '#14243b',
   },
 });
 

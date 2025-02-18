@@ -9,26 +9,23 @@ const About = () => {
   const isWeb = Platform.OS === 'web';
 
   return (
-    <LinearGradient
-      colors={['#E8F5E9', '#72f2b8']} // Gradient colors
-      style={styles.container}
-    >
+    <View style={styles.container}>
+      <Text style={styles.mainTitle}>About Us</Text>
       {isWeb ? (
-      <ScrollView 
-      contentContainerStyle={[styles.scrollViewContent, { minHeight: height }]}
-      showsVerticalScrollIndicator={false}
-    >
+        <ScrollView 
+          contentContainerStyle={[styles.scrollViewContent, { minHeight: height }]}
+          showsVerticalScrollIndicator={false}
+        >
           <View style={styles.mainLayout}>
-            {/* Left Section */}
-            <View style={styles.leftSection}>
-              <Text style={styles.sectionTitle}>Our Success Stories & Mission</Text>
+            {/* Left Section - Vision */}
+            <View style={[styles.sectionContainer, styles.leftSection]}>
+              <Text style={styles.sectionTitle}>Vision</Text>
               <Text style={styles.sectionText}>
-                We have impacted thousands of lives by providing cutting-edge AI-driven health insights.
-                Our mission is to revolutionize the way people approach wellness and prevention.
+                We envision a future where predictive healthcare transforms lives, making well-being accessible, engaging, and proactive through AI and gamification.
               </Text>
             </View>
 
-            {/* Center Section */}
+            {/* Center Section - GIF */}
             <View style={styles.centerSection}>
               <Image
                 source={require('../assets/about.gif')} // Correct relative path to your GIF
@@ -36,13 +33,11 @@ const About = () => {
               />
             </View>
 
-            {/* Right Section */}
-            <View style={styles.rightSection}>
-              <Text style={styles.title}>About Us</Text>
-              <Text style={styles.subtitle}>
-                FutureProof leverages AI to provide predictive health insights and preventive wellness
-                solutions, ensuring you stay ahead of potential health risks while optimizing your
-                well-being.
+            {/* Right Section - Mission */}
+            <View style={[styles.sectionContainer, styles.rightSection]}>
+              <Text style={styles.sectionTitle}>Mission</Text>
+              <Text style={styles.sectionText}>
+                FutureProof empowers individuals with AI-driven, gamified health insights for proactive well-being. By integrating genetic, lifestyle, and environmental data, we deliver personalized, preventive care solutions.
               </Text>
             </View>
           </View>
@@ -136,15 +131,24 @@ const About = () => {
           </View>
         </ScrollView>
       )}
-    </LinearGradient>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: 'transparent',
   },
-  scrollContainer: {
+  mainTitle: {
+    fontSize: 60,
+    fontWeight: 'bold',
+    color: '#ffffff',
+    textAlign: 'center',
+    marginTop: 20,
+    marginBottom: 40,
+  },
+  scrollViewContent: {
     flexGrow: 1,
     padding: Platform.OS === 'web' ? 24 : 16,
   },
@@ -160,9 +164,17 @@ const styles = StyleSheet.create({
     marginBottom: 40,
     padding: 16,
   },
+  sectionContainer: {
+    backgroundColor: 'rgba(255, 255, 255, 0.8)',
+    borderRadius: 10,
+    padding: 20,
+    shadowColor: '#2E7D32',
+    shadowOffset: { width: 0, height: 5 },
+    shadowOpacity: 0.8,
+    shadowRadius: 5,
+  },
   leftSection: {
     width: width > 768 ? '30%' : '100%',
-    padding: 10,
     alignSelf: width > 768 ? 'flex-end' : 'center',
   },
   centerSection: {
@@ -171,7 +183,6 @@ const styles = StyleSheet.create({
   },
   rightSection: {
     width: width > 768 ? '30%' : '100%',
-    padding: 10,
     alignSelf: width > 768 ? 'flex-start' : 'center',
   },
   title: {
