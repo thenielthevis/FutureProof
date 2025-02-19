@@ -24,7 +24,7 @@ const Register = ({ navigation }) => {
   const [email, setEmail] = useState('');
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState(''); // New state for confirmation password
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [age, setAge] = useState('');
   const [gender, setGender] = useState('');
   const [height, setHeight] = useState('');
@@ -37,7 +37,7 @@ const Register = ({ navigation }) => {
   const [sleep_hours, setSleepHours] = useState('');
   const [activeness, setActiveness] = useState('');
   const [error, setError] = useState('');
-  const [isLoading, setIsLoading] = useState(false); // State for loader
+  const [isLoading, setIsLoading] = useState(false);
 
   const [customFood, setCustomFood] = useState('');
   const [customVice, setCustomVice] = useState('');
@@ -65,17 +65,17 @@ const Register = ({ navigation }) => {
 
   const showToast = (message, type) => {
     const backgroundColors = {
-      success: '#1B5E20', // Dark green for success
-      error: '#D32F2F', // Dark red for error
-      info: '#1B5E20', // Dark green for loading
+      success: '#1B5E20',
+      error: '#D32F2F',
+      info: '#1B5E20',
     };
 
     Toast.show({
       type: type,
       position: 'top',
-      text1: message, // Keep the original text
-      visibilityTime: type === 'info' ? 10000 : 2000, // Longer duration for loading toast
-      autoHide: type !== 'info', // Do not auto-hide loading toast
+      text1: message,
+      visibilityTime: type === 'info' ? 10000 : 2000,
+      autoHide: type !== 'info',
       topOffset: Platform.OS === 'android' ? 30 : 60,
       props: {
         style: {
@@ -86,7 +86,7 @@ const Register = ({ navigation }) => {
         text1Style: {
           fontSize: 16,
           fontWeight: 'bold',
-          color: '#ffffff', // White text
+          color: '#ffffff',
         },
       },
     });
@@ -105,9 +105,8 @@ const Register = ({ navigation }) => {
     setCustomGeneticDiseaseError('');
     setCustomLifestyleError('');
     setCustomFoodError('');
-    setIsLoading(true); // Show loader
+    setIsLoading(true);
 
-    // Validate numeric fields
     if (!/^\d+$/.test(age)) {
       setAgeError('Age must be a number.');
       showToast('Age must be a number.', 'error');
@@ -127,7 +126,6 @@ const Register = ({ navigation }) => {
       return;
     }
 
-    // Validate text fields
     if (username.trim() === '') {
       setUsernameError('Username is required.');
       showToast('Username is required.', 'error');
@@ -159,7 +157,6 @@ const Register = ({ navigation }) => {
       return;
     }
 
-    // Validate text fields
     if (!/^[a-zA-Z\s]*$/.test(customVice)) {
       setCustomViceError('Other Vices must be text.');
       showToast('Other Vices must be text.', 'error');
@@ -185,7 +182,6 @@ const Register = ({ navigation }) => {
       return;
     }
 
-    // Show loading toast
     showToast('Registering... ⏳', 'info');
 
     const updatedVices = customVice.trim() !== '' ? [...vices, customVice.trim()] : vices;
@@ -214,14 +210,12 @@ const Register = ({ navigation }) => {
       const response = await registerUser(userData);
       console.log('Register success:', response);
 
-      // Hide loading toast and show success toast
-      Toast.hide(); // Hide all toasts
+      Toast.hide();
       showToast('Registration Successful! 🎉', 'success');
 
-      // Navigate to the Login screen after 2 seconds
       setTimeout(() => {
         navigation.navigate('Login');
-        setIsLoading(false); // Hide loader after navigation
+        setIsLoading(false);
       }, 2000);
     } catch (error) {
       console.log('Register error:', error);
@@ -231,10 +225,9 @@ const Register = ({ navigation }) => {
           : 'Something went wrong. Please try again.';
       setError(errorMessage);
 
-      // Hide loading toast and show error toast
-      Toast.hide(); // Hide all toasts
+      Toast.hide();
       showToast(errorMessage, 'error');
-      setIsLoading(false); // Hide loader on error
+      setIsLoading(false);
     }
   };
 
@@ -242,7 +235,6 @@ const Register = ({ navigation }) => {
 
   return (
     <View style={[styles.container, isMobile && styles.mobileContainer]}>
-      {/* Left Section - Logo */}
       <View style={[styles.leftSection, isMobile && styles.mobileLeftSection]}>
         <Image
           source={require('../assets/logo-2.png')}
@@ -253,12 +245,11 @@ const Register = ({ navigation }) => {
         </Text>
       </View>
 
-      {/* Right Section - Form with Gradient Background */}
       <LinearGradient
-        colors={['#ffffff', '#72f2b8']} // Green gradient
+        colors={['#14243b', '#77f3bb']}
         style={[styles.rightSection, isMobile && styles.mobileRightSection]}
       >
-        <ScrollView contentContainerStyle={styles.scrollContainer}>
+        <ScrollView contentContainerStyle={styles.scrollContainer} showsVerticalScrollIndicator={false}>
           <Text style={[styles.header, isMobile && styles.mobileHeader]}>
             {step === 1
               ? 'Step 1: Account Info'
@@ -321,6 +312,11 @@ const Register = ({ navigation }) => {
               >
                 <Text style={styles.buttonText}>Next</Text>
               </TouchableOpacity>
+              <TouchableOpacity onPress={() => navigation.navigate('Login')}>
+                <Text style={[styles.forgotPassword, isMobile && styles.mobileForgotPassword]}>
+                  I already have an account
+                </Text>
+              </TouchableOpacity>
             </View>
           )}
 
@@ -344,6 +340,7 @@ const Register = ({ navigation }) => {
                   status={gender.includes(option) ? 'checked' : 'unchecked'}
                   onPress={() => setGender(option)}
                   key={option}
+                  labelStyle={{ color: '#ffffff' }} // White text
                 />
               ))}
               <View style={[styles.inputContainer, isMobile && styles.mobileInputContainer]}>
@@ -374,6 +371,7 @@ const Register = ({ navigation }) => {
                   status={environment.includes(option) ? 'checked' : 'unchecked'}
                   onPress={() => setEnvironment(option)}
                   key={option}
+                  labelStyle={{ color: '#ffffff' }} // White text
                 />
               ))}
 
@@ -384,6 +382,7 @@ const Register = ({ navigation }) => {
                   status={vices.includes(option) ? 'checked' : 'unchecked'}
                   onPress={() => handleCheckboxToggle(option, setVices, vices)}
                   key={option}
+                  labelStyle={{ color: '#ffffff' }} // White text
                 />
               ))}
               <View style={[styles.inputContainer, isMobile && styles.mobileInputContainer]}>
@@ -425,6 +424,7 @@ const Register = ({ navigation }) => {
                   status={genetic_diseases.includes(option) ? 'checked' : 'unchecked'}
                   onPress={() => handleCheckboxToggle(option, setGeneticDiseases, genetic_diseases)}
                   key={option}
+                  labelStyle={{ color: '#ffffff' }} // White text
                 />
               ))}
               <View style={[styles.inputContainer, isMobile && styles.mobileInputContainer]}>
@@ -450,6 +450,7 @@ const Register = ({ navigation }) => {
                   status={lifestyle.includes(option) ? 'checked' : 'unchecked'}
                   onPress={() => handleCheckboxToggle(option, setLifestyle, lifestyle)}
                   key={option}
+                  labelStyle={{ color: '#ffffff' }} // White text
                 />
               ))}
               <View style={[styles.inputContainer, isMobile && styles.mobileInputContainer]}>
@@ -469,6 +470,7 @@ const Register = ({ navigation }) => {
                   status={food_intake.includes(option) ? 'checked' : 'unchecked'}
                   onPress={() => handleCheckboxToggle(option, setFoodIntake, food_intake)}
                   key={option}
+                  labelStyle={{ color: '#ffffff' }} // White text
                 />
               ))}
               <View style={[styles.inputContainer, isMobile && styles.mobileInputContainer]}>
@@ -504,6 +506,7 @@ const Register = ({ navigation }) => {
                   status={sleep_hours === option ? 'checked' : 'unchecked'}
                   onPress={() => setSleepHours(option)}
                   key={option}
+                  labelStyle={{ color: '#ffffff' }} // White text
                 />
               ))}
 
@@ -514,6 +517,7 @@ const Register = ({ navigation }) => {
                   status={activeness === option ? 'checked' : 'unchecked'}
                   onPress={() => setActiveness(option)}
                   key={option}
+                  labelStyle={{ color: '#ffffff' }} // White text
                 />
               ))}
               <TouchableOpacity
@@ -525,13 +529,19 @@ const Register = ({ navigation }) => {
               <TouchableOpacity
                 style={[styles.button, isMobile && styles.mobileButton]}
                 onPress={handleRegister}
-                disabled={isLoading} // Disable button when loading
+                disabled={isLoading}
               >
                 {isLoading ? (
-                  <ActivityIndicator size="small" color="#ffffff" /> // Show loader
+                  <ActivityIndicator size="small" color="#ffffff" />
                 ) : (
                   <Text style={styles.buttonText}>Register</Text>
                 )}
+              </TouchableOpacity>
+
+              <TouchableOpacity onPress={() => navigation.navigate('Login')}>
+                <Text style={[styles.forgotPassword, isMobile && styles.mobileForgotPassword]}>
+                  I don't have an account
+                </Text>
               </TouchableOpacity>
             </View>
           )}
@@ -539,7 +549,6 @@ const Register = ({ navigation }) => {
           {error ? <Text style={styles.error}>{error}</Text> : null}
         </ScrollView>
       </LinearGradient>
-      {/* Toast component */}
       <Toast />
     </View>
   );
@@ -592,8 +601,9 @@ const styles = StyleSheet.create({
   header: {
     fontSize: 55,
     fontWeight: 'bold',
-    color: '#333',
+    color: '#ffffff',
     marginBottom: 60,
+    marginTop: 100,
     textAlign: 'center',
   },
   mobileHeader: {
@@ -635,8 +645,8 @@ const styles = StyleSheet.create({
   },
   buttonText: {
     color: '#ffffff',
-    fontWeight: 'bold',
-    fontSize: 16,
+    fontSize: 18,
+    textAlign: 'center',
   },
   mobileButtonText: {
     fontSize: 14,
@@ -645,6 +655,23 @@ const styles = StyleSheet.create({
     color: 'red',
     marginBottom: 10,
     textAlign: 'center',
+  },
+  forgotPassword: {
+    color: '#004d00',
+    fontSize: 18,
+    textAlign: 'center',
+    marginTop: 10,
+  },
+  subHeader: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#ffffff',
+    marginBottom: 10,
+  },
+  Checkbox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 10,
   },
 });
 

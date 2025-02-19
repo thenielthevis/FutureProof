@@ -9,7 +9,6 @@ import {
   Dimensions,
   ScrollView,
 } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
 import FontAwesome from 'react-native-vector-icons/FontAwesome';
 
 const { width, height } = Dimensions.get('window');
@@ -73,8 +72,8 @@ const Features = () => {
   };
 
   return (
-    <LinearGradient colors={['#E8F5E9', '#72f2b8']} style={styles.container}>
-           <ScrollView 
+    <View style={styles.container}>
+      <ScrollView 
         contentContainerStyle={[styles.scrollViewContent, { minHeight: height }]}
         showsVerticalScrollIndicator={false}
       >
@@ -91,25 +90,13 @@ const Features = () => {
           <FontAwesome name="leaf" size={150} color="#e2f5e7" style={[styles.iconBackground, { top: 500, top: 500 }]} />
         </View>
 
-        {/* Title */}
-        <Animated.Text
-          style={[
-            styles.featureTitle,
-            {
-              fontWeight: 'bold',
-              textAlign: 'center',
-              color: '#1B5E20',
-              marginTop: 30,
-            },
-          ]}
-        >
-          Learn More about our Features
-        </Animated.Text>
+        {/* Huge Title */}
+        <Text style={styles.hugeTitle}>Discover Our Features</Text>
 
         {/* Features Container */}
         <View style={styles.featuresContainer}>
           {/* Nutritional Tracking */}
-          <View style={[styles.featureRow, isMobile ? styles.mobileFeatureRow : styles.alternateRow]}>
+          <View style={[styles.featureContainer, isMobile ? styles.mobileFeatureRow : styles.alternateRow]}>
             <View style={styles.textContainer}>
               <Animated.Text
                 style={[
@@ -135,7 +122,7 @@ const Features = () => {
             >
               <TouchableOpacity onPressIn={handlePressIn} onPressOut={handlePressOut}>
                 <Image
-                  source={require('../assets/f-1.png')}
+                  source={require('../assets/f-1.gif')}
                   style={styles.icon}
                 />
               </TouchableOpacity>
@@ -146,7 +133,7 @@ const Features = () => {
           <View style={styles.separator} />
 
           {/* Daily Assessment */}
-          <View style={[styles.featureRow, isMobile ? styles.mobileFeatureRow : styles.dailyAssessmentRow]}>
+          <View style={[styles.featureContainer, isMobile ? styles.mobileFeatureRow : styles.dailyAssessmentRow]}>
             <View style={styles.textContainer}>
               <Animated.Text
                 style={[
@@ -172,7 +159,7 @@ const Features = () => {
             >
               <TouchableOpacity onPressIn={handlePressIn} onPressOut={handlePressOut}>
                 <Image
-                  source={require('../assets/f-2.png')}
+                  source={require('../assets/f-2.gif')}
                   style={styles.icon}
                 />
               </TouchableOpacity>
@@ -183,7 +170,7 @@ const Features = () => {
           <View style={styles.separator} />
 
           {/* Gamified */}
-          <View style={[styles.featureRow, isMobile ? styles.mobileFeatureRow : styles.alternateRow]}>
+          <View style={[styles.featureContainer, isMobile ? styles.mobileFeatureRow : styles.alternateRow]}>
             <View style={styles.textContainer}>
               <Animated.Text
                 style={[
@@ -209,7 +196,7 @@ const Features = () => {
             >
               <TouchableOpacity onPressIn={handlePressIn} onPressOut={handlePressOut}>
                 <Image
-                  source={require('../assets/f-3.png')}
+                  source={require('../assets/f-3.gif')}
                   style={styles.icon}
                 />
               </TouchableOpacity>
@@ -217,15 +204,16 @@ const Features = () => {
           </View>
         </View>
       </ScrollView>
-    </LinearGradient>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: 'transparent',
   },
-  scrollContainer: {
+  scrollViewContent: {
     flexGrow: 1,
     padding: isMobile ? 20 : 50,
   },
@@ -240,20 +228,32 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   iconBackground: {
-    opacity: 0.5,
+    opacity: 0.2,
     position: 'absolute',
+  },
+  hugeTitle: {
+    fontSize: isMobile ? 40 : 60,
+    fontWeight: 'bold',
+    color: '#ffffff',
+    textAlign: 'center',
+    marginTop: 30,
+    marginBottom: 20,
   },
   featuresContainer: {
     flexDirection: 'column',
     alignItems: 'center',
   },
-  featureRow: {
+  featureContainer: {
     flexDirection: isMobile ? 'column' : 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     padding: 1,
     marginBottom: isMobile ? 30 : 1,
     width: isMobile ? '100%' : '70%',
+    backgroundColor: 'rgba(255, 255, 255, 0.8)', // Semi-transparent white background
+    borderRadius: 15,
+    padding: 20,
+    marginVertical: 10,
   },
   mobileFeatureRow: {
     flexDirection: 'column',
@@ -298,7 +298,7 @@ const styles = StyleSheet.create({
   },
   separator: {
     height: 2,
-    backgroundColor: '#388E3C',
+    backgroundColor: '#ffffff',
     width: '80%',
     marginVertical: 20, // Adjust spacing as needed
   },

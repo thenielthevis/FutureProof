@@ -21,12 +21,9 @@ const Contacts = ({ navigation }) => {
       showsVerticalScrollIndicator={false}
     >
       <View style={styles.container}>
-        {/* Background Section */}
-        <View style={styles.slantedBackground}>
-          <LinearGradient
-            colors={['#E8F5E9', '#72f2b8']} // Green gradient colors
-            style={styles.gradient}
-          />
+        {/* Huge Title Section */}
+        <View style={styles.titleContainer}>
+          <Text style={styles.hugeTitle}>Contact Us</Text>
         </View>
 
         {/* Content Section */}
@@ -100,21 +97,23 @@ const Contacts = ({ navigation }) => {
 
 const styles = StyleSheet.create({
   container: {
-    flex: 10,
+    flex: 1,
     position: 'relative',
     minHeight: height, // Ensure the container takes at least the full height of the screen
+    backgroundColor: 'transparent', // Make the background transparent
   },
-  slantedBackground: {
-    position: 'absolute',
-    top: 0, // Adjust the top to move the background upwards
-    left: 0,
-    right: 5,
-    height: '50%',
-    transform: [{ skewY: '-25deg' }],
-    overflow: 'hidden',
+  titleContainer: {
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: Platform.OS === 'web' ? 20 : 40,
   },
-  gradient: {
-    flex: 1,
+  hugeTitle: {
+    fontSize: Platform.OS === 'web' ? 80 : 60,
+    fontWeight: 'bold',
+    color: '#ffffff',
+    textShadowColor: 'rgba(0, 0, 0, 0.3)',
+    textShadowOffset: { width: 2, height: 2 },
+    textShadowRadius: 5,
   },
   content: {
     flex: 1,
@@ -130,13 +129,13 @@ const styles = StyleSheet.create({
   title: {
     fontSize: Platform.OS === 'web' ? 40 : 50,
     fontWeight: 'bold',
-    color: '#1B5E20',
+    color: '#ffffff',
     marginBottom: 10,
     marginTop: Platform.OS === 'web' ? 0 : 0, // Adjust this value to move the title upwards
   },
   subtitle: {
     fontSize: Platform.OS === 'web' ? 20 : 25,
-    color: '#388E3C',
+    color: '#ffffff',
     textAlign: 'center',
     marginBottom: 20,
   },
@@ -173,7 +172,7 @@ const styles = StyleSheet.create({
     zIndex: 0,
   },
   detailBox: {
-    backgroundColor: '#75f2b9',
+    backgroundColor: '#ffffff',
     padding: Platform.OS === 'web' ? 10 : 15,
     marginBottom: 20,
     marginLeft: 35,

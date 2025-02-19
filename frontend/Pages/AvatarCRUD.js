@@ -35,22 +35,21 @@ const AvatarCRUD = () => {
       quality: 1,
       base64: false,
     });
-  
+
     if (!result.canceled) {
       const pickedFile = result.assets[0];
-  
+
       if (!pickedFile.uri) {
         console.error('Invalid file URI:', pickedFile);
         return;
       }
-  
-      let fileUri = pickedFile.uri; // Use the original URI by default
-  
+
+      let fileUri = pickedFile.uri;
+
       if (Platform.OS !== 'web') {
-        // Only move file on mobile (Android/iOS)
         const fileName = `avatar_${Date.now()}.png`;
         fileUri = `${FileSystem.cacheDirectory}${fileName}`;
-  
+
         try {
           await FileSystem.moveAsync({
             from: pickedFile.uri,
@@ -60,17 +59,14 @@ const AvatarCRUD = () => {
           console.error('Error moving file:', error);
         }
       }
-  
-      // Set the file to be used for upload
+
       setFile({
         uri: fileUri,
         type: 'image/png',
         name: `avatar_${Date.now()}.png`,
       });
-  
-      console.log('Updated file URI:', fileUri);
     }
-  };  
+  };
 
   const handleCreateAvatar = async () => {
     try {
@@ -115,6 +111,7 @@ const AvatarCRUD = () => {
 
   return (
     <View style={styles.container}>
+      {/* Sidebar */}
       <View style={styles.sidebar}>
         <TouchableOpacity style={styles.sidebarItem} onPress={() => navigation.navigate('Admin')}>
           <Text style={styles.sidebarText}>Home</Text>
@@ -126,8 +123,12 @@ const AvatarCRUD = () => {
           <Text style={styles.sidebarText}>Daily Rewards</Text>
         </TouchableOpacity>
       </View>
+
+      {/* Main Content */}
       <View style={styles.content}>
-        <Text style={styles.contentText}>Avatar Management</Text>
+        <Text style={styles.header}>Avatar Management</Text>
+
+        {/* Form */}
         <View style={styles.form}>
           <TextInput
             style={styles.input}
@@ -142,30 +143,36 @@ const AvatarCRUD = () => {
             onChangeText={setDescription}
           />
           <TouchableOpacity style={styles.button} onPress={handlePickImage}>
-            <Text style={styles.buttonText}>Pick an image</Text>
+            <Text style={styles.buttonText}>Pick an Image</Text>
           </TouchableOpacity>
-          {file && <Image source={{ uri: file.uri }} style={styles.image} />}
+          {file && <Image source={{ uri: file.uri }} style={styles.imagePreview} />}
           <TouchableOpacity
-            style={styles.button}
+            style={styles.buttonPrimary}
             onPress={editingAvatar ? handleUpdateAvatar : handleCreateAvatar}
           >
             <Text style={styles.buttonText}>{editingAvatar ? 'Update Avatar' : 'Create Avatar'}</Text>
           </TouchableOpacity>
         </View>
+
+        {/* Avatar List */}
         <FlatList
           data={avatars}
           keyExtractor={(item) => item._id}
           renderItem={({ item }) => (
             <View style={styles.avatarItem}>
               <Image source={{ uri: item.url }} style={styles.avatarImage} />
-              <Text style={styles.avatarName}>{item.name}</Text>
-              <Text style={styles.avatarDescription}>{item.description}</Text>
-              <TouchableOpacity style={styles.editButton} onPress={() => handleEditAvatar(item)}>
-                <Text style={styles.buttonText}>Edit</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.deleteButton} onPress={() => handleDeleteAvatar(item._id)}>
-                <Text style={styles.buttonText}>Delete</Text>
-              </TouchableOpacity>
+              <View style={styles.avatarDetails}>
+                <Text style={styles.avatarName}>{item.name}</Text>
+                <Text style={styles.avatarDescription}>{item.description}</Text>
+              </View>
+              <View style={styles.avatarActions}>
+                <TouchableOpacity style={styles.buttonEdit} onPress={() => handleEditAvatar(item)}>
+                  <Text style={styles.buttonText}>Edit</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.buttonDelete} onPress={() => handleDeleteAvatar(item._id)}>
+                  <Text style={styles.buttonText}>Delete</Text>
+                </TouchableOpacity>
+              </View>
             </View>
           )}
         />
@@ -178,6 +185,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     flexDirection: 'row',
+    backgroundColor: '#F5F5F5',
   },
   sidebar: {
     width: '20%',
@@ -195,10 +203,11 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 20,
   },
-  contentText: {
+  header: {
     fontSize: 24,
     fontWeight: 'bold',
     marginBottom: 20,
+    color: '#1A3B32',
   },
   form: {
     marginBottom: 20,
@@ -209,9 +218,17 @@ const styles = StyleSheet.create({
     borderRadius: 5,
     padding: 10,
     marginBottom: 10,
+    backgroundColor: '#fff',
   },
   button: {
     backgroundColor: '#2E7D32',
+    padding: 10,
+    borderRadius: 5,
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  buttonPrimary: {
+    backgroundColor: '#1A3B32',
     padding: 10,
     borderRadius: 5,
     alignItems: 'center',
@@ -221,37 +238,52 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontWeight: 'bold',
   },
-  image: {
+  imagePreview: {
     width: 100,
     height: 100,
     marginBottom: 10,
+    borderRadius: 5,
   },
   avatarItem: {
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 10,
+    backgroundColor: '#fff',
+    padding: 10,
+    borderRadius: 5,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 5,
+    elevation: 2,
   },
   avatarImage: {
     width: 50,
     height: 50,
+    borderRadius: 25,
     marginRight: 10,
+  },
+  avatarDetails: {
+    flex: 1,
   },
   avatarName: {
     fontSize: 18,
     fontWeight: 'bold',
-    flex: 1,
   },
   avatarDescription: {
     fontSize: 14,
-    flex: 2,
+    color: '#666',
   },
-  editButton: {
+  avatarActions: {
+    flexDirection: 'row',
+  },
+  buttonEdit: {
     backgroundColor: '#3498db',
     padding: 5,
     borderRadius: 5,
     marginRight: 5,
   },
-  deleteButton: {
+  buttonDelete: {
     backgroundColor: '#e74c3c',
     padding: 5,
     borderRadius: 5,

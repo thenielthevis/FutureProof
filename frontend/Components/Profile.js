@@ -96,7 +96,7 @@ const Profile = ({ visible, onClose }) => {
     <Modal visible={visible} transparent={true} animationType="slide">
       <View style={styles.modalOverlay}>
         <LinearGradient
-          colors={['#f5f5f5', '#8fe0c1']}
+          colors={['#14243b', '#77f3bb']}
           style={styles.modalContent}
         >
           <ScrollView
@@ -190,8 +190,8 @@ const styles = StyleSheet.create({
   modalContent: {
     padding: 20,
     borderRadius: 15,
-    width: '90%',
-    maxHeight: '90%',
+    width: '50%',
+    maxHeight: '70%',
   },
   scrollViewContent: {
     flexGrow: 1,
@@ -211,11 +211,11 @@ const styles = StyleSheet.create({
   userName: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: '#333',
+    color: '#ffffff',
   },
   userDetails: {
     fontSize: 16,
-    color: '#666',
+    color: '#ffffff',
   },
   row: {
     flexDirection: 'row',
@@ -270,7 +270,7 @@ const styles = StyleSheet.create({
     marginTop: 5,
   },
   closeButton: {
-    backgroundColor: '#4CAF50',
+    backgroundColor: '#14243b',
     padding: 10,
     borderRadius: 8,
     alignItems: 'center',

@@ -9,6 +9,7 @@ const DailyRewards = ({ visible, onClose }) => {
   const [rewards, setRewards] = useState([]);
   const [avatarIcons, setAvatarIcons] = useState({});
   const [error, setError] = useState('');
+  const [currentDay, setCurrentDay] = useState(1); // Assuming day 1 is the current day
 
   useEffect(() => {
     const fetchRewards = async () => {
@@ -75,58 +76,86 @@ const DailyRewards = ({ visible, onClose }) => {
         setError('Error claiming avatar');
       }
     }
-    // Add logic to update user's coins and achievements in the backend
+  };
+
+  const getCoinImage = (coins) => {
+    if (coins > 50) {
+      return require("../assets/CoinPack3.png");
+    } else if (coins > 20) {
+      return require("../assets/CoinPack2.png");
+    } else {
+      return require("../assets/CoinPack1.png");
+    }
   };
 
   return (
     <Modal visible={visible} transparent={true} animationType="slide">
       <View style={styles.modalOverlay}>
         <View style={styles.modalContent}>
+          <TouchableOpacity onPress={onClose} style={styles.closeButton}>
+            <Icon name="close" size={20} color="#fff" />
+          </TouchableOpacity>
+
           <Text style={styles.modalHeader}>Daily Rewards</Text>
           {error ? <Text style={styles.errorText}>{error}</Text> : null}
           <ScrollView contentContainerStyle={styles.scrollViewContent}>
             <View style={styles.rewardsRow}>
               {rewards.map((reward) => (
-                <View key={reward.day} style={styles.rewardBox}>
-                  <View style={styles.coinsContainer}>
-                    <FontAwesome5 name="coins" size={20} color="gold" />
-                    <Text style={styles.coinsText}>{reward.coins}</Text>
+                <TouchableOpacity
+                  key={reward.day}
+                  style={[
+                    styles.rewardBox,
+                    reward.day === currentDay && styles.currentDayBox,
+                    reward.claimed && styles.claimedBox,
+                  ]}
+                  onPress={() => claimReward(reward.day, reward.avatar_id)}
+                  disabled={reward.claimed || reward.day !== currentDay}
+                >
+                  {/* Reward Content */}
+                  <View style={styles.rewardContent}>
+                    {reward.claimed && (
+                      <Icon name="check-circle" size={24} color="#fff" style={styles.checkedIcon} />
+                    )}
+                    <View style={styles.coinsContainer}>
+                      <Image
+                        source={getCoinImage(reward.coins)}
+                        style={[
+                          styles.coinImage,
+                          !reward.avatar && styles.largeCoinImage // Larger coin image when no avatar
+                        ]}
+                      />
+                      <Text style={[styles.coinsText, !reward.avatar && styles.largeCoinsText]}>
+                        {reward.coins}
+                      </Text>
+                    </View>
+                    {reward.avatar && avatarIcons[reward.avatar] && (
+                      <Image source={{ uri: avatarIcons[reward.avatar] }} style={styles.avatarIcon} />
+                    )}
+                    <Text style={[styles.dayText, reward.claimed && styles.claimedText]}>
+                      Day {reward.day}
+                    </Text>
                   </View>
-                  {reward.avatar && avatarIcons[reward.avatar] && (
-                    <Image source={{ uri: avatarIcons[reward.avatar] }} style={styles.avatarIcon} />
+
+                  {/* Overlay for Unclaimed Days */}
+                  {!reward.claimed && reward.day !== currentDay && (
+                    <View style={styles.overlay} />
                   )}
-                  <TouchableOpacity
-                    style={[styles.claimButton, reward.claimed && styles.claimedButton]}
-                    onPress={() => claimReward(reward.day, reward.avatar_id)}
-                    disabled={reward.claimed}
-                  >
-                    <Text style={styles.buttonText}>{reward.claimed ? 'Claimed' : 'Claim'}</Text>
-                  </TouchableOpacity>
-                </View>
+                </TouchableOpacity>
               ))}
             </View>
             <View style={styles.stepperContainer}>
               {rewards.map((reward, index) => (
                 <View key={reward.day} style={styles.stepperItem}>
-                  {/* Line before stepper circle */}
                   {index > 0 && <View style={[styles.stepperLine, styles.stepperLineLeft]} />}
-
-                  {/* Stepper Circle */}
                   <View style={[styles.stepperCircle, reward.claimed && styles.stepperCircleClaimed]} />
-
-                  {/* Line after stepper circle */}
                   {index < rewards.length - 1 && <View style={[styles.stepperLine, styles.stepperLineRight]} />}
-
-                  {/* Day Label */}
-                  <Text style={styles.stepperText}>Day {reward.day}</Text>
+                  <Text style={[styles.stepperText, reward.claimed && styles.claimedText]}>
+                    Day {reward.day}
+                  </Text>
                 </View>
               ))}
             </View>
           </ScrollView>
-          <TouchableOpacity onPress={onClose} style={styles.closeButton}>
-            <Icon name="close" size={20} color="#fff" />
-            <Text style={styles.buttonText}>Close</Text>
-          </TouchableOpacity>
         </View>
       </View>
     </Modal>
@@ -141,11 +170,23 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   modalContent: {
-    backgroundColor: '#f5f5f5',
+    backgroundColor: '#2c3e50',
     padding: 20,
     borderRadius: 15,
     width: '90%',
     maxHeight: '80%',
+    position: 'relative',
+  },
+  closeButton: {
+    position: 'absolute',
+    top: 10,
+    right: 10,
+    backgroundColor: '#c0392b',
+    borderRadius: 15,
+    width: 30,
+    height: 30,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   scrollViewContent: {
     flexGrow: 1,
@@ -156,7 +197,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     marginBottom: 15,
     textAlign: 'center',
-    color: '#333',
+    color: '#fff',
   },
   rewardsRow: {
     flexDirection: 'row',
@@ -164,52 +205,70 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   rewardBox: {
-    backgroundColor: 'white',
-    padding: 10,
+    backgroundColor: '#34495e', // Default dark background for unclaimable rewards
+    padding: 15,
     borderRadius: 10,
     borderWidth: 1,
-    borderColor: '#ccc',
-    width: '13%', // Adjust width to fit 7 columns
+    borderColor: '#3b4a5a',
+    width: '13%',
     alignItems: 'center',
     marginBottom: 10,
+    justifyContent: 'space-between',
+    height: 180,
+    position: 'relative', // Needed for the overlay positioning
+  },
+  rewardContent: {
+    zIndex: 1, // Ensure content is above the overlay
+  },
+  currentDayBox: {
+    backgroundColor: '#4CAF50', // Green background for claimable rewards
+  },
+  claimedBox: {
+    backgroundColor: '#2196F3', // Blue background for claimed rewards
+  },
+  overlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)', // Semi-transparent black overlay
+    borderRadius: 10,
+    zIndex: 2, // Ensure overlay is above the reward box content
   },
   coinsContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 5,
   },
-  coinsText: {
-    fontSize: 14,
-    color: '#333',
-    marginLeft: 5,
-  },
-  avatarIcon: {
+  coinImage: {
     width: 40,
     height: 40,
-    marginBottom: 5,
   },
-  claimButton: {
-    backgroundColor: '#2E7D32',
-    paddingVertical: 5,
-    borderRadius: 8,
-    alignItems: 'center',
-    marginTop: 5,
+  largeCoinImage: {
+    width: 120, // Larger coin image when no avatar
+    height: 120,
   },
-  claimedButton: {
-    backgroundColor: '#888',
+  coinsText: {
+    fontSize: 18,
+    color: 'gold',
+    marginLeft: 5,
   },
-  buttonText: {
-    color: 'white',
+  largeCoinsText: {
+    fontSize: 20,
+  },
+  avatarIcon: {
+    width: 80,
+    height: 80,
+    marginBottom: 10,
+  },
+  dayText: {
+    fontSize: 16,
+    color: '#fff',
     fontWeight: 'bold',
-    fontSize: 12,
   },
-  closeButton: {
-    backgroundColor: '#c0392b',
-    paddingVertical: 10,
-    borderRadius: 8,
-    alignItems: 'center',
-    marginTop: 20,
-    flexDirection: 'row',
+  claimedText: {
+    color: '#888',
   },
   stepperContainer: {
     flexDirection: 'row',
@@ -221,13 +280,13 @@ const styles = StyleSheet.create({
   stepperItem: {
     alignItems: 'center',
     position: 'relative',
-    width: '14.7%', // Keeps alignment with rewards
+    width: '14.7%',
   },
   stepperCircle: {
     width: 15,
     height: 15,
     borderRadius: 7.5,
-    backgroundColor: '#ccc',
+    backgroundColor: '#444',
     borderWidth: 2,
     borderColor: 'gold',
   },
@@ -236,7 +295,7 @@ const styles = StyleSheet.create({
   },
   stepperText: {
     fontSize: 12,
-    color: '#333',
+    color: '#fff',
     marginTop: 5,
     textAlign: 'center',
     fontWeight: 'bold',
@@ -246,7 +305,7 @@ const styles = StyleSheet.create({
     width: '50%',
     height: 2,
     backgroundColor: 'gold',
-    top: 6, // Centers with circles
+    top: 6,
   },
   stepperLineLeft: {
     left: 0,
@@ -258,6 +317,12 @@ const styles = StyleSheet.create({
     color: 'red',
     textAlign: 'center',
     marginBottom: 10,
+  },
+  checkedIcon: {
+    position: 'absolute',
+    top: 10,
+    right: 10,
+    zIndex: 3,
   },
 });
 

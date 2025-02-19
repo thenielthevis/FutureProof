@@ -111,7 +111,7 @@ const Login = ({ navigation }) => {
       </View>
 
       <LinearGradient
-        colors={['#ffffff', '#72f2b8']}
+        colors={['#14243b', '#77f3bb']}
         style={[styles.rightSection, isMobile && styles.mobileRightSection]}
       >
         <Text style={[styles.header, isMobile && styles.mobileHeader]}>
@@ -170,9 +170,11 @@ const Login = ({ navigation }) => {
           )}
         </TouchableOpacity>
 
-        <Text style={[styles.forgotPassword, isMobile && styles.mobileForgotPassword]}>
-          Forgot Password?
-        </Text>
+       <TouchableOpacity onPress={() => navigation.navigate('Register')}>
+  <Text style={[styles.forgotPassword, isMobile && styles.mobileForgotPassword]}>
+    I don't have an account
+  </Text>
+</TouchableOpacity>
       </LinearGradient>
 
       {/* Toast component */}
@@ -206,7 +208,7 @@ const styles = StyleSheet.create({
   header: {
     fontSize: 55,
     fontWeight: 'bold',
-    color: '#333',
+    color: '#ffffff',
     marginBottom: 70,
     textAlign: 'center',
   },
@@ -230,7 +232,7 @@ const styles = StyleSheet.create({
     marginRight: 20,
     alignSelf: 'center',
   },
-  input: { flex: 1, height: 40, fontSize: 16, },
+  input: { flex: 0.9, height: 40, fontSize: 16, padding: 10,backgroundColor: '#f9f9f9' },
   button: {
     backgroundColor: '#004d00',
     paddingVertical: 10,

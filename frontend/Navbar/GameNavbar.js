@@ -119,7 +119,7 @@ const styles = StyleSheet.create({
     top: 0,
     left: 0,
     width: '100%',
-    backgroundColor: '#1A3B32',
+    backgroundColor: '#14243b',
     padding: 20,
     flexDirection: 'row',
     justifyContent: 'space-between',
