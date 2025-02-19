@@ -109,7 +109,7 @@ export default function Navbar({ navigation }) {
                 <Icon name="cogs" size={24} color="#f0fdf7" />
               </TouchableOpacity>
             )}
-            <TouchableOpacity style={styles.iconButton} onPress={() => navigation.navigate('Prediction')}>
+            <TouchableOpacity style={styles.iconButton} onPress={() => navigation.navigate('Game')}>
               <Icon name="gamepad" size={24} color="#f0fdf7" />
             </TouchableOpacity>
             <TouchableOpacity style={styles.logoutButton} onPress={handleLogoutPress}>

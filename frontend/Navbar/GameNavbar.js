@@ -6,11 +6,13 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getUser, getAvatar } from '../API/api';
 import Profile from '../Components/Profile';
 import DailyRewards from '../Components/DailyRewards'; // Import the DailyRewards component
+import TaskModal from '../Components/TaskModal'; // Import the TaskModal component
 
 const GameNavbar = () => {
   const navigation = useNavigation();
   const [profileVisible, setProfileVisible] = useState(false);
   const [rewardsVisible, setRewardsVisible] = useState(false); // State for Daily Rewards modal
+  const [taskModalVisible, setTaskModalVisible] = useState(false); // State for Task Modal
   const [avatarUrl, setAvatarUrl] = useState('');
   const [user, setUser] = useState({ coins: 0, level: 1, xp: 0 });
 
@@ -63,19 +65,21 @@ const GameNavbar = () => {
           <TouchableOpacity style={styles.iconButton} onPress={() => setRewardsVisible(true)}>
             <FontAwesome name="clipboard" size={20} color="#F5F5F5" />
           </TouchableOpacity>
+          <TouchableOpacity style={styles.iconButton} onPress={() => setTaskModalVisible(true)}>
+            <FontAwesome name="map" size={20} color="#F5F5F5" />
+          </TouchableOpacity>
         </View>
 
         {/* Center Icon */}
         <View style={styles.centerIcon}>
-
-        </View>
           <TouchableOpacity style={styles.iconButton}>
             <FontAwesome name="battery-half" size={20} color="#F5F5F5" />
           </TouchableOpacity>
+        </View>
 
         {/* Right Icons */}
         <View style={styles.rightIcons}>
-        <View style={styles.iconWithText}>
+          <View style={styles.iconWithText}>
             <FontAwesome5 name="coins" size={20} color="gold" />
             <Text style={styles.userInfoText}>{user.coins}</Text>
           </View>
@@ -102,6 +106,9 @@ const GameNavbar = () => {
 
       {/* Daily Rewards Modal */}
       <DailyRewards visible={rewardsVisible} onClose={() => setRewardsVisible(false)} />
+
+      {/* Task Modal */}
+      <TaskModal visible={taskModalVisible} onClose={() => setTaskModalVisible(false)} />
     </View>
   );
 };

@@ -89,7 +89,7 @@ const Login = ({ navigation }) => {
       setError(errorMessage);
 
       // Hide loading toast and show error toast
-      Toast.hideAll(); // Hide all toasts
+      Toast.hide(); // Hide all toasts
       showToast(errorMessage, 'error');
       setIsLoading(false); // Hide loader on error
     }

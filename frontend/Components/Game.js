@@ -4,8 +4,7 @@ import { OrbitControls, useGLTF } from '@react-three/drei/native';
 import { View, Text, TouchableOpacity, StyleSheet, Modal, TextInput, Image, ScrollView } from 'react-native';
 import { Asset } from 'expo-asset';
 import * as THREE from 'three';
-import Icon from 'react-native-vector-icons/FontAwesome';
-import { FaShoppingCart, FaClipboardCheck, FaHome } from 'react-icons/fa';
+import { FontAwesome, FontAwesome5 } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { LinearGradient } from 'expo-linear-gradient';
 
@@ -133,13 +132,13 @@ export default function Prediction() {
       case 'Home':
         return (
           <TouchableOpacity style={styles.iconButton} onPress={handleHomePress}>
-            <FaHome style={styles.additionalIconStyle} />
+            <FontAwesome name="home" style={styles.additionalIconStyle} />
           </TouchableOpacity>
         );
       case 'shoppingCart':
-        return <FaShoppingCart style={styles.additionalIconStyle} />;
+        return <FontAwesome name="shopping-cart" style={styles.additionalIconStyle} />;
       case 'clipboardCheck':
-        return <FaClipboardCheck style={styles.additionalIconStyle} />;
+        return <FontAwesome name="clipboard-check" style={styles.additionalIconStyle} />;
       default:
         return null;
     }
@@ -190,13 +189,13 @@ export default function Prediction() {
       {/* Navigation Bar Below Character */}
       <View style={styles.navContainer}>
         <TouchableOpacity style={styles.iconButton} onPress={handleNextPress}>
-          <Icon name="arrow-left" style={styles.iconStyle} />
+          <FontAwesome name="arrow-left" style={styles.iconStyle} />
         </TouchableOpacity>
         <View style={styles.additionalIconsContainer}>
           {renderAdditionalIcon()}
         </View>
         <TouchableOpacity style={styles.iconButton} onPress={handleNextPress}>
-          <Icon name="arrow-right" style={styles.iconStyle} />
+          <FontAwesome name="arrow-right" style={styles.iconStyle} />
         </TouchableOpacity>
       </View>
 
