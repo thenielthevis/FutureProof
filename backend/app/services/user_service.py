@@ -55,6 +55,7 @@ async def register_user(user: UserCreate):
         food_intake=user.food_intake,
         sleep_hours=user.sleep_hours,
         activeness=user.activeness,
+        role=user.role,  # Add this line
         id=ObjectId()  # MongoDB ObjectId
     )
     await db.users.insert_one(user_in_db.dict(by_alias=True, exclude={"id"}))

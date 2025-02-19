@@ -18,7 +18,7 @@ class UserCreate(BaseModel):
     username: str
     email: EmailStr
     password: str
-    role: str = "user"
+    role: str = "user"  # Ensure default value is set
     age: int
     gender: str
     height: float

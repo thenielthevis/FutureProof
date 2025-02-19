@@ -8,6 +8,7 @@ import Icon from 'react-native-vector-icons/FontAwesome';
 import { FaShoppingCart, FaClipboardCheck, FaHome } from 'react-icons/fa';
 import { useNavigation } from '@react-navigation/native';
 import { LinearGradient } from 'expo-linear-gradient';
+import GameNavbar from '../Navbar/GameNavbar'; // Import GameNavbar
 
 // Reusable Model Component with Color
 function Model({ scale, uri, position, color }) {
@@ -169,7 +170,10 @@ export default function Prediction() {
   };
 
   return (
-    <LinearGradient colors={['#ffffff', '#77f3bb']} style={styles.container}>
+    <LinearGradient colors={['#14243b', '#77f3bb']} style={styles.container}>
+      {/* Game Navbar */}
+      <GameNavbar />
+
       {/* 3D Scene */}
       <View style={styles.sceneContainer}>
         <Canvas camera={{ position: [0, 0, 10] }}>
@@ -183,7 +187,7 @@ export default function Prediction() {
             {selectedBottom && <Model scale={modelScale} uri={selectedBottom} position={modelPosition} color={colors.bottom} />}
             {selectedShoes && <Model scale={modelScale} uri={selectedShoes} position={modelPosition} color={colors.shoes} />}
           </Suspense>
-          <OrbitControls enableDamping maxPolarAngle={Math.PI} minDistance={5} maxDistance={15} />
+          <OrbitControls enableDamping maxPolarAngle={Math.PI} minDistance={10} maxDistance={15} />
         </Canvas>
       </View>
 
@@ -318,7 +322,7 @@ const styles = StyleSheet.create({
     top: 100,
     width: '20%',
     zIndex: 10,
-    backgroundColor: 'rgba(255, 255, 255, 0.5)',
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
     padding: 10,
     borderRadius: 8,
     shadowColor: '#000',
