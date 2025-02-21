@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.config import get_database, print_mongo_connection_info
-from app.routes import user_routes, prediction_routes, avatar_routes, daily_reward_routes, health_quiz_routes
+from app.routes import user_routes, prediction_routes, avatar_routes, daily_reward_routes, health_quiz_routes, meditation_breathing_routes
 
 app = FastAPI()
 
@@ -29,6 +29,7 @@ app.include_router(prediction_routes.router)
 app.include_router(avatar_routes.router)
 app.include_router(daily_reward_routes.router)
 app.include_router(health_quiz_routes.router)
+app.include_router(meditation_breathing_routes.router)
 
 # MongoDB connection setup at startup
 @app.on_event("startup")

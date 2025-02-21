@@ -1,13 +1,20 @@
 import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Modal } from 'react-native';
 import { FontAwesome } from '@expo/vector-icons';
-import HealthQuizModal from './HealthQuizModal'; // Import the HealthQuizModal component
+import HealthQuizModal from './HealthQuizModal';
+import MeditationBreathingModal from './MeditationBreathingModal';
 
 const TaskModal = ({ visible, onClose }) => {
   const [healthQuizVisible, setHealthQuizVisible] = useState(false);
+  const [meditationbreathingVisible, setMeditationBreathingVisible] = useState(false);
 
   const handleHealthQuiz = () => {
     setHealthQuizVisible(true);
+    onClose();
+  };
+
+  const handleMeditationBreathing = () => {
+    setMeditationBreathingVisible(true);
     onClose();
   };
 
@@ -30,7 +37,7 @@ const TaskModal = ({ visible, onClose }) => {
                 <FontAwesome name="question-circle" size={20} color="#4CAF50" />
                 <Text style={styles.buttonText}>Health Quiz</Text>
               </TouchableOpacity>
-              <TouchableOpacity style={styles.taskButton}>
+              <TouchableOpacity style={styles.taskButton} onPress={handleMeditationBreathing}>
                 <FontAwesome name="medkit" size={20} color="#4CAF50" />
                 <Text style={styles.buttonText}>Meditation and Breathing Exercises</Text>
               </TouchableOpacity>
@@ -49,6 +56,8 @@ const TaskModal = ({ visible, onClose }) => {
 
       {/* Health Quiz Modal */}
       <HealthQuizModal visible={healthQuizVisible} onClose={() => setHealthQuizVisible(false)} onBack={handleBackToTaskModal} />
+      {/* Meditation Breathing Modal */}
+      <MeditationBreathingModal visible={meditationbreathingVisible} onClose={() => setMeditationBreathingVisible(false)} onBack={handleBackToTaskModal}  meditationBreathingIds={meditationbreathingVisible} />
     </>
   );
 };

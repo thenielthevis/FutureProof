@@ -268,6 +268,28 @@ export const deleteAvatar = async (avatarId) => {
   }
 };
 
+////////////// MEDITATION BREATHING
+
+export const getMeditationBreathingExercises = async () => {
+  try {
+    const response = await fetch(`${API_URL}/meditation_breathing`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error("Failed to fetch meditation exercises");
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error("Error fetching meditation exercises:", error);
+    throw error;
+  }
+};
+
 ////////////// DAILY REWARDS
 // Create a new daily reward
 export const createDailyReward = async (dailyRewardData) => {
