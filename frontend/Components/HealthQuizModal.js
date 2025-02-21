@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, ActivityIndicator, Modal, Animated, Easing, Dimensions } from 'react-native';
-import { getRandomQuestions, submitQuiz, claimRewards } from '../API/api';  // Import the new API function
+import { getRandomQuestions, submitQuiz, claimRewards } from '../API/api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { FontAwesome5, FontAwesome } from '@expo/vector-icons';
-import ConfettiCannon from 'react-native-confetti-cannon';  // Import ConfettiCannon
+import ConfettiCannon from 'react-native-confetti-cannon';
 
 const { width, height } = Dimensions.get("window");
 
@@ -22,8 +22,8 @@ const HealthQuizModal = ({ visible, onClose, onBack }) => {
   const XP_FOR_QUIZ_COMPLETION = 25;
   const coinAnimation = useRef(new Animated.Value(0)).current;
   const fadeAnimation = useRef(new Animated.Value(0)).current;
-  const [showConfetti, setShowConfetti] = useState(false); // Add state for confetti
-  const confettiRef = useRef(null); // Ref for confetti cannon
+  const [showConfetti, setShowConfetti] = useState(false);
+  const confettiRef = useRef(null);
 
   useEffect(() => {
     const fetchQuestions = async () => {
@@ -200,6 +200,7 @@ const HealthQuizModal = ({ visible, onClose, onBack }) => {
             <TouchableOpacity onPress={onBack} style={styles.backButtonTopLeft}>
               <FontAwesome name="arrow-left" size={20} color="#fff" />
             </TouchableOpacity>
+            <Text style={styles.modalHeader}>Health Quiz</Text>
             <View style={styles.questionContainer}>
               {answerStatus && (
                 <Animated.Text style={[answerStatus === 'correct' ? styles.correctText : styles.incorrectText, { opacity: fadeAnimation }]}>
@@ -267,6 +268,13 @@ const styles = StyleSheet.create({
     width: '50%',
     maxHeight: '80%',
     position: 'relative',
+  },
+  modalHeader: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    marginBottom: 15,
+    textAlign: 'center',
+    color: '#fff',
   },
   questionCounter: {
     fontSize: 16,
