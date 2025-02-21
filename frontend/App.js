@@ -18,6 +18,7 @@ import Profile from './Components/Profile';
 import Admin from './Pages/Admin';
 import AvatarCRUD from './Pages/AvatarCRUD';
 import DailyRewardsCRUD from './Pages/DailyRewardsCRUD';
+import Shop from './Components/Shop';
 
 const Stack = createStackNavigator();
 const { width, height } = Dimensions.get('window');
@@ -52,6 +53,7 @@ export default function App() {
               <Stack.Screen name="Admin" component={Admin} />
               <Stack.Screen name="AvatarCRUD" component={AvatarCRUD} />
               <Stack.Screen name="DailyRewardsCRUD" component={DailyRewardsCRUD} />
+              <Stack.Screen name="Shop" component={Shop} />
             </Stack.Navigator>
           </NavigationContainer>
         </ScrollView>

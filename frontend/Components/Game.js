@@ -2,7 +2,6 @@ import React, { useState, Suspense } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls, useGLTF } from '@react-three/drei/native';
 import { View, Text, TouchableOpacity, StyleSheet, Modal, TextInput, Image, ScrollView } from 'react-native';
-import { Asset } from 'expo-asset';
 import * as THREE from 'three';
 import { FontAwesome, FontAwesome5 } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
@@ -33,7 +32,7 @@ function OptionButton({ label, onPress, isSelected, color, preview }) {
       style={[styles.optionButton, { backgroundColor: isSelected ? color : '#ddd' }]}
       onPress={onPress}
     >
-      <Image source={preview} style={styles.previewImage} />
+      <Image source={{ uri: preview }} style={styles.previewImage} />
       <Text style={styles.optionButtonText}>{label}</Text>
     </TouchableOpacity>
   );
@@ -61,32 +60,24 @@ export default function Prediction() {
   };
 
   const hairOptions = [
-    { id: 1, label: "Hair 001", uri: Asset.fromModule(require('../assets/Game/Hair.001.glb')).uri, preview: require('../assets/preview/hair001.png') },
-    { id: 2, label: "Hair 002", uri: Asset.fromModule(require('../assets/Game/Hair.002.glb')).uri, preview: require('../assets/preview/hair002.png') },
-    { id: 3, label: "Hair 003", uri: Asset.fromModule(require('../assets/Game/Hair.003.glb')).uri, preview: require('../assets/preview/hair003.png') },
-    { id: 4, label: "Hair 004", uri: Asset.fromModule(require('../assets/Game/Hair.004.glb')).uri, preview: require('../assets/preview/hair004.png') },
-    { id: 5, label: "Hair 005", uri: Asset.fromModule(require('../assets/Game/Hair.005.glb')).uri, preview: require('../assets/preview/hair005.png') },
-    { id: 6, label: "Hair 006", uri: Asset.fromModule(require('../assets/Game/Hair.006.glb')).uri, preview: require('../assets/preview/hair006.png') },
-    { id: 7, label: "Hair 007", uri: Asset.fromModule(require('../assets/Game/Hair.007.glb')).uri, preview: require('../assets/preview/hair007.png') },
-    { id: 8, label: "Hair 008", uri: Asset.fromModule(require('../assets/Game/Hair.008.glb')).uri, preview: require('../assets/preview/hair008.png') },
-    { id: 9, label: "Hair 009", uri: Asset.fromModule(require('../assets/Game/Hair.009.glb')).uri, preview: require('../assets/preview/hair009.png') },
-    { id: 10, label: "Hair 010", uri: Asset.fromModule(require('../assets/Game/Hair.010.glb')).uri, preview: require('../assets/preview/hair010.png') },
-    { id: 11, label: "Hair 011", uri: Asset.fromModule(require('../assets/Game/Hair.011.glb')).uri, preview: require('../assets/preview/hair011.png') },
+    { id: 1, label: "Hair 001", uri: 'https://res.cloudinary.com/dv4vzq7pv/image/upload/v1739961154/Hair.001_kjslfw.glb', preview: 'https://res.cloudinary.com/dv4vzq7pv/image/upload/v1739961160/hair_vlrckj.jpg' },
+    { id: 2, label: "Hair 002", uri: 'https://res.cloudinary.com/dv4vzq7pv/image/upload/v1739961154/Hair.002_fdoekw.glb', preview: 'https://res.cloudinary.com/dv4vzq7pv/image/upload/v1739962931/hair002_hqdyuw.png' },
+    // Add more hair options as needed
   ];
 
   const topOptions = [
-    { id: 1, label: "Top 001", uri: Asset.fromModule(require('../assets/Game/Top.001.glb')).uri, preview: require('../assets/preview/top001.png') },
-    { id: 2, label: "Top 002", uri: Asset.fromModule(require('../assets/Game/Top.002.glb')).uri, preview: require('../assets/preview/top002.png') }
+    { id: 1, label: "Top 001", uri: 'https://res.cloudinary.com/dv4vzq7pv/image/upload/v1739961171/Top.001_r3hrar.glb', preview: 'https://res.cloudinary.com/dv4vzq7pv/image/upload/v1739963250/top001_fbuvvv.png' },
+    { id: 2, label: "Top 002", uri: 'https://res.cloudinary.com/dv4vzq7pv/image/upload/v1739961171/Top.002_clkylw.glb', preview: 'https://res.cloudinary.com/dv4vzq7pv/image/upload/v1739963251/top002_lwwb7z.png' }
   ];
 
   const bottomOptions = [
-    { id: 1, label: "Bottom 001", uri: Asset.fromModule(require('../assets/Game/Bottom.001.glb')).uri, preview: require('../assets/preview/bottom001.png') },
-    { id: 2, label: "Bottom 002", uri: Asset.fromModule(require('../assets/Game/Bottom.002.glb')).uri, preview: require('../assets/preview/bottom002.png') }
+    { id: 1, label: "Bottom 001", uri: 'https://res.cloudinary.com/dv4vzq7pv/image/upload/v1739961133/Bottom.001_xhbnnn.glb', preview: 'https://res.cloudinary.com/dv4vzq7pv/image/upload/v1739962928/bottom001_fflyct.png' },
+    { id: 2, label: "Bottom 002", uri: 'https://res.cloudinary.com/dv4vzq7pv/image/upload/v1739961132/Bottom.002_obpclh.glb', preview: 'https://res.cloudinary.com/dv4vzq7pv/image/upload/v1739962929/bottom002_fabniq.png' }
   ];
 
   const shoesOptions = [
-    { id: 1, label: "Shoes 001", uri: Asset.fromModule(require('../assets/Game/Shoes.001.glb')).uri, preview: require('../assets/preview/shoes001.png') },
-    { id: 2, label: "Shoes 002", uri: Asset.fromModule(require('../assets/Game/Shoes.002.glb')).uri, preview: require('../assets/preview/shoes002.png') }
+    { id: 1, label: "Shoes 001", uri: 'https://res.cloudinary.com/dv4vzq7pv/image/upload/v1739961169/Shoes.001_flplvd.glb', preview: 'https://res.cloudinary.com/dv4vzq7pv/image/upload/v1739963247/shoes001_pawg36.png' },
+    { id: 2, label: "Shoes 002", uri: 'https://res.cloudinary.com/dv4vzq7pv/image/upload/v1739961169/Shoes.002_auycyv.glb', preview: 'https://res.cloudinary.com/dv4vzq7pv/image/upload/v1739963249/shoes002_wbgu9y.png' }
   ];
 
   const calculateBmi = () => {
@@ -129,6 +120,7 @@ export default function Prediction() {
 
   const renderAdditionalIcon = () => {
     const icon = icons[currentIconIndex];
+  
     switch (icon) {
       case 'Home':
         return (
@@ -137,13 +129,21 @@ export default function Prediction() {
           </TouchableOpacity>
         );
       case 'shoppingCart':
-        return <FontAwesome name="shopping-cart" style={styles.additionalIconStyle} />;
+        return (
+          <TouchableOpacity 
+            style={styles.iconButton} 
+            onPress={() => navigation.navigate('Shop')}
+          >
+            <FaShoppingCart style={styles.additionalIconStyle} />
+          </TouchableOpacity>
+        );
       case 'clipboardCheck':
         return <FontAwesome name="clipboard-check" style={styles.additionalIconStyle} />;
       default:
         return null;
     }
   };
+  
 
   const renderOptions = () => {
     switch (activeTab) {
@@ -179,8 +179,8 @@ export default function Prediction() {
           <ambientLight intensity={0.7} />
           <pointLight position={[10, 10, 10]} />
           <Suspense fallback={null}>
-            <Model scale={modelScale} uri={Asset.fromModule(require('../assets/Game/NakedFullBody.glb')).uri} position={modelPosition} />
-            <Model scale={modelScale} uri={Asset.fromModule(require('../assets/Game/Head.001.glb')).uri} position={modelPosition} />
+            <Model scale={modelScale} uri='https://res.cloudinary.com/dv4vzq7pv/image/upload/v1739961165/NakedFullBody_jaufkc.glb' position={modelPosition} />
+            <Model scale={modelScale} uri='https://res.cloudinary.com/dv4vzq7pv/image/upload/v1739961163/Head.001_p5sjoz.glb' position={modelPosition} />
             {selectedHair && <Model scale={modelScale} uri={selectedHair} position={modelPosition} color={colors.hair} />}
             {selectedTop && <Model scale={modelScale} uri={selectedTop} position={modelPosition} color={colors.top} />}
             {selectedBottom && <Model scale={modelScale} uri={selectedBottom} position={modelPosition} color={colors.bottom} />}
