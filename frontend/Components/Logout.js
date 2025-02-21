@@ -8,8 +8,7 @@ const Logout = ({ navigation }) => {
 
   const handleLogout = async () => {
     try {
-      await AsyncStorage.removeItem('token');
-
+      await AsyncStorage.clear();
       Toast.show({
         type: 'success',
         text1: 'Logged out successfully!',

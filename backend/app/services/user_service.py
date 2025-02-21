@@ -8,6 +8,7 @@ from app.config import get_database
 from app.models.user_model import UserCreate, UserInDB, UserLogin
 from jose import JWTError, jwt
 from app.database import get_user_by_email
+from fastapi import HTTPException
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
@@ -76,7 +77,7 @@ async def login_user(user: UserLogin):
         return None
     access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     access_token = create_access_token(
-        data={"sub": user.email}, expires_delta=access_token_expires
+        data={"sub": user.email, "user_id": str(user_in_db.id)}, expires_delta=access_token_expires
     )
     return {"access_token": access_token, "role": user_in_db.role}
 
@@ -91,3 +92,16 @@ async def get_user_by_token(token: str) -> UserInDB:
         return user
     except JWTError:
         return None
+
+# Function to update user's coins and XP
+async def update_user_coins_and_xp(user_id: str, coins: int, xp: int):
+    db = get_database()
+    user = await db["users"].find_one({"_id": user_id})
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    new_coins = user.get("coins", 0) + coins
+    new_xp = user.get("xp", 0) + xp
+
+    await db["users"].update_one({"_id": user_id}, {"$set": {"coins": new_coins, "xp": new_xp}})
+    return {"coins": new_coins, "xp": new_xp}
