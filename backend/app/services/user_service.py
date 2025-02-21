@@ -9,6 +9,8 @@ from app.models.user_model import UserCreate, UserInDB, UserLogin
 from jose import JWTError, jwt
 from app.database import get_user_by_email
 from fastapi import HTTPException
+import random
+from app.mailtrap_client import send_otp_email  # Update the path to the correct module
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
@@ -41,6 +43,7 @@ async def register_user(user: UserCreate):
         return None
     
     hashed_password = get_password_hash(user.password)
+    otp = str(random.randint(100000, 999999))  # Generate a 6-digit OTP
     user_in_db = UserInDB(
         username=user.username,
         email=user.email,
@@ -56,10 +59,13 @@ async def register_user(user: UserCreate):
         food_intake=user.food_intake,
         sleep_hours=user.sleep_hours,
         activeness=user.activeness,
-        role=user.role,  # Add this line
-        id=ObjectId()  # MongoDB ObjectId
+        role=user.role,
+        id=ObjectId(),
+        otp=otp,  # Add OTP field
+        verified=False  # Set verified to False initially
     )
     await db.users.insert_one(user_in_db.dict(by_alias=True, exclude={"id"}))
+    send_otp_email(user.email, otp)  # Send OTP email
     return user_in_db
 
 async def authenticate_user(email: str, password: str):
@@ -105,3 +111,11 @@ async def update_user_coins_and_xp(user_id: str, coins: int, xp: int):
 
     await db["users"].update_one({"_id": user_id}, {"$set": {"coins": new_coins, "xp": new_xp}})
     return {"coins": new_coins, "xp": new_xp}
+
+async def verify_user_otp(email: str, otp: str):
+    user = await db.users.find_one({"email": email})
+    if not user or user.get("otp") != otp:
+        raise HTTPException(status_code=400, detail="Invalid OTP")
+
+    await db.users.update_one({"email": email}, {"$set": {"verified": True, "otp": None}})
+    return {"message": "User verified successfully"}

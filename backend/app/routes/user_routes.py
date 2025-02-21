@@ -4,6 +4,7 @@ from pydantic import BaseModel
 from app.services.user_service import register_user, login_user, get_user_by_token
 from app.services.prediction_service import predict_disease
 from app.models.user_model import UserCreate, UserLogin, UserInDB
+from app.mailtrap_client import send_otp_email
 from typing import List
 
 router = APIRouter()
@@ -14,6 +15,10 @@ class Token(BaseModel):
     access_token: str
     token_type: str
     role: str
+
+class OTPRequest(BaseModel):
+    email: str
+    otp: str
 
 @router.post("/register")
 async def register(user: UserCreate):
@@ -39,3 +44,11 @@ async def get_user(token: str = Depends(oauth2_scheme)):
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     return user
+
+@router.post("/send-otp/")
+async def send_otp(request: OTPRequest):
+    try:
+        send_otp_email(request.email, request.otp)
+        return {"message": "OTP sent successfully!"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))

@@ -1,7 +1,7 @@
 import axios from 'axios';
 import { Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { jwtDecode } from 'jwt-decode';  // Correct import statement
+import { jwtDecode } from 'jwt-decode';
 
 // Set the API base URL based on the platform
 const API_URL = Platform.OS === 'android' 

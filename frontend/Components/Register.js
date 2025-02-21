@@ -10,12 +10,14 @@ import {
   TouchableOpacity,
   Platform,
   ActivityIndicator,
+  Alert,
 } from 'react-native';
 import { Checkbox } from 'react-native-paper';
 import { LinearGradient } from 'expo-linear-gradient';
 import { registerUser } from '../API/api';
 import Toast from 'react-native-toast-message';
 import Icon from 'react-native-vector-icons/FontAwesome';
+import axios from 'axios'; // Import axios
 
 const { width } = Dimensions.get('window');
 
@@ -58,6 +60,10 @@ const Register = ({ navigation }) => {
 
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [otp, setOtp] = useState('');
+  const [otpError, setOtpError] = useState('');
+  const [isOtpSent, setIsOtpSent] = useState(false);
+
 
   const handleCheckboxToggle = (option, setState, state) => {
     setState(state.includes(option) ? state.filter(item => item !== option) : [...state, option]);
@@ -90,6 +96,52 @@ const Register = ({ navigation }) => {
         },
       },
     });
+  };
+
+  const sendEmail = async (email, username) => {
+    try {
+      const response = await axios.post('http://127.0.0.1:8000/send-email/', {
+        to_email: email,
+        subject: 'Welcome to FutureProof',
+        message: `Hello ${username}, welcome to FutureProof! We are excited to have you on board.`,
+      });
+
+      Alert.alert('Success', response.data.message);
+    } catch (error) {
+      Alert.alert('Error', error.response?.data?.detail || 'Failed to send email');
+    }
+  };
+
+  const verifyOtp = async () => {
+    setOtpError('');
+    setIsLoading(true);
+  
+    if (otp.trim() === '') {
+      setOtpError('OTP is required.');
+      showToast('OTP is required.', 'error');
+      setIsLoading(false);
+      return;
+    }
+  
+    try {
+      const response = await axios.post('http://127.0.0.1:8000/verify-otp/', {
+        email,
+        otp,
+      });
+  
+      showToast('OTP verified successfully! 🎉', 'success');
+      setTimeout(() => {
+        navigation.navigate('Login');
+        setIsLoading(false);
+      }, 2000);
+    } catch (error) {
+      console.log('OTP verification error:', error);
+      const errorMessage =
+        error.response?.data?.detail || 'Invalid OTP. Please try again.';
+      setOtpError(errorMessage);
+      showToast(errorMessage, 'error');
+      setIsLoading(false);
+    }
   };
 
   const handleRegister = async () => {
@@ -206,25 +258,23 @@ const Register = ({ navigation }) => {
         sleep_hours,
         activeness,
       };
-
-      const response = await registerUser(userData);
-      console.log('Register success:', response);
-
+  
+      // Send data to Python server
+      const registerResponse = await axios.post('http://127.0.0.1:8000/register/', userData);
+      console.log('Register success:', registerResponse);
+  
       Toast.hide();
       showToast('Registration Successful! 🎉', 'success');
-
-      setTimeout(() => {
-        navigation.navigate('Login');
-        setIsLoading(false);
-      }, 2000);
+  
+      setIsOtpSent(true); // Set OTP sent flag to true
+      setStep(5); // Move to OTP verification step
+      setIsLoading(false);
     } catch (error) {
       console.log('Register error:', error);
       const errorMessage =
-        typeof error === 'object' && error.msg
-          ? error.msg
-          : 'Something went wrong. Please try again.';
+        error.response?.data?.detail || 'Something went wrong. Please try again.';
       setError(errorMessage);
-
+  
       Toast.hide();
       showToast(errorMessage, 'error');
       setIsLoading(false);
@@ -257,7 +307,9 @@ const Register = ({ navigation }) => {
               ? 'Step 2: BMI & Environment'
               : step === 3
               ? 'Step 3: Health & Lifestyle'
-              : 'Step 4: Sleep & Activeness'}
+              : step === 4
+              ? 'Step 4: Sleep & Activeness'
+              : 'Step 5: Verify OTP'}
           </Text>
 
           {step === 1 && (
@@ -546,6 +598,37 @@ const Register = ({ navigation }) => {
             </View>
           )}
 
+          {step === 5 && (
+            <View>
+              <Text style={styles.subHeader}>Enter OTP</Text>
+              <View style={[styles.inputContainer, isMobile && styles.mobileInputContainer]}>
+                <TextInput
+                  style={[styles.input, isMobile && styles.mobileInput]}
+                  placeholder="OTP"
+                  value={otp}
+                  onChangeText={setOtp}
+                />
+                {otpError ? <Text style={styles.error}>{otpError}</Text> : null}
+              </View>
+              <TouchableOpacity
+                style={[styles.button, isMobile && styles.mobileButton]}
+                onPress={verifyOtp}
+                disabled={isLoading}
+              >
+                {isLoading ? (
+                  <ActivityIndicator size="small" color="#ffffff" />
+                ) : (
+                  <Text style={styles.buttonText}>Verify OTP</Text>
+                )}
+              </TouchableOpacity>
+              <TouchableOpacity onPress={() => navigation.navigate('Login')}>
+                <Text style={[styles.forgotPassword, isMobile && styles.mobileForgotPassword]}>
+                  I already have an account
+                </Text>
+              </TouchableOpacity>
+            </View>
+          )}
+
           {error ? <Text style={styles.error}>{error}</Text> : null}
         </ScrollView>
       </LinearGradient>
@@ -672,6 +755,17 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 10,
+  },
+  subHeader: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#ffffff',
+    marginBottom: 10,
+  },
+  error: {
+    color: 'red',
+    marginBottom: 10,
+    textAlign: 'center',
   },
 });
 

@@ -33,6 +33,7 @@ class UserCreate(BaseModel):
     food_intake: List[str] = []
     sleep_hours: str
     activeness: str
+    verified: bool = False
 
     class Config:
         json_encoders = {
@@ -62,6 +63,8 @@ class UserInDB(ObjectIdModel):
     coins: int = 0
     level: int = 1
     xp: int = 0
+    otp: Optional[str] = None  # Add OTP field
+    verified: bool = False
 
     class Config:
         json_encoders = {
