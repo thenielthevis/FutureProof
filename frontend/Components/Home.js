@@ -184,7 +184,7 @@ const Home = ({ navigation }) => {
           {isLoggedIn ? (
             <>
               {userRole === 'admin' && (
-                <TouchableOpacity style={styles.iconButton} onPress={() => navigation.navigate('Admin')}>
+                <TouchableOpacity style={styles.iconButton} onPress={() => navigation.navigate('AvatarCRUD')}>
                   <Icon name="cogs" size={24} color="#f0fdf7" />
                 </TouchableOpacity>
               )}
