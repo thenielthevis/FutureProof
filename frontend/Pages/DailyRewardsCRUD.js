@@ -7,6 +7,8 @@ import { FontAwesome, FontAwesome5 } from '@expo/vector-icons';
 import * as Print from 'expo-print';
 import { shareAsync } from 'expo-sharing';
 import * as FileSystem from 'expo-file-system';
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
 
 const DailyRewardsCRUD = () => {
   const navigation = useNavigation();
@@ -229,7 +231,7 @@ const DailyRewardsCRUD = () => {
             </TouchableOpacity>
             <TouchableOpacity style={styles.sidebarItem} onPress={() => navigation.navigate('Home')}>
               <FontAwesome name="home" size={24} color="white" />
-              <Text style={styles.sidebarText}>home</Text>
+              <Text style={styles.sidebarText}>Home</Text>
             </TouchableOpacity>
             <TouchableOpacity style={styles.sidebarItem} onPress={() => navigation.navigate('AvatarCRUD')}>
               <FontAwesome name="user" size={24} color="white" />
@@ -321,72 +323,102 @@ const DailyRewardsCRUD = () => {
 
         {/* Modal for Create/Update Reward */}
         <Modal
-          animationType="slide"
-          transparent={true}
-          visible={modalVisible}
-          onRequestClose={() => setModalVisible(false)}
-        >
-          <View style={styles.modalOverlay}>
-            <View style={styles.modalContent}>
-              <LinearGradient
-                colors={['#1A3B32', '#2E7D32']}
-                style={styles.modalHeader}
-              >
-                <Text style={styles.modalHeaderText}>{editingReward ? 'Update Reward' : 'Create Reward'}</Text>
-                <TouchableOpacity style={styles.closeButton} onPress={() => setModalVisible(false)}>
-                  <Text style={styles.closeButtonText}>X</Text>
-                </TouchableOpacity>
-              </LinearGradient>
+  animationType="slide"
+  transparent={true}
+  visible={modalVisible}
+  onRequestClose={() => setModalVisible(false)}
+>
+  <View style={styles.modalOverlay}>
+    <View style={styles.modalContent}>
+      <LinearGradient
+        colors={['#1A3B32', '#1A3B32']}
+        style={styles.modalHeader}
+      >
+        <Text style={styles.modalHeaderText}>{editingReward ? 'Update Reward' : 'Create Reward'}</Text>
+        <TouchableOpacity style={styles.closeButton} onPress={() => setModalVisible(false)}>
+          <Text style={styles.closeButtonText}>X</Text>
+        </TouchableOpacity>
+      </LinearGradient>
 
-              <TextInput
-                style={styles.input}
-                placeholder="Day"
-                value={day}
-                onChangeText={setDay}
-              />
-              <TextInput
-                style={styles.input}
-                placeholder="Coins"
-                value={coins}
-                onChangeText={setCoins}
-              />
-              <Picker
-                selectedValue={avatar}
-                style={styles.picker}
-                onValueChange={(itemValue) => setAvatar(itemValue)}
-              >
-                <Picker.Item label="Select Avatar" value="" />
-                {avatars.map((avatar) => (
-                  <Picker.Item key={avatar._id} label={avatar.name} value={avatar._id} />
-                ))}
-              </Picker>
-              <TextInput
-                style={styles.input}
-                placeholder="Top ID"
-                value={top}
-                onChangeText={setTop}
-              />
-              <TextInput
-                style={styles.input}
-                placeholder="Bottom ID"
-                value={bottom}
-                onChangeText={setBottom}
-              />
-              <TextInput
-                style={styles.input}
-                placeholder="Shoes ID"
-                value={shoes}
-                onChangeText={setShoes}
-              />
-              <TouchableOpacity
-                style={styles.buttonPrimary}
-                onPress={editingReward ? handleUpdateReward : handleCreateReward}
-              >
-                <Text style={styles.buttonText}>{editingReward ? 'Update Reward' : 'Create Reward'}</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </Modal>
+      {/* Day Input */}
+      <View style={styles.inputGroup}>
+        <Text style={styles.label}>Day</Text>
+        <TextInput
+          style={styles.input}
+          placeholder="Enter day number"
+          value={day}
+          onChangeText={setDay}
+        />
+      </View>
+
+      {/* Coins Input */}
+      <View style={styles.inputGroup}>
+        <Text style={styles.label}>Coins</Text>
+        <TextInput
+          style={styles.input}
+          placeholder="Enter coin amount"
+          value={coins}
+          onChangeText={setCoins}
+        />
+      </View>
+
+      {/* Avatar Picker */}
+      <View style={styles.inputGroup}>
+        <Text style={styles.label}>Avatar</Text>
+        <Picker
+          selectedValue={avatar}
+          style={styles.picker}
+          onValueChange={(itemValue) => setAvatar(itemValue)}
+        >
+          <Picker.Item label="Select Avatar" value="" />
+          {avatars.map((avatar) => (
+            <Picker.Item key={avatar._id} label={avatar.name} value={avatar._id} />
+          ))}
+        </Picker>
+      </View>
+
+      {/* Top ID Input */}
+      <View style={styles.inputGroup}>
+        <Text style={styles.label}>Top ID</Text>
+        <TextInput
+          style={styles.input}
+          placeholder="Enter top clothing ID"
+          value={top}
+          onChangeText={setTop}
+        />
+      </View>
+
+      {/* Bottom ID Input */}
+      <View style={styles.inputGroup}>
+        <Text style={styles.label}>Bottom ID</Text>
+        <TextInput
+          style={styles.input}
+          placeholder="Enter bottom clothing ID"
+          value={bottom}
+          onChangeText={setBottom}
+        />
+      </View>
+
+      {/* Shoes ID Input */}
+      <View style={styles.inputGroup}>
+        <Text style={styles.label}>Shoes ID</Text>
+        <TextInput
+          style={styles.input}
+          placeholder="Enter shoes ID"
+          value={shoes}
+          onChangeText={setShoes}
+        />
+      </View>
+
+      <TouchableOpacity
+        style={styles.buttonPrimary}
+        onPress={editingReward ? handleUpdateReward : handleCreateReward}
+      >
+        <Text style={styles.buttonText}>{editingReward ? 'Update Reward' : 'Create Reward'}</Text>
+      </TouchableOpacity>
+    </View>
+  </View>
+</Modal>
       </LinearGradient>
     </View>
   );
@@ -494,35 +526,44 @@ const styles = StyleSheet.create({
     padding: 5,
     borderRadius: 5,
     marginRight: 5,
+    width: 100,
   },
   buttonDelete: {
     backgroundColor: '#e74c3c',
     padding: 5,
     borderRadius: 5,
+    width: 100,
   },
   tableContainer: {
     width: '100%',
+    backgroundColor: '#fff',
+    borderRadius: 10,
+    overflow: 'hidden',
+    marginBottom: 20,
   },
   tableHeader: {
     flexDirection: 'row',
-    backgroundColor: '#f2f2f2',
-    padding: 10,
+    backgroundColor: '#2E7D32',
+    padding: 15,
   },
   tableHeaderText: {
     flex: 1,
     fontWeight: 'bold',
     textAlign: 'center',
+    color: '#fff',
   },
   tableRow: {
     flexDirection: 'row',
-    padding: 10,
+    padding: 15,
     borderBottomWidth: 1,
-    borderBottomColor: '#ccc',
+    borderBottomColor: '#eee',
+    backgroundColor: '#fff',
   },
   tableCell: {
     flex: 1,
     textAlign: 'center',
     justifyContent: 'center',
+    marginLeft: 50,
   },
   avatarImage: {
     width: 50,
@@ -536,15 +577,15 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
   },
   modalContent: {
-    width: '80%',
-    backgroundColor: '#fff',
+    width: '50%',
+    backgroundColor: '#1A3B32',
     padding: 20,
     borderRadius: 10,
     alignItems: 'center',
   },
   modalHeader: {
     width: '100%',
-    backgroundColor: '#2E7D32', // Light green background
+    backgroundColor: '#2E7D32',
     padding: 10,
     borderTopLeftRadius: 10,
     borderTopRightRadius: 10,
@@ -556,9 +597,16 @@ const styles = StyleSheet.create({
   modalHeaderText: {
     fontSize: 20,
     fontWeight: 'bold',
-    alignItems: 'center',
     color: '#fff',
-    
+  },
+  closeButton: {
+    padding: 10,
+    backgroundColor: '#fff',
+    borderRadius: 20,
+  },
+  closeButtonText: {
+    fontSize: 18,
+    color: '#333',
   },
   openModalButton: {
     backgroundColor: '#3498db',
@@ -617,6 +665,29 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
 
+  inputGroup: {
+    marginBottom: 15,
+    width: '100%',
+  },
+  label: {
+    color: '#fff',
+    marginBottom: 5,
+    fontSize: 16,
+    fontWeight: '500',
+  },
+  // Update input and picker to remove individual margins
+  input: {
+    borderWidth: 1,
+    borderColor: '#ccc',
+    borderRadius: 5,
+    padding: 10,
+    backgroundColor: '#fff',
+  },
+  picker: {
+    height: 50,
+    width: '100%',
+    backgroundColor: '#fff',
+  },
 });
 
 export default DailyRewardsCRUD;

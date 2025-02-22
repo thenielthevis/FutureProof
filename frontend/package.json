@@ -34,6 +34,8 @@
     "expo-speech": "^13.0.1",
     "expo-status-bar": "~2.0.1",
     "expo-three": "^2.2.1",
+    "html2canvas": "^1.4.1",
+    "jspdf": "^3.0.0",
     "jwt-decode": "^4.0.0",
     "react": "18.3.1",
     "react-bootstrap": "^2.10.9",
