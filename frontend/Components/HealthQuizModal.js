@@ -266,7 +266,7 @@ const styles = StyleSheet.create({
     padding: 20,
     borderRadius: 15,
     width: '50%',
-    maxHeight: '80%',
+    maxHeight: 'auto',
     position: 'relative',
   },
   modalHeader: {

@@ -3,10 +3,14 @@ import { View, Text, TouchableOpacity, StyleSheet, Modal } from 'react-native';
 import { FontAwesome } from '@expo/vector-icons';
 import HealthQuizModal from './HealthQuizModal';
 import MeditationBreathingModal from './MeditationBreathingModal';
+import PhysicalActivitiesModal from './PhysicalActivitiesModal';
+import NutritionalTrackingModal from './NutritionalTrackingModal';
 
 const TaskModal = ({ visible, onClose }) => {
   const [healthQuizVisible, setHealthQuizVisible] = useState(false);
   const [meditationbreathingVisible, setMeditationBreathingVisible] = useState(false);
+  const [physicalActivitiesVisible, setPhysicalActivitiesVisible] = useState(false);
+  const [nutritionalTrackingVisible, setNutritionalTrackingVisible] = useState(false);
 
   const handleHealthQuiz = () => {
     setHealthQuizVisible(true);
@@ -15,6 +19,16 @@ const TaskModal = ({ visible, onClose }) => {
 
   const handleMeditationBreathing = () => {
     setMeditationBreathingVisible(true);
+    onClose();
+  };
+
+  const handlePhysicalActivities = () => {
+    setPhysicalActivitiesVisible(true);
+    onClose();
+  };
+
+  const handleNutritionalTracking = () => {
+    setNutritionalTrackingVisible(true);
     onClose();
   };
 
@@ -41,11 +55,11 @@ const TaskModal = ({ visible, onClose }) => {
                 <FontAwesome name="medkit" size={20} color="#4CAF50" />
                 <Text style={styles.buttonText}>Meditation and Breathing Exercises</Text>
               </TouchableOpacity>
-              <TouchableOpacity style={styles.taskButton}>
+              <TouchableOpacity style={styles.taskButton} onPress={handlePhysicalActivities}>
                 <FontAwesome name="heartbeat" size={20} color="#4CAF50" />
                 <Text style={styles.buttonText}>Physical Activities</Text>
               </TouchableOpacity>
-              <TouchableOpacity style={styles.taskButton}>
+              <TouchableOpacity style={styles.taskButton} onPress={handleNutritionalTracking}>
                 <FontAwesome name="apple" size={20} color="#4CAF50" />
                 <Text style={styles.buttonText}>Nutritional Tracking</Text>
               </TouchableOpacity>
@@ -57,7 +71,11 @@ const TaskModal = ({ visible, onClose }) => {
       {/* Health Quiz Modal */}
       <HealthQuizModal visible={healthQuizVisible} onClose={() => setHealthQuizVisible(false)} onBack={handleBackToTaskModal} />
       {/* Meditation Breathing Modal */}
-      <MeditationBreathingModal visible={meditationbreathingVisible} onClose={() => setMeditationBreathingVisible(false)} onBack={handleBackToTaskModal}  meditationBreathingIds={meditationbreathingVisible} />
+      <MeditationBreathingModal visible={meditationbreathingVisible} onClose={() => setMeditationBreathingVisible(false)} onBack={handleBackToTaskModal} />
+      {/* Physical Activities Modal */}
+      <PhysicalActivitiesModal visible={physicalActivitiesVisible} onClose={() => setPhysicalActivitiesVisible(false)} onBack={handleBackToTaskModal} />
+      {/* Nutritional Tracking Modal */}
+      <NutritionalTrackingModal visible={nutritionalTrackingVisible} onClose={() => setNutritionalTrackingVisible(false)} onBack={handleBackToTaskModal} />
     </>
   );
 };

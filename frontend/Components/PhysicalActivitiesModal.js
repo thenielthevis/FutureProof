@@ -1,113 +1,86 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, ActivityIndicator, Modal, Dimensions, FlatList, Image } from 'react-native';
-import { getMeditationBreathingExercises } from '../API/api';
+import { getPhysicalActivities } from '../API/api';
 import { FontAwesome } from '@expo/vector-icons';
 import Video from 'react-native-video';
-import TrackPlayer, { usePlaybackState } from 'react-native-track-player';
 import * as Speech from 'expo-speech';
+import TrackPlayer, { usePlaybackState } from 'react-native-track-player';
 
 const { width } = Dimensions.get('window');
 
-const MeditationBreathingModal = ({ visible, onClose, onBack }) => {
-  const [meditations, setMeditations] = useState([]);
+const PhysicalActivitiesModal = ({ visible, onClose, onBack }) => {
+  const [activities, setActivities] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [currentIndex, setCurrentIndex] = useState(0);
   const [started, setStarted] = useState(false);
-  const [playing, setPlaying] = useState(false);
+  const [category, setCategory] = useState(null);
   const [showGif, setShowGif] = useState(false);
-  const playbackState = usePlaybackState();
 
   useEffect(() => {
-    const fetchMeditations = async () => {
-      try {
-        const meditationData = await getMeditationBreathingExercises();
-        setMeditations(meditationData);
-      } catch (err) {
-        setError(err.detail || 'Failed to load meditations.');
-      } finally {
-        setLoading(false);
-      }
+    const fetchActivities = async () => {
+        try {
+            const activityData = await getPhysicalActivities();
+            console.log('Fetched activities:', activityData);
+
+            // Filter activities based on the selected category
+            const filteredData = activityData.filter(activity => activity.activity_type === category);
+            setActivities(filteredData);
+        } catch (err) {
+            setError(err.detail || 'Failed to load activities.');
+        } finally {
+            setLoading(false);
+        }
     };
 
     if (visible) {
-      fetchMeditations();
-      setupTrackPlayer();
+        fetchActivities();
     }
-  }, [visible]);
+}, [visible, category]);
 
   useEffect(() => {
-    if (started && meditations.length > 0) {
+    if (started && activities.length > 0) {
       playVoiceOver();
     }
   }, [currentIndex, started]);
 
   useEffect(() => {
-    return () => {
-      stopAudio();
+    const handleBeforeUnload = () => {
       Speech.stop();
+    };
+
+    window.addEventListener("beforeunload", handleBeforeUnload);
+
+    return () => {
+      window.removeEventListener("beforeunload", handleBeforeUnload);
     };
   }, []);
 
-  // Ensure it runs when the page is unloading
-  useEffect(() => {
-  const handleBeforeUnload = () => {
+  const handleCategorySelect = (selectedCategory) => {
+    setCategory(selectedCategory);
+    setStarted(false);
+    setCurrentIndex(0);
+    setActivities([]);
+    };
+
+  const stopAudio = async () => {
+    // await TrackPlayer.stop();
+    // await TrackPlayer.reset();
     Speech.stop();
   };
-
-  window.addEventListener("beforeunload", handleBeforeUnload);
-
-  return () => {
-    window.removeEventListener("beforeunload", handleBeforeUnload);
-  };
-}, []);
-
-  const setupTrackPlayer = async () => {
-    try {
-      const queue = await TrackPlayer.getQueue();
-      if (queue.length === 0) {  // If queue is empty, initialize the player
-        await TrackPlayer.setupPlayer();
-        await TrackPlayer.add({
-          id: '1',
-          url: require('../assets/relaxing-music.mp3'),
-          title: 'Relaxing Music',
-          artist: 'Unknown',
-        });
-      }
-    } catch (error) {
-      console.error("Error setting up TrackPlayer:", error);
-    }
-  };  
-
-  const togglePlayback = async () => {
-    try {
-      const state = await TrackPlayer.getPlaybackState();
   
-      if (state.isPlaying) {
-        await TrackPlayer.pause();
-        setPlaying(false);
-      } else {
-        await TrackPlayer.play();
-        setPlaying(true);
-      }
-    } catch (error) {
-      console.error("Error toggling playback:", error);
-    }
-  };  
-
   const handleClose = async () => {
     await stopAudio();
-    await TrackPlayer.reset();
+    // await TrackPlayer.reset();
     setCurrentIndex(0);
     setStarted(false);
-    setPlaying(false);
     onClose();
-  };  
+  }; 
 
   const handleNavigation = (direction) => {
     Speech.stop();
     setShowGif(true);
-  
+
     setTimeout(() => {
       Speech.speak("Inhale", { rate: 0.7 });
       setTimeout(() => {
@@ -117,7 +90,7 @@ const MeditationBreathingModal = ({ visible, onClose, onBack }) => {
           setCurrentIndex((prev) => {
             let newIndex = direction === 'next' ? prev + 1 : prev - 1;
             if (newIndex < 0) newIndex = 0;
-            if (newIndex >= meditations.length) newIndex = meditations.length - 1;
+            if (newIndex >= activities.length) newIndex = activities.length - 1;
             return newIndex;
           });
           setTimeout(() => {
@@ -127,23 +100,19 @@ const MeditationBreathingModal = ({ visible, onClose, onBack }) => {
       }, 5000);
     }, 500);
   };
-  
+
   const playVoiceOver = () => {
-    if (meditations.length > 0) {
-      const exercise = meditations[currentIndex];
-      const text = `${exercise.name}. ${exercise.description}. Instructions: ${exercise.instructions.join(", ")}. Breathe in, breathe out.`;
-  
-      Speech.speak(text, { 
-        rate: 0.7, 
-        onDone: () => Speech.stop()
-      });
+    if (activities.length > 0) {
+      const exercise = activities[currentIndex];
+      let text = `${exercise.activity_name}. ${exercise.description}. Instructions: ${exercise.instructions.join(", ")}.`;
+
+      if (exercise.activity_type === category) {
+        Speech.speak(text, { 
+          rate: 0.7, 
+          onDone: () => Speech.stop()
+        });
+      }
     }
-  };
-   
-  const stopAudio = async () => {
-    await TrackPlayer.stop();
-    await TrackPlayer.reset();
-    Speech.stop();
   };
 
   if (loading) {
@@ -173,21 +142,35 @@ const MeditationBreathingModal = ({ visible, onClose, onBack }) => {
     );
   }
 
+  const filteredActivities = activities.filter(activity => activity.activity_type === category);
+
   return (
     <Modal visible={visible} transparent={true} animationType="slide">
       <View style={styles.modalOverlay}>
         <View style={styles.modalContent}>
-        <TouchableOpacity onPress={handleClose} style={styles.closeButtonTopRight}>
-          <FontAwesome name="close" size={20} color="#fff" />
-        </TouchableOpacity>
+          <TouchableOpacity onPress={handleClose} style={styles.closeButtonTopRight}>
+            <FontAwesome name="close" size={20} color="#fff" />
+          </TouchableOpacity>
           <TouchableOpacity onPress={onBack} style={styles.backButtonTopLeft}>
             <FontAwesome name="arrow-left" size={20} color="#fff" />
           </TouchableOpacity>
-          <Text style={styles.modalHeader}>Meditation & Breathing Exercises</Text>
-          {!started ? (
+          <Text style={styles.modalHeader}>Physical Activities</Text>
+          {!category ? (
+            <View style={styles.categoryContainer}>
+              {/* <TouchableOpacity style={styles.categoryButton} onPress={() => handleCategorySelect('Gardening')}>
+                <Text style={styles.buttonText}>Gardening</Text>
+              </TouchableOpacity> */}
+              <TouchableOpacity style={styles.categoryButton} onPress={() => handleCategorySelect('Workout')}>
+                <Text style={styles.buttonText}>Workout</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.categoryButton} onPress={() => handleCategorySelect('Zumba')}>
+                <Text style={styles.buttonText}>Zumba</Text>
+              </TouchableOpacity>
+            </View>
+          ) : !started ? (
             <>
               <FlatList
-                data={meditations}
+                data={filteredActivities}
                 keyExtractor={(item, index) => index.toString()}
                 renderItem={({ item }) => (
                   <View style={styles.exerciseListItem}>
@@ -197,8 +180,9 @@ const MeditationBreathingModal = ({ visible, onClose, onBack }) => {
                       resizeMode="contain"
                       repeat={true}
                       paused={false}
+                      volume={0}
                     />
-                    <Text style={styles.exerciseTextPreview}>{item.name}</Text>
+                    <Text style={styles.exerciseTextPreview}>{item.activity_name}</Text>
                   </View>
                 )}
               />
@@ -214,33 +198,25 @@ const MeditationBreathingModal = ({ visible, onClose, onBack }) => {
                 <>
                   <View style={styles.exerciseItem}>
                     <Video
-                      source={{ uri: meditations[currentIndex].url }}
+                      source={{ uri: filteredActivities[currentIndex].url }}
                       style={styles.video}
                       resizeMode="contain"
                       repeat={true}
                       paused={false}
                     />
-                    <Text style={styles.exerciseText}>{meditations[currentIndex].name}</Text>
                   </View>
                   <View style={styles.descriptionContainer}>
+                  <Text style={styles.exerciseText}>{filteredActivities[currentIndex].activity_name}</Text>
                     <Text style={styles.descriptionHeader}>Description:</Text>
-                    <Text style={styles.descriptionText}>{meditations[currentIndex].description}</Text>
+                    <Text style={styles.descriptionText}>{filteredActivities[currentIndex].description}</Text>
                     <Text style={styles.instructionsHeader}>Instructions:</Text>
-                    {meditations[currentIndex].instructions.map((instruction, idx) => (
+                    {filteredActivities[currentIndex].instructions.map((instruction, idx) => (
                       <Text key={idx} style={styles.instructionText}>• {instruction}</Text>
                     ))}
                   </View>
                 </>
               )}
               <View style={styles.navigationButtons}>
-              <TouchableOpacity onPress={togglePlayback} style={styles.musicButton}>
-                <FontAwesome name={playing ? "pause" : "play"} size={20} color="#fff" />
-                <Text style={styles.buttonText}>Play Music</Text>
-              </TouchableOpacity>
-          <TouchableOpacity style={styles.voiceButton} onPress={playVoiceOver}>
-                  <FontAwesome name="volume-up" size={20} color="#fff" />
-                  <Text style={styles.buttonText}>Play Voiceover</Text>
-                </TouchableOpacity>
                 <TouchableOpacity 
                   style={styles.navButton} 
                   onPress={() => handleNavigation('prev')}>
@@ -266,12 +242,14 @@ const styles = StyleSheet.create({
     modalHeader: { fontSize: 24, fontWeight: 'bold', marginBottom: 15, textAlign: 'center', color: '#fff' },
     closeButtonTopRight: { position: 'absolute', top: 10, right: 10, backgroundColor: '#c0392b', padding: 5, borderRadius: 15 },
     backButtonTopLeft: { position: 'absolute', top: 10, left: 10, backgroundColor: '#3498db', padding: 5, borderRadius: 15 },
+    categoryContainer: { flexDirection: 'row', justifyContent: 'space-around', marginTop: 20 },
+    categoryButton: { backgroundColor: '#27ae60', padding: 10, borderRadius: 8, alignItems: 'center', width: '30%' },
     exerciseListItem: { backgroundColor: '#fff', padding: 10, borderRadius: 8, marginBottom: 10, alignItems: 'center', maxHeight: 100, height: 100 },
-    videoPreview: { width: 100, height: 100, marginBottom: 5 },
-    video: { width: 400, height: 400 },
+    videoPreview: { width: 100, height: 100, marginTop: 50 },
     startButton: { backgroundColor: '#27ae60', padding: 10, borderRadius: 8, alignItems: 'center', marginTop: 10 },
-    exerciseItem: { backgroundColor: '#fff', padding: 10, borderRadius: 8, marginBottom: 10, alignItems: 'center', maxHeight: 400, height: 400 },
-    exerciseText: { color: 'black', fontSize: 20, fontWeight: 'bold', },
+    video: { width: '100%', height: '100%' },
+    exerciseItem: { backgroundColor: '#fff', padding: 10, borderRadius: 8, marginBottom: 10, alignItems: 'center', width: '100%', height: 400 },
+    exerciseText: { color: '#fff', fontSize: 20, fontWeight: 'bold', },
     exerciseTextPreview: { color: 'black', fontSize: 16, fontWeight: 'bold', },
     descriptionContainer: { padding: 10, borderRadius: 8 },
     descriptionText: { fontSize: 14, color: '#fff', marginBottom: 5 },
@@ -281,9 +259,7 @@ const styles = StyleSheet.create({
     navButton: { backgroundColor: '#27ae60', padding: 10, borderRadius: 8, margin: 10 },
     navigationButtons: { flexDirection: 'row', justifyContent: 'center', marginTop: 10 },
     buttonText: { color: 'white', fontWeight: 'bold' },
-    musicButton: { position: 'absolute', top: 10, right: 50, backgroundColor: '#2980b9', padding: 5, borderRadius: 15, justifyContent: 'center', alignItems: 'center' },  
-    voiceButton: { position: 'absolute', top: 10, left: 50, backgroundColor: '#8e44ad', padding: 5, borderRadius: 15, justifyContent: 'center', alignItems: 'center' },
     breathingGif: { width: '100%', height: 500, alignSelf: 'center', marginBottom: 20, padding: 10, borderRadius: 8, },
-  });
+});
 
-export default MeditationBreathingModal;
+export default PhysicalActivitiesModal;

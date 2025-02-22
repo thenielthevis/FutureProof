@@ -75,16 +75,26 @@ const Home = ({ navigation }) => {
     const [isLoggedIn, setIsLoggedIn] = useState(false);
     const [modalVisible, setModalVisible] = useState(false); // Controls Logout Popup
     const [userRole, setUserRole] = useState('');
+    const [tokenExpiredModalVisible, setTokenExpiredModalVisible] = useState(false);
 
     const currentRoute = useNavigationState(state => state.routes[state.index].name);
-
+    
     useEffect(() => {
       const checkToken = async () => {
         const token = await AsyncStorage.getItem('token');
         if (token) {
-          setIsLoggedIn(true);
-          const userData = await getUser(token);
-          setUserRole(userData.role);
+          try {
+            const userData = await getUser(token);
+            setIsLoggedIn(true);
+            setUserRole(userData.role);
+          } catch (error) {
+            if (error.response && error.response.status === 401) {
+              // Token is expired
+              setTokenExpiredModalVisible(true);
+            } else {
+              console.error('Token validation error:', error);
+            }
+          }
         }
       };
       checkToken();
@@ -136,6 +146,17 @@ const Home = ({ navigation }) => {
           autoHide: true,
           topOffset: Platform.OS === 'android' ? 30 : 60,
         });
+      }
+    };
+
+    const handleTokenExpiredLogout = async () => {
+      try {
+        await AsyncStorage.removeItem('token');
+        setIsLoggedIn(false);
+        setTokenExpiredModalVisible(false);
+        navigation.navigate('Login');
+      } catch (err) {
+        console.error('Logout error:', err);
       }
     };
 
@@ -272,6 +293,23 @@ const Home = ({ navigation }) => {
                   onPress={handleLogout}
                 >
                   <Text style={styles.buttonText}>Logout</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </Modal>
+
+        {/* Token Expired Popup */}
+        <Modal visible={tokenExpiredModalVisible} transparent={true} animationType="fade">
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalContent}>
+              <Text style={styles.modalHeader}>Your session has expired. Please log in again.</Text>
+              <View style={styles.buttonContainer}>
+                <TouchableOpacity
+                  style={[styles.button, styles.logoutButton]} 
+                  onPress={handleTokenExpiredLogout}
+                >
+                  <Text style={styles.buttonText}>Login</Text>
                 </TouchableOpacity>
               </View>
             </View>
