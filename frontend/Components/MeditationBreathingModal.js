@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, ActivityIndicator, Modal, Dimensions, FlatList, Image } from 'react-native';
-import { getMeditationBreathingExercises } from '../API/api';
+import { getMeditationBreathingExercises, claimRewards } from '../API/api';
 import { FontAwesome } from '@expo/vector-icons';
 import Video from 'react-native-video';
 import TrackPlayer, { usePlaybackState } from 'react-native-track-player';
 import * as Speech from 'expo-speech';
+import MeditationCongratulationsModal from './MeditationCongratulationsModal';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const { width } = Dimensions.get('window');
 
@@ -16,7 +18,11 @@ const MeditationBreathingModal = ({ visible, onClose, onBack }) => {
   const [started, setStarted] = useState(false);
   const [playing, setPlaying] = useState(false);
   const [showGif, setShowGif] = useState(false);
+  const [showCongratulations, setShowCongratulations] = useState(false);
+  const [rewards, setRewards] = useState({ xp: 0, coins: 0 });
   const playbackState = usePlaybackState();
+  const [startTime, setStartTime] = useState(null); // State to track the start time
+  const [completedExercises, setCompletedExercises] = useState([]); // State to track completed exercises
 
   useEffect(() => {
     const fetchMeditations = async () => {
@@ -62,6 +68,12 @@ const MeditationBreathingModal = ({ visible, onClose, onBack }) => {
   };
 }, []);
 
+  useEffect(() => {
+    if (started) {
+      setStartTime(new Date()); // Set the start time when the session starts
+    }
+  }, [started]);
+
   const setupTrackPlayer = async () => {
     try {
       const queue = await TrackPlayer.getQueue();
@@ -102,7 +114,7 @@ const MeditationBreathingModal = ({ visible, onClose, onBack }) => {
     setStarted(false);
     setPlaying(false);
     onClose();
-  };  
+  };
 
   const handleNavigation = (direction) => {
     Speech.stop();
@@ -146,6 +158,27 @@ const MeditationBreathingModal = ({ visible, onClose, onBack }) => {
     Speech.stop();
   };
 
+  const handleFinish = async () => {
+    const xpReward = 25;
+    const coinReward = 50;
+    const token = await AsyncStorage.getItem('token');
+    
+    setRewards({ xp: xpReward, coins: coinReward });
+    await claimRewards(xpReward, coinReward, token);
+  
+    const endTime = new Date();
+    const timeSpent = Math.round((endTime - startTime) / 60000);
+  
+    setCompletedExercises(meditations.slice(0, currentIndex + 1));
+  
+    onClose();  
+    stopAudio();
+  
+    setTimeout(() => {
+      setShowCongratulations(true);
+    }, 300);
+  };  
+
   if (loading) {
     return (
       <Modal visible={visible} transparent={true} animationType="slide">
@@ -174,6 +207,7 @@ const MeditationBreathingModal = ({ visible, onClose, onBack }) => {
   }
 
   return (
+    <>
     <Modal visible={visible} transparent={true} animationType="slide">
       <View style={styles.modalOverlay}>
         <View style={styles.modalContent}>
@@ -246,17 +280,35 @@ const MeditationBreathingModal = ({ visible, onClose, onBack }) => {
                   onPress={() => handleNavigation('prev')}>
                   <FontAwesome name="arrow-left" size={30} color="#fff" />
                 </TouchableOpacity>
-                <TouchableOpacity 
-                  style={styles.navButton} 
-                  onPress={() => handleNavigation('next')}>
-                  <FontAwesome name="arrow-right" size={30} color="#fff" />
-                </TouchableOpacity>
+                {currentIndex === meditations.length - 1 ? (
+                  <TouchableOpacity 
+                    style={styles.finishButton} 
+                    onPress={handleFinish}>
+                    <Text style={styles.buttonText}>Finish</Text>
+                  </TouchableOpacity>
+                ) : (
+                  <TouchableOpacity 
+                    style={styles.navButton} 
+                    onPress={() => handleNavigation('next')}>
+                    <FontAwesome name="arrow-right" size={30} color="#fff" />
+                  </TouchableOpacity>
+                )}
               </View>
             </>
           )}
         </View>
       </View>
     </Modal>
+    {showCongratulations && (
+      <MeditationCongratulationsModal
+        visible={showCongratulations}
+        onClose={() => setShowCongratulations(false)}
+        rewards={rewards}
+        exercises={completedExercises}
+        timeSpent={Math.round((new Date() - startTime) / 60000)} // Pass the time spent
+      />
+    )}
+  </>
   );
 };
 
@@ -284,6 +336,7 @@ const styles = StyleSheet.create({
     musicButton: { position: 'absolute', top: 10, right: 50, backgroundColor: '#2980b9', padding: 5, borderRadius: 15, justifyContent: 'center', alignItems: 'center' },  
     voiceButton: { position: 'absolute', top: 10, left: 50, backgroundColor: '#8e44ad', padding: 5, borderRadius: 15, justifyContent: 'center', alignItems: 'center' },
     breathingGif: { width: '100%', height: 500, alignSelf: 'center', marginBottom: 20, padding: 10, borderRadius: 8, },
+    finishButton: { backgroundColor: '#27ae60', padding: 10, borderRadius: 8, margin: 10, justifyContent: 'center', alignItems: 'center', width: '50px' },
   });
 
 export default MeditationBreathingModal;

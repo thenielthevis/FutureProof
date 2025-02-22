@@ -2,6 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, ActivityIndicator, Modal, TextInput, Button } from 'react-native';
 import { createNutritionalTracking, getNutritionalTrackingQuestions, submitNutritionalTrackingResponses } from '../API/api';
 import { FontAwesome } from '@expo/vector-icons';
+import NutritionalTrackingCongratulationsModal from './NutritionalTrackingCongratulationsModal';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { claimRewards } from '../API/api';
 
 const NutritionalTrackingModal = ({ visible, onClose, onBack }) => {
   const [questionsAnswers, setQuestionsAnswers] = useState([]);
@@ -10,6 +13,8 @@ const NutritionalTrackingModal = ({ visible, onClose, onBack }) => {
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [currentResponse, setCurrentResponse] = useState('');
   const [started, setStarted] = useState(false);
+  const [showCongratulations, setShowCongratulations] = useState(false);
+  const [rewards, setRewards] = useState({ xp: 0, coins: 0 });
 
   useEffect(() => {
     if (visible) {
@@ -55,7 +60,7 @@ const NutritionalTrackingModal = ({ visible, onClose, onBack }) => {
     setCurrentQuestionIndex((prevIndex) => prevIndex - 1);
   };
 
-  const handleSubmit = async () => {
+  const handleFinish = async () => {
     const updatedQuestionsAnswers = [...questionsAnswers];
     updatedQuestionsAnswers[currentQuestionIndex].answer = currentResponse;
     setQuestionsAnswers(updatedQuestionsAnswers);
@@ -65,10 +70,22 @@ const NutritionalTrackingModal = ({ visible, onClose, onBack }) => {
         question_index: currentQuestionIndex,
         answer: currentResponse
       });
-      onClose();
     } catch (err) {
       setError(err.response?.data?.detail || 'Failed to submit response.');
     }
+
+    const xpReward = 25;
+    const coinReward = 50;
+    const token = await AsyncStorage.getItem('token');
+    
+    setRewards({ xp: xpReward, coins: coinReward });
+    await claimRewards(xpReward, coinReward, token);
+  
+    onClose();  
+  
+    setTimeout(() => {
+      setShowCongratulations(true);
+    }, 300);
   };
 
   if (loading) {
@@ -99,56 +116,65 @@ const NutritionalTrackingModal = ({ visible, onClose, onBack }) => {
   }
 
   return (
-    <Modal visible={visible} transparent={true} animationType="slide">
-      <View style={styles.modalOverlay}>
-        <View style={styles.modalContent}>
-          <TouchableOpacity onPress={onClose} style={styles.closeButtonTopRight}>
-            <FontAwesome name="close" size={20} color="#fff" />
-          </TouchableOpacity>
-          <TouchableOpacity onPress={onBack} style={styles.backButtonTopLeft}>
-            <FontAwesome name="arrow-left" size={20} color="#fff" />
-          </TouchableOpacity>
-          <Text style={styles.modalHeader}>Nutritional Tracking</Text>
-          {!started ? (
-            <>
-              <Text style={styles.introductionText}>
-                Be honest and transparent with your answers. This will help us track your nutrition and health better.
-              </Text>
-              <TouchableOpacity style={styles.startButton} onPress={handleStart}>
-                <Text style={styles.buttonText}>Start</Text>
-              </TouchableOpacity>
-            </>
-          ) : (
-            <>
-              <Text style={styles.questionText}>{questionsAnswers[currentQuestionIndex].question}</Text>
-              <TextInput
-                style={styles.input}
-                value={currentResponse}
-                onChangeText={setCurrentResponse}
-                placeholder="Type your response here"
-                multiline
-              />
-              <View style={styles.navigationButtons}>
-                {currentQuestionIndex > 0 && (
-                  <TouchableOpacity style={styles.navButton} onPress={handlePreviousQuestion}>
-                    <FontAwesome name="arrow-left" size={30} color="#fff" />
-                  </TouchableOpacity>
-                )}
-                {currentQuestionIndex < questionsAnswers.length - 1 ? (
-                  <TouchableOpacity style={styles.navButton} onPress={handleNextQuestion}>
-                    <FontAwesome name="arrow-right" size={30} color="#fff" />
-                  </TouchableOpacity>
-                ) : (
-                  <TouchableOpacity style={styles.submitButton} onPress={handleSubmit}>
-                    <Text style={styles.buttonText}>Submit</Text>
-                  </TouchableOpacity>
-                )}
-              </View>
-            </>
-          )}
+    <>
+      <Modal visible={visible} transparent={true} animationType="slide">
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <TouchableOpacity onPress={onClose} style={styles.closeButtonTopRight}>
+              <FontAwesome name="close" size={20} color="#fff" />
+            </TouchableOpacity>
+            <TouchableOpacity onPress={onBack} style={styles.backButtonTopLeft}>
+              <FontAwesome name="arrow-left" size={20} color="#fff" />
+            </TouchableOpacity>
+            <Text style={styles.modalHeader}>Nutritional Tracking</Text>
+            {!started ? (
+              <>
+                <Text style={styles.introductionText}>
+                  Be honest and transparent with your answers. This will help us track your nutrition and health better.
+                </Text>
+                <TouchableOpacity style={styles.startButton} onPress={handleStart}>
+                  <Text style={styles.buttonText}>Start</Text>
+                </TouchableOpacity>
+              </>
+            ) : (
+              <>
+                <Text style={styles.questionText}>{questionsAnswers[currentQuestionIndex].question}</Text>
+                <TextInput
+                  style={styles.input}
+                  value={currentResponse}
+                  onChangeText={setCurrentResponse}
+                  placeholder="Type your response here"
+                  multiline
+                />
+                <View style={styles.navigationButtons}>
+                  {currentQuestionIndex > 0 && (
+                    <TouchableOpacity style={styles.navButton} onPress={handlePreviousQuestion}>
+                      <FontAwesome name="arrow-left" size={30} color="#fff" />
+                    </TouchableOpacity>
+                  )}
+                  {currentQuestionIndex < questionsAnswers.length - 1 ? (
+                    <TouchableOpacity style={styles.navButton} onPress={handleNextQuestion}>
+                      <FontAwesome name="arrow-right" size={30} color="#fff" />
+                    </TouchableOpacity>
+                  ) : (
+                    <TouchableOpacity style={styles.submitButton} onPress={handleFinish}>
+                      <Text style={styles.buttonText}>Submit</Text>
+                    </TouchableOpacity>
+                  )}
+                </View>
+              </>
+            )}
+          </View>
         </View>
-      </View>
-    </Modal>
+      </Modal>
+      {showCongratulations && (
+        <NutritionalTrackingCongratulationsModal
+          visible={showCongratulations}
+          onClose={() => setShowCongratulations(false)}
+          rewards={rewards}
+        />
+      )}
+    </>
   );
 };
 
@@ -163,8 +189,8 @@ const styles = StyleSheet.create({
   input: { backgroundColor: '#fff', padding: 10, borderRadius: 8, height: 100, textAlignVertical: 'top' },
   navigationButtons: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 20 },
   navButton: { backgroundColor: '#27ae60', padding: 10, borderRadius: 8 },
-  startButton: { backgroundColor: '#2980b9', padding: 10, borderRadius: 8, alignItems: 'center', marginTop: 20 },
-  submitButton: { backgroundColor: '#2980b9', padding: 10, borderRadius: 8 },
+  startButton: { backgroundColor: '#27ae60', padding: 10, borderRadius: 8, alignItems: 'center', marginTop: 20 },
+  submitButton: { backgroundColor: '#27ae60', padding: 10, borderRadius: 8 },
   buttonText: { color: 'white', fontWeight: 'bold' },
   error: { color: 'red', marginBottom: 10 },
 });

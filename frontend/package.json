@@ -29,6 +29,8 @@
     "expo-image-picker": "^16.0.6",
     "expo-linear-gradient": "^14.0.2",
     "expo-modules-core": "^2.2.2",
+    "expo-print": "^14.0.3",
+    "expo-sharing": "^13.0.1",
     "expo-speech": "^13.0.1",
     "expo-status-bar": "~2.0.1",
     "expo-three": "^2.2.1",
