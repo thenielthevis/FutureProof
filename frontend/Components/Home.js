@@ -1,5 +1,5 @@
 import React, { useRef, Suspense, useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Dimensions, Animated, Image, Modal, Platform } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Dimensions, Animated, Image, Modal, Platform, TouchableWithoutFeedback } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { MaterialIcons } from 'react-native-vector-icons';
 import { Canvas } from '@react-three/fiber';
@@ -12,9 +12,9 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import Toast from 'react-native-toast-message';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import { useNavigationState } from '@react-navigation/native';
-import { getUser } from '../API/api';
+import { getUser, getAvatar } from '../API/api';
 import GameNavbar from '../Navbar/GameNavbar';
-import Features from './Features'; // Import the Features component
+import Features from './Features';
 import About from './About';
 import Contacts from './Contacts';
 
@@ -66,60 +66,53 @@ const Home = ({ navigation }) => {
   };
 
   const modelScale = { x: 3, y: 3, z: 3 };
-  const modelPosition = { x: 0, y: 0.5, z: 0 }; // Adjusted position to move the model downwards
+  const modelPosition = { x: 0, y: 0.5, z: 0 };
 
   // Navbar component
   const Navbar = ({ navigation }) => {
     const [isLogin, setIsLogin] = useState(true);
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const [isLoggedIn, setIsLoggedIn] = useState(false);
-    const [modalVisible, setModalVisible] = useState(false); // Controls Logout Popup
+    const [modalVisible, setModalVisible] = useState(false);
+    const [profileModalVisible, setProfileModalVisible] = useState(false);
     const [userRole, setUserRole] = useState('');
     const [tokenExpiredModalVisible, setTokenExpiredModalVisible] = useState(false);
+    const [avatarUrl, setAvatarUrl] = useState(null);
 
     const currentRoute = useNavigationState(state => state.routes[state.index].name);
-    
+
     useEffect(() => {
-      const checkToken = async () => {
-        const token = await AsyncStorage.getItem('token');
-        if (token) {
-          try {
-            const userData = await getUser(token);
-            setIsLoggedIn(true);
-            setUserRole(userData.role);
-          } catch (error) {
-            if (error.response && error.response.status === 401) {
-              // Token is expired
-              setTokenExpiredModalVisible(true);
-            } else {
-              console.error('Token validation error:', error);
-            }
+      const fetchUserData = async () => {
+        try {
+          const token = await AsyncStorage.getItem('token');
+          if (!token) {
+            console.error('No token found');
+            return;
           }
+          const userData = await getUser(token);
+          setUserRole(userData.role);
+          setIsLoggedIn(true);
+          if (userData.default_avatar) {
+            const avatarResponse = await getAvatar(userData.default_avatar);
+            setAvatarUrl(avatarResponse.url);
+            console.log('Avatar URL:', avatarResponse.url); // Debug log
+          }
+        } catch (error) {
+          console.error('Error fetching user data:', error);
         }
       };
-      checkToken();
+
+      fetchUserData();
     }, []);
 
-    const handleTogglePress = (targetPage) => {
-      if (targetPage === 'Login') {
-        setIsLogin(true);
-        navigation.navigate('Login');
-      } else {
-        setIsLogin(false);
-        navigation.navigate('Register');
-      }
-    };
-
     const handleLogoutPress = async () => {
-      setModalVisible(true); // Show the logout modal
+      setModalVisible(true);
     };
 
     const handleLogout = async () => {
       try {
         await AsyncStorage.removeItem('token');
         setIsLoggedIn(false);
-
-        // Toast message for logout success
         Toast.show({
           type: 'success',
           text1: 'Logged out successfully!',
@@ -128,11 +121,7 @@ const Home = ({ navigation }) => {
           autoHide: true,
           topOffset: Platform.OS === 'android' ? 30 : 60,
         });
-
-        // Close the modal
         setModalVisible(false);
-
-        // Redirect to login after 2 seconds
         setTimeout(() => {
           navigation.navigate('Login');
         }, 2000);
@@ -167,7 +156,7 @@ const Home = ({ navigation }) => {
     // Desktop Navigation
     const renderDesktopNav = () => (
       <View style={styles.navLinksContainer}>
-        <LinearGradient colors={['#77f3bb']} style={styles.navLinks}>  {/* Gradient color change */}
+        <LinearGradient colors={['#77f3bb']} style={styles.navLinks}>
           <TouchableOpacity onPress={() => scrollToSection('about')}>
             <Text style={styles.navLinkText}>About</Text>
           </TouchableOpacity>
@@ -179,33 +168,28 @@ const Home = ({ navigation }) => {
           </TouchableOpacity>
         </LinearGradient>
 
-        {/* Login/Register Toggle */}
         <View style={styles.toggleContainer}>
           {isLoggedIn ? (
-            <>
-              {userRole === 'admin' && (
-                <TouchableOpacity style={styles.iconButton} onPress={() => navigation.navigate('AvatarCRUD')}>
-                  <Icon name="cogs" size={24} color="#f0fdf7" />
-                </TouchableOpacity>
-              )}
-              <TouchableOpacity style={styles.iconButton} onPress={() => navigation.navigate('Game')}>
-                <Icon name="gamepad" size={24} color="#f0fdf7" />
+            <View style={styles.profileContainer}>
+              <TouchableOpacity onPress={() => setProfileModalVisible(true)}>
+                {avatarUrl ? (
+                  <Image source={{ uri: avatarUrl }} style={styles.avatar} />
+                ) : (
+                  <FontAwesome name="user" size={24} color="#f0fdf7" />
+                )}
               </TouchableOpacity>
-              <TouchableOpacity style={styles.logoutButton} onPress={handleLogoutPress}>
-                <Text style={styles.logoutText}>Logout</Text>
-              </TouchableOpacity>
-            </>
+            </View>
           ) : (
             <View style={styles.segmentedControl}>
               <TouchableOpacity
                 style={[styles.segmentButton, isLogin && styles.activeSegment]}
-                onPress={() => handleTogglePress('Login')}
+                onPress={() => navigation.navigate('Login')}
               >
                 <Text style={[styles.segmentText, isLogin && styles.activeSegmentText]}>Login</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={[styles.segmentButton, !isLogin && styles.activeSegment]}
-                onPress={() => handleTogglePress('Register')}
+                onPress={() => navigation.navigate('Register')}
               >
                 <Text style={[styles.segmentText, !isLogin && styles.activeSegmentText]}>Register</Text>
               </TouchableOpacity>
@@ -217,55 +201,28 @@ const Home = ({ navigation }) => {
 
     // Mobile Navigation
     const renderMobileNav = () => (
-      <>
+      <View style={styles.mobileNavContainer}>
         <TouchableOpacity onPress={() => setIsMenuOpen(!isMenuOpen)} style={styles.hamburgerButton}>
           <Icon name="bars" size={24} color="#f0fdf7" />
         </TouchableOpacity>
 
-        {/* Dropdown Menu for Mobile */}
-        {isMenuOpen && (
-          <View style={styles.dropdownMenu}>
-            <TouchableOpacity onPress={() => scrollToSection('about')}>
-              <Text style={styles.dropdownMenuItem}>About</Text>
-            </TouchableOpacity>
-            <TouchableOpacity onPress={() => scrollToSection('features')}>
-              <Text style={styles.dropdownMenuItem}>Features</Text>
-            </TouchableOpacity>
-            <TouchableOpacity onPress={() => scrollToSection('contact')}>
-              <Text style={styles.dropdownMenuItem}>Contact Us</Text>
-            </TouchableOpacity>
-            {isLoggedIn ? (
-              <>
-                {userRole === 'admin' && (
-                  <TouchableOpacity onPress={() => navigation.navigate('Admin')}>
-                    <Text style={styles.dropdownMenuItem}>Admin</Text>
-                  </TouchableOpacity>
-                )}
-                <TouchableOpacity onPress={() => navigation.navigate('Prediction')}>
-                  <Text style={styles.dropdownMenuItem}>Prediction</Text>
-                </TouchableOpacity>
-                <TouchableOpacity onPress={handleLogoutPress}>
-                  <Text style={styles.dropdownMenuItem}>Logout</Text>
-                </TouchableOpacity>
-              </>
+        {isLoggedIn && (
+          <TouchableOpacity
+            style={styles.profileIconMobile}
+            onPress={() => setProfileModalVisible(true)}
+          >
+            {avatarUrl ? (
+              <Image source={{ uri: avatarUrl }} style={styles.avatar} />
             ) : (
-              <>
-                <TouchableOpacity onPress={() => handleTogglePress('Login')}>
-                  <Text style={styles.dropdownMenuItem}>Login</Text>
-                </TouchableOpacity>
-                <TouchableOpacity onPress={() => handleTogglePress('Register')}>
-                  <Text style={styles.dropdownMenuItem}>Register</Text>
-                </TouchableOpacity>
-              </>
+              <FontAwesome name="user" size={24} color="#f0fdf7" />
             )}
-          </View>
+          </TouchableOpacity>
         )}
-      </>
+      </View>
     );
 
     return (
       <SafeAreaView style={styles.headerContainer} edges={['top']}>
-        {/* Logo */}
         <View style={styles.logoContainer}>
           <Image source={require('../assets/logo.png')} style={styles.logo} />
           <TouchableOpacity onPress={() => scrollToSection('home')}>
@@ -273,8 +230,49 @@ const Home = ({ navigation }) => {
           </TouchableOpacity>
         </View>
 
-        {/* Render Desktop or Mobile Navigation */}
         {isMobile ? renderMobileNav() : renderDesktopNav()}
+
+        {/* Profile Modal */}
+        <Modal visible={profileModalVisible} transparent={true} animationType="fade">
+          <TouchableWithoutFeedback onPress={() => setProfileModalVisible(false)}>
+            <View style={styles.modalOverlay}>
+              <View style={styles.profilemodalContent}>
+                {userRole === 'admin' && (
+                  <TouchableOpacity
+                    style={styles.dropdownItem}
+                    onPress={() => {
+                      navigation.navigate('AvatarCRUD');
+                      setProfileModalVisible(false);
+                    }}
+                  >
+                    <Icon name="cogs" size={20} color="#f0fdf7" />
+                    <Text style={styles.dropdownText}>Admin</Text>
+                  </TouchableOpacity>
+                )}
+                <TouchableOpacity
+                  style={styles.dropdownItem}
+                  onPress={() => {
+                    navigation.navigate('Game');
+                    setProfileModalVisible(false);
+                  }}
+                >
+                  <Icon name="gamepad" size={20} color="#f0fdf7" />
+                  <Text style={styles.dropdownText}>Game</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.dropdownItem}
+                  onPress={() => {
+                    handleLogoutPress();
+                    setProfileModalVisible(false);
+                  }}
+                >
+                  <Icon name="sign-out" size={20} color="#f0fdf7" />
+                  <Text style={styles.dropdownText}>Logout</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </TouchableWithoutFeedback>
+        </Modal>
 
         {/* Logout Confirmation Popup */}
         <Modal visible={modalVisible} transparent={true} animationType="fade">
@@ -283,13 +281,13 @@ const Home = ({ navigation }) => {
               <Text style={styles.modalHeader}>Are you sure you want to logout?</Text>
               <View style={styles.buttonContainer}>
                 <TouchableOpacity
-                  style={[styles.button, styles.cancelButton]} 
+                  style={[styles.button, styles.cancelButton]}
                   onPress={() => setModalVisible(false)}
                 >
                   <Text style={styles.buttonText}>Cancel</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
-                  style={[styles.button, styles.logoutButton]} 
+                  style={[styles.button, styles.logoutButton]}
                   onPress={handleLogout}
                 >
                   <Text style={styles.buttonText}>Logout</Text>
@@ -306,7 +304,7 @@ const Home = ({ navigation }) => {
               <Text style={styles.modalHeader}>Your session has expired. Please log in again.</Text>
               <View style={styles.buttonContainer}>
                 <TouchableOpacity
-                  style={[styles.button, styles.logoutButton]} 
+                  style={[styles.button, styles.logoutButton]}
                   onPress={handleTokenExpiredLogout}
                 >
                   <Text style={styles.buttonText}>Login</Text>
@@ -343,11 +341,11 @@ const Home = ({ navigation }) => {
               <Suspense fallback={null}>
                 <Model scale={modelScale} uri={Asset.fromModule(require('../assets/a.glb')).uri} position={modelPosition} />
               </Suspense>
-              <OrbitControls 
-                enableDamping 
-                maxPolarAngle={Math.PI / 1.5} // Limit rotation to 240 degrees
-                minDistance={3} // Disable zooming in
-                maxDistance={3} // Disable zooming out
+              <OrbitControls
+                enableDamping
+                maxPolarAngle={Math.PI / 1.5}
+                minDistance={3}
+                maxDistance={3}
               />
             </Canvas>
           </View>
@@ -798,6 +796,7 @@ const styles = StyleSheet.create({
     right: 20,
     backgroundColor: '#14243b',
     borderRadius: 5,
+    margin: 10,
     padding: 10,
     zIndex: 1,
     shadowColor: '#000',
@@ -805,12 +804,18 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.2,
     shadowRadius: 4,
     elevation: 5,
+    height: 100,
+    width: 100,
   },
   dropdownMenuItem: {
-    fontSize: 16,
+    fontSize: 24,
     color: '#f0fdf7',
-    paddingVertical: 5,
     fontWeight: '600',
+    borderColor: '#ffffff',
+    borderRadius: 5,
+    borderWidth: 1,
+    width: 100,
+    height: 50,
   },
   modalOverlay: {
     flex: 1,
@@ -824,6 +829,19 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     width: '25%',
     alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 5,
+  },
+  profilemodalContent: {
+    position: 'absolute',
+    top: 40,
+    right: 0,
+    backgroundColor: '#14243b',
+    borderRadius: 10, // Increased border radius
+    padding: 15, // Increased padding
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.2,
@@ -851,6 +869,62 @@ const styles = StyleSheet.create({
   buttonText: {
     fontSize: 16,
     color: '#fff',
+  },
+  profileContainer: {
+    position: 'relative',
+     // Ensure the profile container is on top
+      },
+      profileDropdown: {
+        position: 'absolute',
+        bottom: 50, // Lowered the absolute position
+        right: 0,
+        backgroundColor: '#14243b',
+        borderRadius: 10, // Increased border radius
+        padding: 15, // Increased padding
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.2,
+        shadowRadius: 4,
+        elevation: 5,
+      },
+      dropdownItem: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingVertical: 12, // Increased padding
+    paddingHorizontal: 15, // Increased padding
+  },
+  dropdownText: {
+    color: '#ffffff',
+    marginLeft: 10, // Increased margin
+    fontSize: 18, // Increased font size
+  },
+  avatar: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+  },
+  mobileNavContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    flex: 1,
+  },
+  profileIconMobile: {
+    marginRight: 10,
+  },
+  profileDropdownMobile: {
+    position: 'absolute',
+    top: 50,
+    right: 10,
+    backgroundColor: '#14243b',
+    borderRadius: 5,
+    padding: 10,
+    zIndex: 1,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 5,
   },
 });
 
