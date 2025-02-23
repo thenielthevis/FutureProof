@@ -1,4 +1,4 @@
-import React, { useState, Suspense } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls, useGLTF } from '@react-three/drei/native';
 import { View, Text, TouchableOpacity, StyleSheet, Modal, TextInput, Image, ScrollView, Pressable } from 'react-native';
@@ -10,6 +10,8 @@ import GameNavbar from '../Navbar/GameNavbar'; // Import GameNavbar
 import DailyRewards from './DailyRewards'; // Import DailyRewards
 import TaskModal from './TaskModal'; // Import TaskModal
 // import Prediction from './Prediction'; // Import Prediction
+import { FaShoppingCart } from 'react-icons/fa';
+import { readPurchasedItems } from '../API/api'; // Import the API function to fetch purchased items
 
 // Reusable Model Component with Color
 function Model({ scale, uri, position, color }) {
@@ -44,6 +46,7 @@ function OptionButton({ label, onPress, isSelected, color, preview }) {
 export default function Game() {
   const navigation = useNavigation();
   const [selectedHair, setSelectedHair] = useState(null);
+  const [selectedHead, setSelectedHead] = useState(null);  // Define selectedHead state
   const [selectedTop, setSelectedTop] = useState(null);
   const [selectedBottom, setSelectedBottom] = useState(null);
   const [selectedShoes, setSelectedShoes] = useState(null);
@@ -54,6 +57,7 @@ export default function Game() {
   const [bmiCategory, setBmiCategory] = useState(null);
   const [currentIconIndex, setCurrentIconIndex] = useState(0);
   const [activeTab, setActiveTab] = useState('hair');
+  const [purchasedItems, setPurchasedItems] = useState([]); // Ensure it's initialized as an array
   const [dailyRewardsVisible, setDailyRewardsVisible] = useState(false);
   const [taskModalVisible, setTaskModalVisible] = useState(false);
   const [predictionVisible, setPredictionVisible] = useState(false);
@@ -65,33 +69,30 @@ export default function Game() {
     require('../assets/icons/Navigation/shop.png'),
     require('../assets/icons/Navigation/task.png')
   ];
+  const handleShopPress = () => {
+    navigation.navigate('Shop');   
+  };
 
   const colors = {
     hair: "#000000",
+    head: "#ff0000",  // Add color for head
     bottom: "#0000ff",
     shoes: "#000000",
   };
 
-  const hairOptions = [
-    { id: 1, label: "Hair 001", uri: 'https://res.cloudinary.com/dv4vzq7pv/image/upload/v1739961154/Hair.001_kjslfw.glb', preview: 'https://res.cloudinary.com/dv4vzq7pv/image/upload/v1739961160/hair_vlrckj.jpg' },
-    { id: 2, label: "Hair 002", uri: 'https://res.cloudinary.com/dv4vzq7pv/image/upload/v1739961154/Hair.002_fdoekw.glb', preview: 'https://res.cloudinary.com/dv4vzq7pv/image/upload/v1739962931/hair002_hqdyuw.png' },
-    // Add more hair options as needed
-  ];
+  useEffect(() => {
+    // Fetch purchased items from the backend
+    const fetchPurchasedItems = async () => {
+      try {
+        const items = await readPurchasedItems();
+        setPurchasedItems(items);
+      } catch (error) {
+        console.error('Error fetching purchased items:', error);
+      }
+    };
 
-  const topOptions = [
-    { id: 1, label: "Top 001", uri: 'https://res.cloudinary.com/dv4vzq7pv/image/upload/v1739961171/Top.001_r3hrar.glb', preview: 'https://res.cloudinary.com/dv4vzq7pv/image/upload/v1739963250/top001_fbuvvv.png' },
-    { id: 2, label: "Top 002", uri: 'https://res.cloudinary.com/dv4vzq7pv/image/upload/v1739961171/Top.002_clkylw.glb', preview: 'https://res.cloudinary.com/dv4vzq7pv/image/upload/v1739963251/top002_lwwb7z.png' }
-  ];
-
-  const bottomOptions = [
-    { id: 1, label: "Bottom 001", uri: 'https://res.cloudinary.com/dv4vzq7pv/image/upload/v1739961133/Bottom.001_xhbnnn.glb', preview: 'https://res.cloudinary.com/dv4vzq7pv/image/upload/v1739962928/bottom001_fflyct.png' },
-    { id: 2, label: "Bottom 002", uri: 'https://res.cloudinary.com/dv4vzq7pv/image/upload/v1739961132/Bottom.002_obpclh.glb', preview: 'https://res.cloudinary.com/dv4vzq7pv/image/upload/v1739962929/bottom002_fabniq.png' }
-  ];
-
-  const shoesOptions = [
-    { id: 1, label: "Shoes 001", uri: 'https://res.cloudinary.com/dv4vzq7pv/image/upload/v1739961169/Shoes.001_flplvd.glb', preview: 'https://res.cloudinary.com/dv4vzq7pv/image/upload/v1739963247/shoes001_pawg36.png' },
-    { id: 2, label: "Shoes 002", uri: 'https://res.cloudinary.com/dv4vzq7pv/image/upload/v1739961169/Shoes.002_auycyv.glb', preview: 'https://res.cloudinary.com/dv4vzq7pv/image/upload/v1739963249/shoes002_wbgu9y.png' }
-  ];
+    fetchPurchasedItems();
+  }, []);
 
   const calculateBmi = () => {
     const heightInMeters = height / 100;
@@ -120,8 +121,8 @@ export default function Game() {
     return { x: widthScale, y: heightScale, z: widthScale };
   };
 
-  const modelScale = getModelScale();
-  const modelPosition = { x: 0, y: -2.5, z: 0 }; // Adjusted position to move the model downwards
+  const modelScale = { x: getModelScale().x * 2, y: getModelScale().y * 2, z: getModelScale().z * 2 }; // 2x larger
+  const modelPosition = { x: 0, y: -5, z: 0 }; // Adjusted position to move the model downwards
 
   const handleIconPress = (index) => {
     switch (index) {
@@ -136,6 +137,7 @@ export default function Game() {
         break;
       case 3:
         navigation.navigate('Shop');
+        onPress={handleShopPress};
         break;
       case 4:
         setTaskModalVisible(true);
@@ -163,22 +165,30 @@ export default function Game() {
   };
 
   const renderOptions = () => {
+    if (!Array.isArray(purchasedItems) || purchasedItems.length === 0) {
+      return <Text style={styles.noAssetsText}>You don't have any accessories. Purchase them from the Shop!</Text>;
+    }
+
     switch (activeTab) {
       case 'hair':
-        return hairOptions.map((hair) => (
-          <OptionButton key={hair.id} label={hair.label} onPress={() => setSelectedHair(hair.uri)} isSelected={hair.uri === selectedHair} color="#27ae60" preview={hair.preview} />
+        return purchasedItems.filter(item => item.asset_type === 'hair').map((hair) => (
+          <OptionButton key={hair._id} label={hair.name} onPress={() => setSelectedHair(hair.url)} isSelected={hair.url === selectedHair} color="#27ae60" preview={hair.image_url} />
+        ));
+      case 'head':  // Add case for head
+        return purchasedItems.filter(item => item.asset_type === 'head').map((head) => (
+          <OptionButton key={head._id} label={head.name} onPress={() => setSelectedHead(head.url)} isSelected={head.url === selectedHead} color="#ff0000" preview={head.image_url} />
         ));
       case 'top':
-        return topOptions.map((top) => (
-          <OptionButton key={top.id} label={top.label} onPress={() => setSelectedTop(top.uri)} isSelected={top.uri === selectedTop} color="#3498db" preview={top.preview} />
+        return purchasedItems.filter(item => item.asset_type === 'top').map((top) => (
+          <OptionButton key={top._id} label={top.name} onPress={() => setSelectedTop(top.url)} isSelected={top.url === selectedTop} color="#3498db" preview={top.image_url} />
         ));
       case 'bottom':
-        return bottomOptions.map((bottom) => (
-          <OptionButton key={bottom.id} label={bottom.label} onPress={() => setSelectedBottom(bottom.uri)} isSelected={bottom.uri === selectedBottom} color="#e74c3c" preview={bottom.preview} />
+        return purchasedItems.filter(item => item.asset_type === 'bottom').map((bottom) => (
+          <OptionButton key={bottom._id} label={bottom.name} onPress={() => setSelectedBottom(bottom.url)} isSelected={bottom.url === selectedBottom} color="#e74c3c" preview={bottom.image_url} />
         ));
       case 'shoes':
-        return shoesOptions.map((shoes) => (
-          <OptionButton key={shoes.id} label={shoes.label} onPress={() => setSelectedShoes(shoes.uri)} isSelected={shoes.uri === selectedShoes} color="#f39c12" preview={shoes.preview} />
+        return purchasedItems.filter(item => item.asset_type === 'shoes').map((shoes) => (
+          <OptionButton key={shoes._id} label={shoes.name} onPress={() => setSelectedShoes(shoes.url)} isSelected={shoes.url === selectedShoes} color="#f39c12" preview={shoes.image_url} />
         ));
       default:
         return null;
@@ -193,12 +203,15 @@ export default function Game() {
       {/* 3D Scene */}
       <View style={styles.sceneContainer}>
         <Canvas camera={{ position: [0, 0, 10] }}>
-          <ambientLight intensity={0.7} />
-          <pointLight position={[10, 10, 10]} />
+          <ambientLight intensity={0.5} /> {/* Imitated lighting */}
+          <directionalLight position={[5, 5, 5]} /> {/* Imitated lighting */}
           <Suspense fallback={null}>
             <Model scale={modelScale} uri='https://res.cloudinary.com/dv4vzq7pv/image/upload/v1739961165/NakedFullBody_jaufkc.glb' position={modelPosition} />
             <Model scale={modelScale} uri='https://res.cloudinary.com/dv4vzq7pv/image/upload/v1739961163/Head.001_p5sjoz.glb' position={modelPosition} />
+            <Model scale={modelScale} uri='https://res.cloudinary.com/dv4vzq7pv/image/upload/v1739961141/Eyes.001_uab6p6.glb' position={modelPosition} /> {/* Eyes */}
+            <Model scale={modelScale} uri='https://res.cloudinary.com/dv4vzq7pv/image/upload/v1739961165/Nose.001_s4fxsi.glb' position={modelPosition} /> {/* Nose */}
             {selectedHair && <Model scale={modelScale} uri={selectedHair} position={modelPosition} color={colors.hair} />}
+            {selectedHead && <Model scale={modelScale} uri={selectedHead} position={modelPosition} color={colors.head} />}  {/* Add selectedHead */}
             {selectedTop && <Model scale={modelScale} uri={selectedTop} position={modelPosition} color={colors.top} />}
             {selectedBottom && <Model scale={modelScale} uri={selectedBottom} position={modelPosition} color={colors.bottom} />}
             {selectedShoes && <Model scale={modelScale} uri={selectedShoes} position={modelPosition} color={colors.shoes} />}
@@ -212,7 +225,7 @@ export default function Game() {
         {renderAdditionalIcons()}
       </View>
 
-      {/* Right Panel */}
+      {/* Right Panel
       <View style={styles.rightPanel}>
         <TouchableOpacity style={styles.customizeButton} onPress={() => setModalVisible(true)}>
           <Text style={styles.buttonText}>Customize Character</Text>
@@ -238,7 +251,7 @@ export default function Game() {
           </TouchableOpacity>
           {bmi && <Text style={styles.bmiText}>BMI: {bmi} ({bmiCategory})</Text>}
         </View>
-      </View>
+      </View> */}
       
       {/* Modal for Customization */}
       <Modal visible={modalVisible} animationType="slide" transparent>
@@ -250,6 +263,9 @@ export default function Game() {
             <View style={styles.tabContainer}>
               <TouchableOpacity style={[styles.tabButton, activeTab === 'hair' && styles.activeTab]} onPress={() => setActiveTab('hair')}>
                 <Text style={styles.tabText}>Hair</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={[styles.tabButton, activeTab === 'head' && styles.activeTab]} onPress={() => setActiveTab('head')}>  {/* Add tab for head */}
+                <Text style={styles.tabText}>Head</Text>
               </TouchableOpacity>
               <TouchableOpacity style={[styles.tabButton, activeTab === 'top' && styles.activeTab]} onPress={() => setActiveTab('top')}>
                 <Text style={styles.tabText}>Top</Text>
@@ -456,5 +472,11 @@ const styles = StyleSheet.create({
     fontSize: 16,
     textAlign: 'center',
     marginTop: 10,
+  },
+  noAssetsText: {
+    fontSize: 16,
+    textAlign: 'center',
+    marginTop: 10,
+    color: '#e74c3c',
   },
 });
