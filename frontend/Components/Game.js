@@ -1,4 +1,4 @@
-import React, { useState, Suspense } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls, useGLTF } from '@react-three/drei/native';
 import { View, Text, TouchableOpacity, StyleSheet, Modal, TextInput, Image, ScrollView } from 'react-native';
@@ -7,6 +7,8 @@ import { FontAwesome, FontAwesome5 } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { LinearGradient } from 'expo-linear-gradient';
 import GameNavbar from '../Navbar/GameNavbar'; // Import GameNavbar
+import { FaShoppingCart } from 'react-icons/fa';
+import { readOwnedAssets } from '../API/api'; // Import the API function to fetch owned assets
 
 // Reusable Model Component with Color
 function Model({ scale, uri, position, color }) {
@@ -51,6 +53,7 @@ export default function Prediction() {
   const [bmiCategory, setBmiCategory] = useState(null);
   const [currentIconIndex, setCurrentIconIndex] = useState(0);
   const [activeTab, setActiveTab] = useState('hair');
+  const [ownedAssets, setOwnedAssets] = useState([]);
   const icons = ['Home', 'shoppingCart', 'clipboardCheck'];
 
   const colors = {
@@ -59,26 +62,19 @@ export default function Prediction() {
     shoes: "#000000",
   };
 
-  const hairOptions = [
-    { id: 1, label: "Hair 001", uri: 'https://res.cloudinary.com/dv4vzq7pv/image/upload/v1739961154/Hair.001_kjslfw.glb', preview: 'https://res.cloudinary.com/dv4vzq7pv/image/upload/v1739961160/hair_vlrckj.jpg' },
-    { id: 2, label: "Hair 002", uri: 'https://res.cloudinary.com/dv4vzq7pv/image/upload/v1739961154/Hair.002_fdoekw.glb', preview: 'https://res.cloudinary.com/dv4vzq7pv/image/upload/v1739962931/hair002_hqdyuw.png' },
-    // Add more hair options as needed
-  ];
+  useEffect(() => {
+    // Fetch owned assets from the backend
+    const fetchOwnedAssets = async () => {
+      try {
+        const assets = await readOwnedAssets();
+        setOwnedAssets(assets);
+      } catch (error) {
+        console.error('Error fetching owned assets:', error);
+      }
+    };
 
-  const topOptions = [
-    { id: 1, label: "Top 001", uri: 'https://res.cloudinary.com/dv4vzq7pv/image/upload/v1739961171/Top.001_r3hrar.glb', preview: 'https://res.cloudinary.com/dv4vzq7pv/image/upload/v1739963250/top001_fbuvvv.png' },
-    { id: 2, label: "Top 002", uri: 'https://res.cloudinary.com/dv4vzq7pv/image/upload/v1739961171/Top.002_clkylw.glb', preview: 'https://res.cloudinary.com/dv4vzq7pv/image/upload/v1739963251/top002_lwwb7z.png' }
-  ];
-
-  const bottomOptions = [
-    { id: 1, label: "Bottom 001", uri: 'https://res.cloudinary.com/dv4vzq7pv/image/upload/v1739961133/Bottom.001_xhbnnn.glb', preview: 'https://res.cloudinary.com/dv4vzq7pv/image/upload/v1739962928/bottom001_fflyct.png' },
-    { id: 2, label: "Bottom 002", uri: 'https://res.cloudinary.com/dv4vzq7pv/image/upload/v1739961132/Bottom.002_obpclh.glb', preview: 'https://res.cloudinary.com/dv4vzq7pv/image/upload/v1739962929/bottom002_fabniq.png' }
-  ];
-
-  const shoesOptions = [
-    { id: 1, label: "Shoes 001", uri: 'https://res.cloudinary.com/dv4vzq7pv/image/upload/v1739961169/Shoes.001_flplvd.glb', preview: 'https://res.cloudinary.com/dv4vzq7pv/image/upload/v1739963247/shoes001_pawg36.png' },
-    { id: 2, label: "Shoes 002", uri: 'https://res.cloudinary.com/dv4vzq7pv/image/upload/v1739961169/Shoes.002_auycyv.glb', preview: 'https://res.cloudinary.com/dv4vzq7pv/image/upload/v1739963249/shoes002_wbgu9y.png' }
-  ];
+    fetchOwnedAssets();
+  }, []);
 
   const calculateBmi = () => {
     const heightInMeters = height / 100;
@@ -107,8 +103,8 @@ export default function Prediction() {
     return { x: widthScale, y: heightScale, z: widthScale };
   };
 
-  const modelScale = getModelScale();
-  const modelPosition = { x: 0, y: -2.5, z: 0 }; // Adjusted position to move the model downwards
+  const modelScale = { x: getModelScale().x * 2, y: getModelScale().y * 2, z: getModelScale().z * 2 }; // 2x larger
+  const modelPosition = { x: 0, y: -5, z: 0 }; // Adjusted position to move the model downwards
 
   const handleNextPress = () => {
     setCurrentIconIndex((prevIndex) => (prevIndex + 1) % icons.length);
@@ -116,6 +112,10 @@ export default function Prediction() {
 
   const handleHomePress = () => {
     navigation.navigate('Home');
+  };
+
+  const handleShopPress = () => {
+    navigation.navigate('Shop');   
   };
 
   const renderAdditionalIcon = () => {
@@ -132,7 +132,7 @@ export default function Prediction() {
         return (
           <TouchableOpacity 
             style={styles.iconButton} 
-            onPress={() => navigation.navigate('Shop')}
+            onPress={handleShopPress}
           >
             <FaShoppingCart style={styles.additionalIconStyle} />
           </TouchableOpacity>
@@ -143,25 +143,28 @@ export default function Prediction() {
         return null;
     }
   };
-  
 
   const renderOptions = () => {
+    if (ownedAssets.length === 0) {
+      return <Text style={styles.noAssetsText}>You don't have any accessories. Purchase them from the Shop!</Text>;
+    }
+
     switch (activeTab) {
       case 'hair':
-        return hairOptions.map((hair) => (
-          <OptionButton key={hair.id} label={hair.label} onPress={() => setSelectedHair(hair.uri)} isSelected={hair.uri === selectedHair} color="#27ae60" preview={hair.preview} />
+        return ownedAssets.filter(asset => asset.asset_type === 'hair').map((hair) => (
+          <OptionButton key={hair._id} label={hair.name} onPress={() => setSelectedHair(hair.url)} isSelected={hair.url === selectedHair} color="#27ae60" preview={hair.image_url} />
         ));
       case 'top':
-        return topOptions.map((top) => (
-          <OptionButton key={top.id} label={top.label} onPress={() => setSelectedTop(top.uri)} isSelected={top.uri === selectedTop} color="#3498db" preview={top.preview} />
+        return ownedAssets.filter(asset => asset.asset_type === 'top').map((top) => (
+          <OptionButton key={top._id} label={top.name} onPress={() => setSelectedTop(top.url)} isSelected={top.url === selectedTop} color="#3498db" preview={top.image_url} />
         ));
       case 'bottom':
-        return bottomOptions.map((bottom) => (
-          <OptionButton key={bottom.id} label={bottom.label} onPress={() => setSelectedBottom(bottom.uri)} isSelected={bottom.uri === selectedBottom} color="#e74c3c" preview={bottom.preview} />
+        return ownedAssets.filter(asset => asset.asset_type === 'bottom').map((bottom) => (
+          <OptionButton key={bottom._id} label={bottom.name} onPress={() => setSelectedBottom(bottom.url)} isSelected={bottom.url === selectedBottom} color="#e74c3c" preview={bottom.image_url} />
         ));
       case 'shoes':
-        return shoesOptions.map((shoes) => (
-          <OptionButton key={shoes.id} label={shoes.label} onPress={() => setSelectedShoes(shoes.uri)} isSelected={shoes.uri === selectedShoes} color="#f39c12" preview={shoes.preview} />
+        return ownedAssets.filter(asset => asset.asset_type === 'shoes').map((shoes) => (
+          <OptionButton key={shoes._id} label={shoes.name} onPress={() => setSelectedShoes(shoes.url)} isSelected={shoes.url === selectedShoes} color="#f39c12" preview={shoes.image_url} />
         ));
       default:
         return null;
@@ -176,11 +179,13 @@ export default function Prediction() {
       {/* 3D Scene */}
       <View style={styles.sceneContainer}>
         <Canvas camera={{ position: [0, 0, 10] }}>
-          <ambientLight intensity={0.7} />
-          <pointLight position={[10, 10, 10]} />
+          <ambientLight intensity={0.5} /> {/* Imitated lighting */}
+          <directionalLight position={[5, 5, 5]} /> {/* Imitated lighting */}
           <Suspense fallback={null}>
             <Model scale={modelScale} uri='https://res.cloudinary.com/dv4vzq7pv/image/upload/v1739961165/NakedFullBody_jaufkc.glb' position={modelPosition} />
             <Model scale={modelScale} uri='https://res.cloudinary.com/dv4vzq7pv/image/upload/v1739961163/Head.001_p5sjoz.glb' position={modelPosition} />
+            <Model scale={modelScale} uri='https://res.cloudinary.com/dv4vzq7pv/image/upload/v1739961141/Eyes.001_uab6p6.glb' position={modelPosition} /> {/* Eyes */}
+            <Model scale={modelScale} uri='https://res.cloudinary.com/dv4vzq7pv/image/upload/v1739961165/Nose.001_s4fxsi.glb' position={modelPosition} /> {/* Nose */}
             {selectedHair && <Model scale={modelScale} uri={selectedHair} position={modelPosition} color={colors.hair} />}
             {selectedTop && <Model scale={modelScale} uri={selectedTop} position={modelPosition} color={colors.top} />}
             {selectedBottom && <Model scale={modelScale} uri={selectedBottom} position={modelPosition} color={colors.bottom} />}
@@ -438,5 +443,11 @@ const styles = StyleSheet.create({
     fontSize: 16,
     textAlign: 'center',
     marginTop: 10,
+  },
+  noAssetsText: {
+    fontSize: 16,
+    textAlign: 'center',
+    marginTop: 10,
+    color: '#e74c3c',
   },
 });

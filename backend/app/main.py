@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import smtplib
 from app.config import get_database, print_mongo_connection_info
-from app.routes import user_routes, prediction_routes, avatar_routes, daily_reward_routes, health_quiz_routes, meditation_breathing_routes, physical_activity_routes, nutritional_tracking_routes
+from app.routes import user_routes, prediction_routes, avatar_routes, daily_reward_routes, health_quiz_routes, meditation_breathing_routes, physical_activity_routes, nutritional_tracking_routes, asset_routes
 from app.services.user_service import register_user, verify_user_otp
 from app.models.user_model import UserCreate
 
@@ -89,6 +89,7 @@ app.include_router(health_quiz_routes.router)
 app.include_router(meditation_breathing_routes.router)
 app.include_router(physical_activity_routes.router)
 app.include_router(nutritional_tracking_routes.router)
+app.include_router(asset_routes.router)
 
 # MongoDB connection setup at startup
 @app.on_event("startup")

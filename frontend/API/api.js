@@ -468,3 +468,46 @@ export const createNutritionalTracking = async () => {
     throw error;
   }
 };
+
+// Fetch all assets
+export const readAssets = async () => {
+  try {
+    const response = await axios.get(`${API_URL}/assets/`);
+    return response.data;
+  } catch (error) {
+    console.error('Error reading assets:', error.response ? error.response.data : error);
+    throw error.response ? error.response.data : { detail: 'An error occurred' };
+  }
+};
+
+// Fetch owned assets for a user
+export const readOwnedAssets = async () => {
+  try {
+    const token = await AsyncStorage.getItem('token');
+    const response = await axios.get(`${API_URL}/owned_assets/`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    return response.data;
+  } catch (error) {
+    console.error('Error reading owned assets:', error.response ? error.response.data : error);
+    throw error.response ? error.response.data : { detail: 'An error occurred' };
+  }
+};
+
+// Buy an asset
+export const buyAsset = async (assetUrl) => {
+  try {
+    const token = await AsyncStorage.getItem('token');
+    const response = await axios.post(`${API_URL}/buy_asset`, { asset_url: assetUrl }, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    return response.data;
+  } catch (error) {
+    console.error('Error buying asset:', error.response ? error.response.data : error);
+    throw error.response ? error.response.data : { detail: 'An error occurred' };
+  }
+};

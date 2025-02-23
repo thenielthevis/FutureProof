@@ -1,94 +1,208 @@
-import React, { useState, Suspense } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls, useGLTF } from '@react-three/drei';
-import { View, Image, TouchableOpacity, StyleSheet, ScrollView, Text } from 'react-native';
+import { View, Image, TouchableOpacity, StyleSheet, ScrollView, Text, Alert } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons'; // For icons
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import GameNavbar from '../Navbar/GameNavbar';
+import { readAssets, buyAsset, getUser } from '../API/api'; // Import the API functions to fetch and buy assets
+import { LinearGradient } from 'expo-linear-gradient'; // Import LinearGradient
 
 // Load 3D model component
-function Model({ uri, scale, position }) {
-  const { scene } = useGLTF(uri);
-  scene.scale.set(scale.x, scale.y, scale.z);
-  scene.position.set(position.x, position.y, position.z);
-  return <primitive object={scene} />;
+function Model({ bodyUri, headUri, outfitUri, eyesUri, noseUri, scale, position }) {
+  const body = useGLTF(bodyUri);
+  const head = useGLTF(headUri);
+  const outfit = outfitUri ? useGLTF(outfitUri) : null;
+  const eyes = useGLTF(eyesUri);
+  const nose = useGLTF(noseUri);
+
+  body.scene.scale.set(scale.x, scale.y, scale.z);
+  body.scene.position.set(position.x, position.y, position.z);
+
+  head.scene.scale.set(scale.x, scale.y, scale.z);
+  head.scene.position.set(position.x, position.y, position.z); // Adjust head position
+
+  eyes.scene.scale.set(scale.x, scale.y, scale.z);
+  eyes.scene.position.set(position.x, position.y, position.z); // Adjust eyes position
+
+  nose.scene.scale.set(scale.x, scale.y, scale.z);
+  nose.scene.position.set(position.x, position.y, position.z); // Adjust nose position
+
+  if (outfit) {
+    outfit.scene.scale.set(scale.x, scale.y, scale.z);
+    outfit.scene.position.set(position.x, position.y, position.z); // Adjust outfit position
+  }
+
+  return (
+    <>
+      <primitive object={body.scene} />
+      <primitive object={head.scene} />
+      <primitive object={eyes.scene} />
+      <primitive object={nose.scene} />
+      {outfit && <primitive object={outfit.scene} />}
+    </>
+  );
 }
 
 export default function Shop() {
   const [selectedOutfit, setSelectedOutfit] = useState(null);
+  const [assets, setAssets] = useState([]);
+  const [defaultBodyUri, setDefaultBodyUri] = useState('');
+  const [defaultHeadUri, setDefaultHeadUri] = useState('');
+  const [defaultEyesUri, setDefaultEyesUri] = useState('');
+  const [defaultNoseUri, setDefaultNoseUri] = useState('');
+  const [user, setUser] = useState({ coins: 0 });
+  const [selectedCategory, setSelectedCategory] = useState(null); // State to track selected category
   const navigation = useNavigation(); // Hook for navigation
 
-  // Human model (Cloudinary URLs)
-  const humanModel = 'https://res.cloudinary.com/dv4vzq7pv/image/upload/v1739961165/NakedFullBody_jaufkc.glb';
-  const headModel = 'https://res.cloudinary.com/dv4vzq7pv/image/upload/v1739961163/Head.001_p5sjoz.glb';
+  useEffect(() => {
+    // Fetch assets from the backend
+    const fetchAssets = async () => {
+      try {
+        const fetchedAssets = await readAssets();
 
-  // Outfit options (with preview images and Cloudinary URLs)
-  const outfitOptions = [
-    { id: 1, label: "Outfit 001", uri: 'https://res.cloudinary.com/dv4vzq7pv/image/upload/v1739961166/Outfit.001_ltaosl.glb', preview: { uri: 'https://res.cloudinary.com/dv4vzq7pv/image/upload/v1739963242/outfit1_xpdkme.png' } },
-    { id: 2, label: "Outfit 002", uri: 'https://res.cloudinary.com/dv4vzq7pv/image/upload/v1739961168/Outfit.002_fppb7h.glb', preview: { uri: 'https://res.cloudinary.com/dv4vzq7pv/image/upload/v1739963244/outfit2_ohvmrf.png' } },
-    { id: 3, label: "Outfit 003", uri: 'https://res.cloudinary.com/dv4vzq7pv/image/upload/v1739961167/Outfit.003_u5v8zx.glb', preview: { uri: 'https://res.cloudinary.com/dv4vzq7pv/image/upload/v1739963245/outfit3_zd9w6v.png' } },
-    { id: 4, label: "Outfit 004", uri: 'https://res.cloudinary.com/dv4vzq7pv/image/upload/v1739961167/Outfit.004_puxvvl.glb', preview: { uri: 'https://res.cloudinary.com/dv4vzq7pv/image/upload/v1739963246/outfit4_mdrzhk.png' } },
-  ];
+        // Extract Body, Head, Eyes, and Nose URIs but exclude them from the selection cards
+        const bodyAsset = fetchedAssets.find(asset => asset.name === 'Body');
+        const headAsset = fetchedAssets.find(asset => asset.name === 'Head');
+        const eyesAsset = fetchedAssets.find(asset => asset.name === 'Eyes');
+        const noseAsset = fetchedAssets.find(asset => asset.name === 'Nose');
 
-  // Ensure grid layout with empty cards for alignment
-  const totalCards = 20;
-  const filledCards = outfitOptions.length;
-  const emptyCards = totalCards - filledCards;
-  const allCards = [...outfitOptions, ...Array(emptyCards).fill(null)];
+        if (bodyAsset) setDefaultBodyUri(bodyAsset.url);
+        if (headAsset) setDefaultHeadUri(headAsset.url);
+        if (eyesAsset) setDefaultEyesUri(eyesAsset.url);
+        if (noseAsset) setDefaultNoseUri(noseAsset.url);
+
+        // Filter out Body, Head, Eyes, and Nose from selection cards
+        const filteredAssets = fetchedAssets.filter(asset => asset.name !== 'Body' && asset.name !== 'Head' && asset.name !== 'Eyes' && asset.name !== 'Nose');
+        setAssets(filteredAssets);
+      } catch (error) {
+        console.error('Error fetching assets:', error);
+      }
+    };
+
+    // Fetch user data
+    const fetchUserData = async () => {
+      try {
+        const token = await AsyncStorage.getItem('token');
+        const userData = await getUser(token);
+        setUser(userData);
+      } catch (error) {
+        console.error('Error fetching user data:', error);
+      }
+    };
+
+    fetchAssets();
+    fetchUserData();
+  }, []);
+
+  // Group assets by asset_type
+  const groupedAssets = assets.reduce((acc, asset) => {
+    if (!acc[asset.asset_type]) {
+      acc[asset.asset_type] = [];
+    }
+    acc[asset.asset_type].push(asset);
+    return acc;
+  }, {});
+
+  const handleBuy = async () => {
+    try {
+      const selectedAsset = assets.find(asset => asset.url === selectedOutfit);
+      if (user.coins < selectedAsset.price) {
+        Alert.alert('Insufficient Coins', 'You do not have enough coins to purchase this item.');
+        return;
+      }
+
+      await buyAsset(selectedOutfit);
+      Alert.alert('Success', 'Item purchased successfully!');
+      setUser(prevUser => ({ ...prevUser, coins: prevUser.coins - selectedAsset.price }));
+      setSelectedOutfit(null); // Reset selected outfit after purchase
+    } catch (error) {
+      console.error('Error buying asset:', error);
+      Alert.alert('Error', 'Failed to purchase item.');
+    }
+  };
 
   return (
-    <View style={styles.container}>
-      
+    <LinearGradient colors={['#14243b', '#77f3bb']} style={styles.container}>
+      <GameNavbar /> {/* Navbar added here */}
+
       {/* Back Button */}
       <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
         <Ionicons name="arrow-back" size={24} color="white" />
       </TouchableOpacity>
 
-      {/* Outfit Selection */}
-      <ScrollView contentContainerStyle={styles.gridContainer}>
-        {allCards.map((outfit, index) => (
-          <TouchableOpacity 
-          key={index} 
-          onPress={() => {
-            setSelectedOutfit(null); // Reset first
-            setTimeout(() => setSelectedOutfit(outfit ? outfit.uri : null), 10); // Then update after a short delay
-          }}
-          style={[styles.card, selectedOutfit === outfit?.uri && styles.selectedCard]} 
-          disabled={!outfit} 
-        >
-            {outfit ? (
-              <>
-                <Image source={outfit.preview} style={styles.previewImage} />
-                <View style={styles.priceContainer}>
-                  <Ionicons name="logo-bitcoin" size={16} color="gold" />
-                  <Text style={styles.priceText}>10</Text>
-                </View>
-              </>
-            ) : null}
-          </TouchableOpacity>
-        ))}
-      </ScrollView>
-
-      {/* Buy Button */}
-      {selectedOutfit && (
-        <TouchableOpacity style={styles.buyButton}>
-          <Text style={styles.buyButtonText}>Buy</Text>
-        </TouchableOpacity>
-      )}
-
-      {/* Model Display */}
-      <View style={styles.modelContainer}>
-        <Canvas>
-          <ambientLight intensity={0.5} />
-          <directionalLight position={[5, 5, 5]} />
-          <Suspense fallback={null}>
-            <Model uri={humanModel} scale={{ x: 2, y: 2, z: 2 }} position={{ x: 0, y: -1.5, z: 0 }} />
-            <Model uri={headModel} scale={{ x: 2, y: 2, z: 2 }} position={{ x: 0, y: -1.5, z: 0 }} />
-            {selectedOutfit && <Model uri={selectedOutfit} scale={{ x: 2, y: 2, z: 2 }} position={{ x: 0, y: -1.5, z: 0 }} />}
-          </Suspense>
-          <OrbitControls />
-        </Canvas>
+      {/* Left Half - 3D Model */}
+      <View style={styles.leftHalf}>
+        {/* Model Display */}
+        <View style={styles.modelContainer}>
+          <Canvas>
+            <ambientLight intensity={0.5} />
+            <directionalLight position={[5, 5, 5]} />
+            <Suspense fallback={null}>
+              <Model
+                bodyUri={defaultBodyUri}
+                headUri={defaultHeadUri}
+                eyesUri={defaultEyesUri}
+                noseUri={defaultNoseUri}
+                outfitUri={selectedOutfit}
+                scale={{ x: 3, y: 3, z: 3 }} // Reduced scale to 3x
+                position={{ x: 0, y: -3.6, z: 0 }} // Adjusted position to bring the model downwards
+              />
+            </Suspense>
+            <OrbitControls />
+          </Canvas>
+        </View>
       </View>
-    </View>
+
+      {/* Right Half - Category Buttons and Cards */}
+      <View style={styles.rightHalf}>
+        <ScrollView contentContainerStyle={styles.categoryButtonsContainer}>
+          {Object.keys(groupedAssets).map((assetType) => (
+            <View key={assetType}>
+              <TouchableOpacity
+                style={[styles.categoryButton, selectedCategory === assetType && styles.selectedCategoryButton]}
+                onPress={() => setSelectedCategory(assetType)}
+              >
+                <Text style={styles.categoryButtonText}>{assetType.toUpperCase()}</Text>
+              </TouchableOpacity>
+              {selectedCategory === assetType && (
+                <View style={styles.cardsContainer}>
+                  {groupedAssets[assetType].map((asset, index) => (
+                    <TouchableOpacity
+                      key={index}
+                      onPress={() => {
+                        setSelectedOutfit(null); // Reset first
+                        setTimeout(() => setSelectedOutfit(asset ? asset.url : null), 10); // Then update after a short delay
+                      }}
+                      style={[styles.card, selectedOutfit === asset?.url && styles.selectedCard]}
+                      disabled={!asset}
+                    >
+                      {asset ? (
+                        <>
+                          <Image source={{ uri: asset.image_url }} style={styles.previewImage} />
+                          <View style={styles.priceContainer}>
+                            <Ionicons name="logo-bitcoin" size={16} color="gold" />
+                            <Text style={styles.priceText}>{asset.price}</Text>
+                          </View>
+                        </>
+                      ) : null}
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              )}
+            </View>
+          ))}
+        </ScrollView>
+
+        {/* Buy Button */}
+        {selectedOutfit && (
+          <TouchableOpacity style={styles.buyButton} onPress={handleBuy}>
+            <Text style={styles.buyButtonText}>Buy</Text>
+          </TouchableOpacity>
+        )}
+      </View>
+    </LinearGradient>
   );
 }
 
@@ -96,17 +210,43 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     flexDirection: 'row',
-    backgroundColor: '#f5f5f5',
   },
-  gridContainer: {
-    width: '50%',
+  leftHalf: {
+    flex: 2,
+    paddingLeft: 20,
+  },
+  rightHalf: {
+    flex: 1,
+    backgroundColor: '#fff',
+    borderLeftWidth: 1,
+    borderLeftColor: '#ddd',
+  },
+  categoryButtonsContainer: {
+    paddingVertical: 10,
+    marginTop: 50
+  },
+  cardsContainer: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    justifyContent: 'center',
-    paddingTop: 30,
+    justifyContent: 'space-around',
+    padding: 10,
+  },
+  categoryButton: {
+    paddingVertical: 15,
+    paddingHorizontal: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: '#ddd',
+  },
+  selectedCategoryButton: {
+    backgroundColor: '#4CAF50', // Green color for selected category
+  },
+  categoryButtonText: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#333',
   },
   card: {
-    width: '22%',
+    width: '45%',
     height: 120,
     backgroundColor: '#ffffff',
     borderRadius: 10,
@@ -160,17 +300,17 @@ const styles = StyleSheet.create({
     color: 'white',
   },
   modelContainer: {
-    width: '50%',
+    width: '100%',
     height: '100%',
   },
   backButton: {
     position: 'absolute',
-    top: 20,
+    top: '50%',
     left: 20,
     backgroundColor: 'black',
     padding: 10,
     borderRadius: 50,
     zIndex: 10,
+    transform: [{ translateY: -25 }], // Adjust to center vertically
   },
 });
-
