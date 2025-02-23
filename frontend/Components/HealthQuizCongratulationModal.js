@@ -9,6 +9,7 @@ const { width, height } = Dimensions.get("window");
 const QuizCongratulationsModal = ({ visible, onClose, score, totalQuestions, coins, xp }) => {
   const [showConfetti, setShowConfetti] = useState(false);
   const confettiRef = useRef(null);
+  const [sound, setSound] = useState();
 
   useEffect(() => {
     if (score !== null) {
