@@ -6,7 +6,7 @@ import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons'; // For icons
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import GameNavbar from '../Navbar/GameNavbar';
-import { readAssets, buyAsset, getUser } from '../API/api'; // Import the API functions to fetch and buy assets
+import { readAssets, buyAsset, getUser, purchaseItem } from '../API/api'; // Import the API functions to fetch and buy assets
 import { LinearGradient } from 'expo-linear-gradient'; // Import LinearGradient
 
 // Load 3D model component
@@ -113,7 +113,7 @@ export default function Shop() {
         return;
       }
 
-      await buyAsset(selectedOutfit);
+      await purchaseItem(selectedAsset._id);
       Alert.alert('Success', 'Item purchased successfully!');
       setUser(prevUser => ({ ...prevUser, coins: prevUser.coins - selectedAsset.price }));
       setSelectedOutfit(null); // Reset selected outfit after purchase

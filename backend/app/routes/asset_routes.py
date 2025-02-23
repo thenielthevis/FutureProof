@@ -1,11 +1,10 @@
-from fastapi import APIRouter, HTTPException, UploadFile, File, Form, Depends
+from fastapi import APIRouter, HTTPException, UploadFile, File, Form, Depends, Body  # Import Body
 from pydantic import BaseModel
 from typing import List, Optional
 from app.models.asset_model import Asset
 from app.models.user_model import UserInDB
-from app.dependencies import get_current_admin
+from app.dependencies import get_current_admin, get_current_user  # Import get_current_user
 from app.services.asset_service import create_asset, read_assets, read_asset_by_id, update_asset, delete_asset
-from app.services.owned_asset_service import buy_asset
 
 router = APIRouter()
 
@@ -14,6 +13,9 @@ class AssetCreate(BaseModel):
     description: str
     price: float
     asset_type: str
+
+class BuyAssetRequest(BaseModel):
+    asset_url: str
 
 # Create an asset
 @router.post("/create/asset/", response_model=Asset)
@@ -86,18 +88,3 @@ async def delete_asset_route(asset_id: str, current_admin: UserInDB = Depends(ge
     except Exception as e:
         print(f"Error deleting asset: {str(e)}")
         raise HTTPException(status_code=500, detail="Internal Server Error")
-
-# Buy an asset
-# @router.post("/buy_asset")
-# async def buy_asset_route(
-#     asset_url: str,
-#     current_user: UserInDB = Depends(get_current_user)
-# ):
-#     try:
-#         return await buy_asset(current_user.id, asset_url)
-#     except HTTPException as e:
-#         print(f"Error buying asset: {e.detail}")
-#         raise e
-#     except Exception as e:
-#         print(f"Unexpected error buying asset: {str(e)}")
-#         raise HTTPException(status_code=500, detail="Internal Server Error")

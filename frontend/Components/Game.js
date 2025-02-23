@@ -8,7 +8,7 @@ import { useNavigation } from '@react-navigation/native';
 import { LinearGradient } from 'expo-linear-gradient';
 import GameNavbar from '../Navbar/GameNavbar'; // Import GameNavbar
 import { FaShoppingCart } from 'react-icons/fa';
-import { readOwnedAssets } from '../API/api'; // Import the API function to fetch owned assets
+import { readPurchasedItems } from '../API/api'; // Import the API function to fetch purchased items
 
 // Reusable Model Component with Color
 function Model({ scale, uri, position, color }) {
@@ -43,6 +43,7 @@ function OptionButton({ label, onPress, isSelected, color, preview }) {
 export default function Prediction() {
   const navigation = useNavigation();
   const [selectedHair, setSelectedHair] = useState(null);
+  const [selectedHead, setSelectedHead] = useState(null);  // Define selectedHead state
   const [selectedTop, setSelectedTop] = useState(null);
   const [selectedBottom, setSelectedBottom] = useState(null);
   const [selectedShoes, setSelectedShoes] = useState(null);
@@ -53,27 +54,28 @@ export default function Prediction() {
   const [bmiCategory, setBmiCategory] = useState(null);
   const [currentIconIndex, setCurrentIconIndex] = useState(0);
   const [activeTab, setActiveTab] = useState('hair');
-  const [ownedAssets, setOwnedAssets] = useState([]);
+  const [purchasedItems, setPurchasedItems] = useState([]); // Ensure it's initialized as an array
   const icons = ['Home', 'shoppingCart', 'clipboardCheck'];
 
   const colors = {
     hair: "#000000",
+    head: "#ff0000",  // Add color for head
     bottom: "#0000ff",
     shoes: "#000000",
   };
 
   useEffect(() => {
-    // Fetch owned assets from the backend
-    const fetchOwnedAssets = async () => {
+    // Fetch purchased items from the backend
+    const fetchPurchasedItems = async () => {
       try {
-        const assets = await readOwnedAssets();
-        setOwnedAssets(assets);
+        const items = await readPurchasedItems();
+        setPurchasedItems(items);
       } catch (error) {
-        console.error('Error fetching owned assets:', error);
+        console.error('Error fetching purchased items:', error);
       }
     };
 
-    fetchOwnedAssets();
+    fetchPurchasedItems();
   }, []);
 
   const calculateBmi = () => {
@@ -145,25 +147,29 @@ export default function Prediction() {
   };
 
   const renderOptions = () => {
-    if (ownedAssets.length === 0) {
+    if (!Array.isArray(purchasedItems) || purchasedItems.length === 0) {
       return <Text style={styles.noAssetsText}>You don't have any accessories. Purchase them from the Shop!</Text>;
     }
 
     switch (activeTab) {
       case 'hair':
-        return ownedAssets.filter(asset => asset.asset_type === 'hair').map((hair) => (
+        return purchasedItems.filter(item => item.asset_type === 'hair').map((hair) => (
           <OptionButton key={hair._id} label={hair.name} onPress={() => setSelectedHair(hair.url)} isSelected={hair.url === selectedHair} color="#27ae60" preview={hair.image_url} />
         ));
+      case 'head':  // Add case for head
+        return purchasedItems.filter(item => item.asset_type === 'head').map((head) => (
+          <OptionButton key={head._id} label={head.name} onPress={() => setSelectedHead(head.url)} isSelected={head.url === selectedHead} color="#ff0000" preview={head.image_url} />
+        ));
       case 'top':
-        return ownedAssets.filter(asset => asset.asset_type === 'top').map((top) => (
+        return purchasedItems.filter(item => item.asset_type === 'top').map((top) => (
           <OptionButton key={top._id} label={top.name} onPress={() => setSelectedTop(top.url)} isSelected={top.url === selectedTop} color="#3498db" preview={top.image_url} />
         ));
       case 'bottom':
-        return ownedAssets.filter(asset => asset.asset_type === 'bottom').map((bottom) => (
+        return purchasedItems.filter(item => item.asset_type === 'bottom').map((bottom) => (
           <OptionButton key={bottom._id} label={bottom.name} onPress={() => setSelectedBottom(bottom.url)} isSelected={bottom.url === selectedBottom} color="#e74c3c" preview={bottom.image_url} />
         ));
       case 'shoes':
-        return ownedAssets.filter(asset => asset.asset_type === 'shoes').map((shoes) => (
+        return purchasedItems.filter(item => item.asset_type === 'shoes').map((shoes) => (
           <OptionButton key={shoes._id} label={shoes.name} onPress={() => setSelectedShoes(shoes.url)} isSelected={shoes.url === selectedShoes} color="#f39c12" preview={shoes.image_url} />
         ));
       default:
@@ -187,6 +193,7 @@ export default function Prediction() {
             <Model scale={modelScale} uri='https://res.cloudinary.com/dv4vzq7pv/image/upload/v1739961141/Eyes.001_uab6p6.glb' position={modelPosition} /> {/* Eyes */}
             <Model scale={modelScale} uri='https://res.cloudinary.com/dv4vzq7pv/image/upload/v1739961165/Nose.001_s4fxsi.glb' position={modelPosition} /> {/* Nose */}
             {selectedHair && <Model scale={modelScale} uri={selectedHair} position={modelPosition} color={colors.hair} />}
+            {selectedHead && <Model scale={modelScale} uri={selectedHead} position={modelPosition} color={colors.head} />}  {/* Add selectedHead */}
             {selectedTop && <Model scale={modelScale} uri={selectedTop} position={modelPosition} color={colors.top} />}
             {selectedBottom && <Model scale={modelScale} uri={selectedBottom} position={modelPosition} color={colors.bottom} />}
             {selectedShoes && <Model scale={modelScale} uri={selectedShoes} position={modelPosition} color={colors.shoes} />}
@@ -246,6 +253,9 @@ export default function Prediction() {
             <View style={styles.tabContainer}>
               <TouchableOpacity style={[styles.tabButton, activeTab === 'hair' && styles.activeTab]} onPress={() => setActiveTab('hair')}>
                 <Text style={styles.tabText}>Hair</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={[styles.tabButton, activeTab === 'head' && styles.activeTab]} onPress={() => setActiveTab('head')}>  {/* Add tab for head */}
+                <Text style={styles.tabText}>Head</Text>
               </TouchableOpacity>
               <TouchableOpacity style={[styles.tabButton, activeTab === 'top' && styles.activeTab]} onPress={() => setActiveTab('top')}>
                 <Text style={styles.tabText}>Top</Text>
