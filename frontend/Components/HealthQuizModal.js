@@ -63,7 +63,7 @@ const HealthQuizModal = ({ visible, onClose, onBack }) => {
 
     setTimeout(() => {
       handleNextQuestion(answer);
-    }, 1500); // Delay to show the color change and text
+    }, 1500);
   };
 
   const animateCoins = () => {

@@ -278,8 +278,8 @@ const AvatarCRUD = () => {
       </LinearGradient>
 
       {/* Main Content */}
-      <LinearGradient colors={['#14243b', '#77f3bb']} style={styles.content}>
-        <Text style={styles.header}>imysm</Text>
+      <View style={styles.content}>
+        <Text style={styles.header}>Avatars Management</Text>
         <View style={styles.searchCreateContainer}>
           <TouchableOpacity style={styles.openModalButton} onPress={handleOpenModal}>
             <Text style={styles.openModalButtonText}>Create Avatar</Text>
@@ -391,7 +391,7 @@ const AvatarCRUD = () => {
             </View>
           </View>
         </Modal>
-      </LinearGradient>
+      </View>
     </View>
   );
 };
@@ -414,7 +414,7 @@ const styles = StyleSheet.create({
   },
   sidebarText: {
     color: '#F5F5F5',
-    fontSize: 25,
+    fontSize: 15,
     marginLeft: 10,
   },
   sidebarTop: {
@@ -426,10 +426,9 @@ const styles = StyleSheet.create({
     padding: 20,
   },
   header: {
-    fontSize: 40,
+    fontSize: 20,
     fontWeight: 'bold',
     marginBottom: 20,
-    color: '#ffffff',
   },
   input: {
     borderWidth: 1,

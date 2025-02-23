@@ -64,7 +64,7 @@ const MeditationCongratulationsModal = ({ visible, onClose, rewards, exercises, 
       </Modal>
       {showConfetti && (
         <View style={styles.confettiContainer}>
-          <ConfettiCannon ref={confettiRef} count={200} origin={{ x: width / 2, y: height / 2 }} explosionSpeed={300} fallSpeed={2000} fadeOut={true}/>
+          <ConfettiCannon ref={confettiRef} count={200} origin={{ x: width / 2, y: height / 2 }} explosionSpeed={500} fallSpeed={3000} fadeOut={true}/>
         </View>
       )}
     </>
@@ -146,7 +146,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     zIndex: 1000,
-    transform: [{ translateY: 800 }],
+    transform: [{ translateY: 100 }],
   },
 });
 

@@ -1,12 +1,15 @@
 import React, { useState, Suspense } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls, useGLTF } from '@react-three/drei/native';
-import { View, Text, TouchableOpacity, StyleSheet, Modal, TextInput, Image, ScrollView } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Modal, TextInput, Image, ScrollView, Pressable } from 'react-native';
 import * as THREE from 'three';
-import { FontAwesome, FontAwesome5 } from '@expo/vector-icons';
+import { FontAwesome } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { LinearGradient } from 'expo-linear-gradient';
 import GameNavbar from '../Navbar/GameNavbar'; // Import GameNavbar
+import DailyRewards from './DailyRewards'; // Import DailyRewards
+import TaskModal from './TaskModal'; // Import TaskModal
+// import Prediction from './Prediction'; // Import Prediction
 
 // Reusable Model Component with Color
 function Model({ scale, uri, position, color }) {
@@ -38,7 +41,7 @@ function OptionButton({ label, onPress, isSelected, color, preview }) {
   );
 }
 
-export default function Prediction() {
+export default function Game() {
   const navigation = useNavigation();
   const [selectedHair, setSelectedHair] = useState(null);
   const [selectedTop, setSelectedTop] = useState(null);
@@ -51,7 +54,17 @@ export default function Prediction() {
   const [bmiCategory, setBmiCategory] = useState(null);
   const [currentIconIndex, setCurrentIconIndex] = useState(0);
   const [activeTab, setActiveTab] = useState('hair');
-  const icons = ['Home', 'shoppingCart', 'clipboardCheck'];
+  const [dailyRewardsVisible, setDailyRewardsVisible] = useState(false);
+  const [taskModalVisible, setTaskModalVisible] = useState(false);
+  const [predictionVisible, setPredictionVisible] = useState(false);
+  const [hoveredIndex, setHoveredIndex] = useState(null);
+  const icons = [
+    require('../assets/icons/Navigation/dailyassessment.png'),
+    require('../assets/icons/Navigation/dailyrewards.png'),
+    require('../assets/icons/Navigation/prediction.png'),
+    require('../assets/icons/Navigation/shop.png'),
+    require('../assets/icons/Navigation/task.png')
+  ];
 
   const colors = {
     hair: "#000000",
@@ -110,40 +123,44 @@ export default function Prediction() {
   const modelScale = getModelScale();
   const modelPosition = { x: 0, y: -2.5, z: 0 }; // Adjusted position to move the model downwards
 
-  const handleNextPress = () => {
-    setCurrentIconIndex((prevIndex) => (prevIndex + 1) % icons.length);
-  };
-
-  const handleHomePress = () => {
-    navigation.navigate('Home');
-  };
-
-  const renderAdditionalIcon = () => {
-    const icon = icons[currentIconIndex];
-  
-    switch (icon) {
-      case 'Home':
-        return (
-          <TouchableOpacity style={styles.iconButton} onPress={handleHomePress}>
-            <FontAwesome name="home" style={styles.additionalIconStyle} />
-          </TouchableOpacity>
-        );
-      case 'shoppingCart':
-        return (
-          <TouchableOpacity 
-            style={styles.iconButton} 
-            onPress={() => navigation.navigate('Shop')}
-          >
-            <FaShoppingCart style={styles.additionalIconStyle} />
-          </TouchableOpacity>
-        );
-      case 'clipboardCheck':
-        return <FontAwesome name="clipboard-check" style={styles.additionalIconStyle} />;
+  const handleIconPress = (index) => {
+    switch (index) {
+      case 0:
+        navigation.navigate('DailyAssessment');
+        break;
+      case 1:
+        setDailyRewardsVisible(true);
+        break;
+      case 2:
+        navigation.navigate('Prediction');
+        break;
+      case 3:
+        navigation.navigate('Shop');
+        break;
+      case 4:
+        setTaskModalVisible(true);
+        break;
       default:
-        return null;
+        break;
     }
   };
-  
+
+  const renderAdditionalIcons = () => {
+    return icons.map((icon, index) => (
+      <Pressable
+        key={index}
+        style={({ hovered }) => [
+          styles.iconButton,
+          hovered || hoveredIndex === index ? styles.hoveredIcon : null,
+        ]}
+        onHoverIn={() => setHoveredIndex(index)}
+        onHoverOut={() => setHoveredIndex(null)}
+        onPress={() => handleIconPress(index)}
+      >
+        <Image source={icon} style={styles.additionalIconStyle} />
+      </Pressable>
+    ));
+  };
 
   const renderOptions = () => {
     switch (activeTab) {
@@ -192,15 +209,7 @@ export default function Prediction() {
 
       {/* Navigation Bar Below Character */}
       <View style={styles.navContainer}>
-        <TouchableOpacity style={styles.iconButton} onPress={handleNextPress}>
-          <FontAwesome name="arrow-left" style={styles.iconStyle} />
-        </TouchableOpacity>
-        <View style={styles.additionalIconsContainer}>
-          {renderAdditionalIcon()}
-        </View>
-        <TouchableOpacity style={styles.iconButton} onPress={handleNextPress}>
-          <FontAwesome name="arrow-right" style={styles.iconStyle} />
-        </TouchableOpacity>
+        {renderAdditionalIcons()}
       </View>
 
       {/* Right Panel */}
@@ -264,6 +273,15 @@ export default function Prediction() {
           </View>
         </View>
       </Modal>
+
+      {/* Daily Rewards Modal */}
+      <DailyRewards visible={dailyRewardsVisible} onClose={() => setDailyRewardsVisible(false)} />
+
+      {/* Task Modal */}
+      <TaskModal visible={taskModalVisible} onClose={() => setTaskModalVisible(false)} />
+
+      {/* Prediction Modal */}
+      {/* <Prediction visible={predictionVisible} onClose={() => setPredictionVisible(false)} /> */}
     </LinearGradient>
   );
 }
@@ -311,10 +329,19 @@ const styles = StyleSheet.create({
     marginTop: 10,
   },
   additionalIconStyle: {
-    fontSize: 50,
-    color: '#000',
-    marginLeft: 16,
+    width: 200,
+    height: 125,
+    marginLeft: 30,
+    transform: [{ scale: 1 }],
+    shadowColor: '#000',
+    shadowOffset: { width: 1, height: 2 },
+    shadowOpacity: 10,
+    shadowRadius: 2,
   },
+  hoveredIcon: {
+    transform: [{ scale: 1.2 }], // Scale up when hovered
+    transition: 'transform 0.2s', // Smooth transition
+  },  
   rightPanel: {
     position: 'absolute',
     right: 16,
@@ -344,25 +371,16 @@ const styles = StyleSheet.create({
   },
   modalContainer: {
     flex: 1,
-    position: 'absolute',
-    right: 275,
-    left: 275,
-    bottom: 20,
     justifyContent: 'center',
-    alignItems: 'flex-end',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)', // Semi-transparent background
   },
   modalContent: {
-    height: '80%',
-    width: '100%',
-    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    backgroundColor: '#fff',
     padding: 20,
     borderRadius: 10,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.8,
-    shadowRadius: 2,
-    borderWidth: 1,
-    borderColor: '#ccc',
+    width: '80%',
+    maxHeight: '80%',
   },
   modalTitle: {
     fontSize: 20,
