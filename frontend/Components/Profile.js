@@ -11,7 +11,8 @@ import {
   Dimensions,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { getUser, getAvatar } from '../API/api';
+import { getUser } from '../API/user_api';
+import { getAvatar } from '../API/avatar_api';
 import Toast from 'react-native-toast-message';
 import { MaterialIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';

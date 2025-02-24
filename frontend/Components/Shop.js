@@ -6,7 +6,8 @@ import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons'; // For icons
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import GameNavbar from '../Navbar/GameNavbar';
-import { readAssets, buyAsset, getUser, purchaseItem } from '../API/api'; // Import the API functions to fetch and buy assets
+import { readAssets, buyAsset, purchaseItem } from '../API/assets_api'; // Import the API functions to fetch and buy assets
+import { getUser } from '../API/user_api';
 import { LinearGradient } from 'expo-linear-gradient'; // Import LinearGradient
 
 // Load 3D model component

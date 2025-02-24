@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, ActivityIndicator, Modal, Dimensions, FlatList, Image } from 'react-native';
-import { getPhysicalActivities, claimRewards } from '../API/api';
+import { getPhysicalActivities } from '../API/physical_activities_api';
+import { claimRewards } from '../API/health_quiz_api';
 import { FontAwesome } from '@expo/vector-icons';
 import Video from 'react-native-video';
 import * as Speech from 'expo-speech';

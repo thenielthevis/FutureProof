@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, ActivityIndicator, Modal, TextInput, Button } from 'react-native';
-import { createNutritionalTracking, getNutritionalTrackingQuestions, submitNutritionalTrackingResponses } from '../API/api';
+import { createNutritionalTracking, getNutritionalTrackingQuestions, submitNutritionalTrackingResponses } from '../API/nutritional_tracking_api';
 import { FontAwesome } from '@expo/vector-icons';
 import NutritionalTrackingCongratulationsModal from './NutritionalTrackingCongratulationsModal';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { claimRewards } from '../API/api';
+import { claimRewards } from '../API/health_quiz_api';
 
 const NutritionalTrackingModal = ({ visible, onClose, onBack }) => {
   const [questionsAnswers, setQuestionsAnswers] = useState([]);

@@ -3,7 +3,8 @@ import { View, TouchableOpacity, StyleSheet, Image, Text } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { FontAwesome, FontAwesome5 } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { getUser, getAvatar } from '../API/api';
+import { getUser } from '../API/user_api';
+import { getAvatar } from '../API/avatar_api';
 import Profile from '../Components/Profile';
 import DailyRewards from '../Components/DailyRewards'; // Import the DailyRewards component
 import TaskModal from '../Components/TaskModal'; // Import the TaskModal component
@@ -15,6 +16,50 @@ const GameNavbar = () => {
   const [taskModalVisible, setTaskModalVisible] = useState(false); // State for Task Modal
   const [avatarUrl, setAvatarUrl] = useState('');
   const [user, setUser] = useState({ coins: 0, level: 1, xp: 0 });
+  const [status, setStatus] = useState({
+    sleep: 50, // 50% sleep
+    battery: 25, // 25% battery
+    health: 80, // 80% health
+    medication: 20,
+  });
+  
+  // Define color & fill logic dynamically
+  const getFillColor = (value) => {
+    if (value <= 25) return "rgba(255, 0, 0, 0.7)"; // Red
+    if (value <= 50) return "rgba(255, 165, 0, 0.7)"; // Orange
+    return "rgba(0, 255, 0, 0.7)"; // Green
+  };
+  
+  const statusData = [
+    {
+      name: "Sleep",
+      icon: "moon-o",
+      value: status.sleep,
+      bgColor: "rgba(255, 255, 255, 0.2)",
+      fillColor: getFillColor(status.sleep),
+    },
+    {
+      name: "Battery",
+      icon: "bolt",
+      value: status.battery,
+      bgColor: "rgba(255, 255, 255, 0.2)",
+      fillColor: getFillColor(status.battery),
+    },
+    {
+      name: "Health",
+      icon: "heartbeat",
+      value: status.health,
+      bgColor: "rgba(255, 255, 255, 0.2)",
+      fillColor: getFillColor(status.health),
+    },
+    {
+      name: "Medication",
+      icon: "medkit",
+      value: status.medication,
+      bgColor: "rgba(255, 255, 255, 0.2)",
+      fillColor: getFillColor(status.medication),
+    },
+  ];  
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -64,11 +109,17 @@ const GameNavbar = () => {
           </TouchableOpacity>
         </View>
 
-        {/* Center Icon */}
-        <View style={styles.centerIcon}>
-          <TouchableOpacity style={styles.iconButton}>
-            <FontAwesome name="battery-half" size={20} color="#F5F5F5" />
-          </TouchableOpacity>
+        {/* Center Status Icons */}
+        <View style={styles.statusContainer}>
+          {statusData.map((item, index) => (
+            <View key={index} style={[styles.statusBox, { backgroundColor: item.bgColor }]}>
+              {/* Filler Box (Dynamic Height) */}
+              <View style={[styles.fillBox, { height: `${item.value}%`, backgroundColor: item.fillColor }]} />
+              
+              {/* Icon & Text */}
+              <FontAwesome name={item.icon} size={20} color="#FFF" style={styles.statusIcon} />
+            </View>
+          ))}
         </View>
 
         {/* Right Icons */}
@@ -116,7 +167,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgb(3, 35, 19)',
     padding: 20,
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    justifyContent: 'center',
     alignItems: 'center',
     zIndex: 10,
   },
@@ -125,10 +176,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     width: '100%',
-  },
-  leftIcons: {
-    flexDirection: 'row',
-    gap: 15,
   },
   centerIcon: {
     alignItems: 'center',
@@ -157,6 +204,40 @@ const styles = StyleSheet.create({
     color: '#F5F5F5',
     fontSize: 12,
     marginLeft: 10,
+  },
+  statusContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center', // Center horizontally
+    alignItems: 'center',
+    gap: 15,
+    transform: [{ translateX: 115 }],
+  },
+  statusBox: {
+    width: 40,
+    height: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
+    position: 'relative',
+    overflow: 'hidden',
+    borderRadius: 10,
+  },
+  fillBox: {
+    position: 'absolute',
+    bottom: 0,
+    width: '100%',
+  },
+  statusIcon: {
+    position: 'absolute',
+    top: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  statusText: {
+    color: '#FFF',
+    fontSize: 12,
+    fontWeight: 'bold',
+    position: 'absolute',
+    bottom: 5,
   },
 });
 

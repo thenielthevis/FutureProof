@@ -2,7 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Modal, ScrollView, Image } from 'react-native';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import { FontAwesome5 } from '@expo/vector-icons';
-import { getAchievementIcon, claimAvatar, getUser, readDailyRewards } from '../API/api';
+import { getUser } from '../API/user_api';
+import { getAchievementIcon, claimAvatar,  } from '../API/avatar_api';
+import { readDailyRewards } from '../API/daily_rewards_api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const DailyRewards = ({ visible, onClose }) => {

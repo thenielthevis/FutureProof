@@ -34,6 +34,11 @@ class UserCreate(BaseModel):
     sleep_hours: str
     activeness: str
     verified: bool = False
+    isasleep: bool = False
+    sleep: int = 0
+    battery: int = 0
+    health: int = 0
+    medication: int = 0
 
     class Config:
         json_encoders = {
@@ -65,6 +70,11 @@ class UserInDB(ObjectIdModel):
     xp: int = 0
     otp: Optional[str] = None  # Add OTP field
     verified: bool = False
+    isasleep: bool = False
+    sleep: int = 0
+    battery: int = 0
+    health: int = 0
+    medication: int = 0
 
     class Config:
         json_encoders = {

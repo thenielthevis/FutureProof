@@ -14,7 +14,7 @@ import {
 } from 'react-native';
 import { Checkbox } from 'react-native-paper';
 import { LinearGradient } from 'expo-linear-gradient';
-import { registerUser } from '../API/api';
+import { registerUser } from '../API/user_api';
 import Toast from 'react-native-toast-message';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import axios from 'axios'; // Import axios

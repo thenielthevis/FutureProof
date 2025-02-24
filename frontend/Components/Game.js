@@ -11,7 +11,7 @@ import DailyRewards from './DailyRewards'; // Import DailyRewards
 import TaskModal from './TaskModal'; // Import TaskModal
 // import Prediction from './Prediction'; // Import Prediction
 import { FaShoppingCart } from 'react-icons/fa';
-import { readPurchasedItems } from '../API/api'; // Import the API function to fetch purchased items
+import { readPurchasedItems } from '../API/assets_api'; // Import the API function to fetch purchased items
 
 // Reusable Model Component with Color
 function Model({ scale, uri, position, color }) {

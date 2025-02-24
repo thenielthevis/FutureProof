@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, ActivityIndicator, Modal, Dimensions, FlatList, Image } from 'react-native';
-import { getMeditationBreathingExercises, claimRewards } from '../API/api';
+import { getMeditationBreathingExercises } from '../API/meditation_api';
+import { claimRewards } from '../API/health_quiz_api';
 import { FontAwesome } from '@expo/vector-icons';
 import Video from 'react-native-video';
 import TrackPlayer, { usePlaybackState } from 'react-native-track-player';

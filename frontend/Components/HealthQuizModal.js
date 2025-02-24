@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, ActivityIndicator, Modal, Animated, Easing, Dimensions } from 'react-native';
-import { getRandomQuestions, submitQuiz, claimRewards } from '../API/api';
+import { getRandomQuestions, claimRewards } from '../API/health_quiz_api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { FontAwesome5, FontAwesome } from '@expo/vector-icons';
 import QuizCongratulationsModal from './HealthQuizCongratulationModal';

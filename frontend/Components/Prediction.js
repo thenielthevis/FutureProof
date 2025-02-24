@@ -9,7 +9,7 @@ import {
   ScrollView,
   Dimensions,
 } from 'react-native';
-import { getPrediction } from '../API/api';
+import { getPrediction } from '../API/prediction_api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import { LineChart } from 'react-native-chart-kit';

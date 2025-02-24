@@ -39,7 +39,7 @@ MAILTRAP_HOST = "smtp.mailtrap.io"
 MAILTRAP_PORT = 2525
 MAILTRAP_USERNAME = "3e5da143b7a5f6"
 MAILTRAP_PASSWORD = "4e0634ed53aaf2"
-SENDER_EMAIL = "your_email@example.com"
+SENDER_EMAIL = "futureproof@gmail.com"
 
 @app.post("/send-email/")
 def send_email(email_data: EmailRequest):

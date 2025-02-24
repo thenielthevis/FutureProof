@@ -3,7 +3,7 @@ import {
   View, Text, TouchableOpacity, StyleSheet, TextInput, Image, ScrollView, Modal, Alert, Platform
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import { createAvatar, readAvatars, updateAvatar, deleteAvatar } from '../API/api';
+import { createAvatar, readAvatars, updateAvatar, deleteAvatar } from '../API/avatar_api';
 import * as ImagePicker from 'expo-image-picker';
 import * as FileSystem from 'expo-file-system';
 import { LinearGradient } from 'expo-linear-gradient';

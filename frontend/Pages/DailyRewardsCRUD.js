@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, TextInput, FlatList, Image, Picker, ScrollView, Modal, Alert } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import { createDailyReward, readDailyRewards, updateDailyReward, deleteDailyReward, readAvatars, getAvatar } from '../API/api';
+import { createDailyReward, readDailyRewards, updateDailyReward, deleteDailyReward } from '../API/daily_rewards_api';
+import { readAvatars, getAvatar } from '../API/avatar_api';
 import { LinearGradient } from 'expo-linear-gradient';
 import { FontAwesome, FontAwesome5 } from '@expo/vector-icons';
 import * as Print from 'expo-print';
