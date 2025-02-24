@@ -18,7 +18,7 @@ Developer Guide:
 
 ------------BACKEND START:
 THE BACKEND COMMAND MUST BE APPLIED IN THE BACKEND FOLDER
-uvicorn app.main:app --host 0.0.0.0 --port 8000 
+uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload 
 
 ------------FRONTEND START:
 THE FRONTEND COMMAND MUST BE APPLIED IN THE FRONTEND FOLDER
