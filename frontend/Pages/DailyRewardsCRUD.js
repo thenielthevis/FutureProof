@@ -362,7 +362,7 @@ const DailyRewardsCRUD = () => {
       </LinearGradient>
 
       {/* Main Content with Gradient Background */}
-      <LinearGradient colors={['#14243b', '#77f3bb']} style={styles.content}>
+      <View style={styles.content}>
         <Text style={styles.header}>Daily Rewards Management</Text>
 
         {/* Search and Create Reward Button */}
@@ -436,103 +436,103 @@ const DailyRewardsCRUD = () => {
 
         {/* Modal for Create/Update Reward */}
         <Modal
-  animationType="slide"
-  transparent={true}
-  visible={modalVisible}
-  onRequestClose={() => setModalVisible(false)}
->
-  <View style={styles.modalOverlay}>
-    <View style={styles.modalContent}>
-      <LinearGradient
-        colors={['#1A3B32', '#1A3B32']}
-        style={styles.modalHeader}
-      >
-        <Text style={styles.modalHeaderText}>{editingReward ? 'Update Reward' : 'Create Reward'}</Text>
-        <TouchableOpacity style={styles.closeButton} onPress={() => setModalVisible(false)}>
-          <Text style={styles.closeButtonText}>X</Text>
-        </TouchableOpacity>
-      </LinearGradient>
-
-      {/* Day Input */}
-      <View style={styles.inputGroup}>
-        <Text style={styles.label}>Day</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="Enter day number"
-          value={day}
-          onChangeText={setDay}
-        />
-      </View>
-
-      {/* Coins Input */}
-      <View style={styles.inputGroup}>
-        <Text style={styles.label}>Coins</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="Enter coin amount"
-          value={coins}
-          onChangeText={setCoins}
-        />
-      </View>
-
-      {/* Avatar Picker */}
-      <View style={styles.inputGroup}>
-        <Text style={styles.label}>Avatar</Text>
-        <Picker
-          selectedValue={avatar}
-          style={styles.picker}
-          onValueChange={(itemValue) => setAvatar(itemValue)}
+          animationType="slide"
+          transparent={true}
+          visible={modalVisible}
+          onRequestClose={() => setModalVisible(false)}
         >
-          <Picker.Item label="Select Avatar" value="" />
-          {avatars.map((avatar) => (
-            <Picker.Item key={avatar._id} label={avatar.name} value={avatar._id} />
-          ))}
-        </Picker>
-      </View>
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalContent}>
+              <LinearGradient
+                colors={['#1A3B32', '#1A3B32']}
+                style={styles.modalHeader}
+              >
+                <Text style={styles.modalHeaderText}>{editingReward ? 'Update Reward' : 'Create Reward'}</Text>
+                <TouchableOpacity style={styles.closeButton} onPress={() => setModalVisible(false)}>
+                  <Text style={styles.closeButtonText}>X</Text>
+                </TouchableOpacity>
+              </LinearGradient>
 
-      {/* Top ID Input */}
-      <View style={styles.inputGroup}>
-        <Text style={styles.label}>Top ID</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="Enter top clothing ID"
-          value={top}
-          onChangeText={setTop}
-        />
-      </View>
+              {/* Day Input */}
+              <View style={styles.inputGroup}>
+                <Text style={styles.label}>Day</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder="Enter day number"
+                  value={day}
+                  onChangeText={setDay}
+                />
+              </View>
 
-      {/* Bottom ID Input */}
-      <View style={styles.inputGroup}>
-        <Text style={styles.label}>Bottom ID</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="Enter bottom clothing ID"
-          value={bottom}
-          onChangeText={setBottom}
-        />
-      </View>
+              {/* Coins Input */}
+              <View style={styles.inputGroup}>
+                <Text style={styles.label}>Coins</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder="Enter coin amount"
+                  value={coins}
+                  onChangeText={setCoins}
+                />
+              </View>
 
-      {/* Shoes ID Input */}
-      <View style={styles.inputGroup}>
-        <Text style={styles.label}>Shoes ID</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="Enter shoes ID"
-          value={shoes}
-          onChangeText={setShoes}
-        />
-      </View>
+              {/* Avatar Picker */}
+              <View style={styles.inputGroup}>
+                <Text style={styles.label}>Avatar</Text>
+                <Picker
+                  selectedValue={avatar}
+                  style={styles.picker}
+                  onValueChange={(itemValue) => setAvatar(itemValue)}
+                >
+                  <Picker.Item label="Select Avatar" value="" />
+                  {avatars.map((avatar) => (
+                    <Picker.Item key={avatar._id} label={avatar.name} value={avatar._id} />
+                  ))}
+                </Picker>
+              </View>
 
-      <TouchableOpacity
-        style={styles.buttonPrimary}
-        onPress={editingReward ? handleUpdateReward : handleCreateReward}
-      >
-        <Text style={styles.buttonText}>{editingReward ? 'Update Reward' : 'Create Reward'}</Text>
-      </TouchableOpacity>
-    </View>
-  </View>
-</Modal>
-      </LinearGradient>
+              {/* Top ID Input */}
+              <View style={styles.inputGroup}>
+                <Text style={styles.label}>Top ID</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder="Enter top clothing ID"
+                  value={top}
+                  onChangeText={setTop}
+                />
+              </View>
+
+              {/* Bottom ID Input */}
+              <View style={styles.inputGroup}>
+                <Text style={styles.label}>Bottom ID</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder="Enter bottom clothing ID"
+                  value={bottom}
+                  onChangeText={setBottom}
+                />
+              </View>
+
+              {/* Shoes ID Input */}
+              <View style={styles.inputGroup}>
+                <Text style={styles.label}>Shoes ID</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder="Enter shoes ID"
+                  value={shoes}
+                  onChangeText={setShoes}
+                />
+              </View>
+
+              <TouchableOpacity
+                style={styles.buttonPrimary}
+                onPress={editingReward ? handleUpdateReward : handleCreateReward}
+              >
+                <Text style={styles.buttonText}>{editingReward ? 'Update Reward' : 'Create Reward'}</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </Modal>
+      </View>
     </View>
   );
 };
@@ -560,7 +560,7 @@ const styles = StyleSheet.create({
   },
   sidebarText: {
     color: '#F5F5F5',
-    fontSize: 25,
+    fontSize: 15,
     marginLeft: 10,
   },
   sidebarTop: {
@@ -575,10 +575,9 @@ const styles = StyleSheet.create({
     padding: 20,
   },
   header: {
-    fontSize: 40,
+    fontSize: 20,
     fontWeight: 'bold',
     marginBottom: 20,
-    color: '#ffffff',
   },
   form: {
     marginBottom: 20,

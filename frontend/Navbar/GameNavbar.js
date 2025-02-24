@@ -59,14 +59,8 @@ const GameNavbar = () => {
       <View style={styles.iconContainer}>
         {/* Left Icons */}
         <View style={styles.leftIcons}>
-          <TouchableOpacity style={styles.iconButton} onPress={() => handleNavigation('Prediction')}>
-            <FontAwesome name="line-chart" size={20} color="#F5F5F5" />
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.iconButton} onPress={() => setRewardsVisible(true)}>
-            <FontAwesome name="clipboard" size={20} color="#F5F5F5" />
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.iconButton} onPress={() => setTaskModalVisible(true)}>
-            <FontAwesome name="map" size={20} color="#F5F5F5" />
+          <TouchableOpacity style={styles.iconButton} onPress={() => handleNavigation('Home')}>
+            <FontAwesome name="home" size={25} color="#F5F5F5" />
           </TouchableOpacity>
         </View>
 
@@ -119,7 +113,7 @@ const styles = StyleSheet.create({
     top: 0,
     left: 0,
     width: '100%',
-    backgroundColor: '#14243b',
+    backgroundColor: 'rgb(3, 35, 19)',
     padding: 20,
     flexDirection: 'row',
     justifyContent: 'space-between',

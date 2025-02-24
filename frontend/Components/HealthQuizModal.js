@@ -3,7 +3,8 @@ import { View, Text, TouchableOpacity, StyleSheet, ActivityIndicator, Modal, Ani
 import { getRandomQuestions, submitQuiz, claimRewards } from '../API/api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { FontAwesome5, FontAwesome } from '@expo/vector-icons';
-import ConfettiCannon from 'react-native-confetti-cannon';
+import QuizCongratulationsModal from './HealthQuizCongratulationModal';
+import { Audio } from 'expo-av';
 
 const { width, height } = Dimensions.get("window");
 
@@ -18,12 +19,12 @@ const HealthQuizModal = ({ visible, onClose, onBack }) => {
   const [coins, setCoins] = useState(0);
   const [totalCoins, setTotalCoins] = useState(0);
   const [totalXp, setTotalXp] = useState(0);
+  const [sound, setSound] = useState();
   const COINS_PER_CORRECT_ANSWER = 2;
   const XP_FOR_QUIZ_COMPLETION = 25;
   const coinAnimation = useRef(new Animated.Value(0)).current;
   const fadeAnimation = useRef(new Animated.Value(0)).current;
-  const [showConfetti, setShowConfetti] = useState(false);
-  const confettiRef = useRef(null);
+  const [showCongratulations, setShowCongratulations] = useState(false);
 
   useEffect(() => {
     const fetchQuestions = async () => {
@@ -42,13 +43,7 @@ const HealthQuizModal = ({ visible, onClose, onBack }) => {
     }
   }, [visible]);
 
-  useEffect(() => {
-    if (score !== null) {
-      setShowConfetti(true); // Show confetti when quiz is completed
-    }
-  }, [score]);
-
-  const handleAnswerSelect = (answer) => {
+  const handleAnswerSelect = async (answer) => {
     setSelectedAnswer(answer);
     const isCorrect = answer === questions[currentQuestionIndex].correct_answer;
     setAnswerStatus(isCorrect ? 'correct' : 'incorrect');
@@ -60,12 +55,15 @@ const HealthQuizModal = ({ visible, onClose, onBack }) => {
     }).start();
 
     if (isCorrect) {
+      await playCorrectSound();
       animateCoins();
+    } else {
+      await playWrongSound();
     }
 
     setTimeout(() => {
       handleNextQuestion(answer);
-    }, 1500); // Delay to show the color change and text
+    }, 1500);
   };
 
   const animateCoins = () => {
@@ -112,12 +110,25 @@ const HealthQuizModal = ({ visible, onClose, onBack }) => {
         setTotalCoins(response.coins);
         setTotalXp(response.xp);
         setScore(totalScore);
-        setShowConfetti(true); // Show confetti when quiz is completed
+        setShowCongratulations(true); // Show congratulations modal
+        onClose(); // Close the health quiz modal
       } catch (err) {
         console.error('Error occurred:', err);
         setError(err.detail || 'An error occurred');
       }
     }
+  };
+
+  const playCorrectSound = async () => {
+    const { sound } = await Audio.Sound.createAsync(require('../assets/sound-effects/success.mp3'));
+    setSound(sound);
+    await sound.playAsync();
+  };
+
+  const playWrongSound = async () => {
+    const { sound } = await Audio.Sound.createAsync(require('../assets/sound-effects/wrong.mp3'));
+    setSound(sound);
+    await sound.playAsync();
   };
 
   if (loading) {
@@ -144,36 +155,6 @@ const HealthQuizModal = ({ visible, onClose, onBack }) => {
           </View>
         </View>
       </Modal>
-    );
-  }
-
-  if (score !== null) {
-    return (
-      <>
-        <Modal visible={visible} transparent={true} animationType="slide">
-          <View style={styles.modalOverlay}>
-            <View style={styles.modalContent}>
-              <Text style={styles.congratulationsText}>Congratulations!</Text>
-              <Text style={styles.successText}>You've successfully completed the health quiz.</Text>
-              <Text style={styles.scoreText}>Total Score: {score}/{questions.length}</Text>
-              <Text style={styles.coinsText}>
-                <FontAwesome5 name="coins" size={20} color="gold" /> + {coins} Coins
-              </Text>
-              <Text style={styles.xpText}>
-                <FontAwesome5 name="star" size={20} color="gold" /> + {XP_FOR_QUIZ_COMPLETION} XP
-              </Text>
-              <TouchableOpacity onPress={onClose} style={styles.closeButton}>
-                <Text style={styles.buttonText}>Continue</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </Modal>
-        {showConfetti && (
-          <View style={styles.confettiContainer}>
-            <ConfettiCannon ref={confettiRef} count={200} origin={{ x: width / 2, y: height / 2 }} explosionSpeed={300} fallSpeed={2000} fadeOut={true}/>
-          </View>
-        )}
-      </>
     );
   }
 
@@ -250,6 +231,16 @@ const HealthQuizModal = ({ visible, onClose, onBack }) => {
           </View>
         </View>
       </Modal>
+      {showCongratulations && (
+        <QuizCongratulationsModal
+          visible={true}
+          onClose={() => setShowCongratulations(false)}
+          score={score}
+          totalQuestions={questions.length}
+          coins={coins}
+          xp={XP_FOR_QUIZ_COMPLETION}
+        />
+      )}
     </>
   );
 };

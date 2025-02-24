@@ -6,7 +6,7 @@ import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons'; // For icons
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import GameNavbar from '../Navbar/GameNavbar';
-import { readAssets, buyAsset, getUser } from '../API/api'; // Import the API functions to fetch and buy assets
+import { readAssets, buyAsset, getUser, purchaseItem } from '../API/api'; // Import the API functions to fetch and buy assets
 import { LinearGradient } from 'expo-linear-gradient'; // Import LinearGradient
 
 // Load 3D model component
@@ -113,7 +113,7 @@ export default function Shop() {
         return;
       }
 
-      await buyAsset(selectedOutfit);
+      await purchaseItem(selectedAsset._id);
       Alert.alert('Success', 'Item purchased successfully!');
       setUser(prevUser => ({ ...prevUser, coins: prevUser.coins - selectedAsset.price }));
       setSelectedOutfit(null); // Reset selected outfit after purchase
@@ -146,8 +146,8 @@ export default function Shop() {
                 eyesUri={defaultEyesUri}
                 noseUri={defaultNoseUri}
                 outfitUri={selectedOutfit}
-                scale={{ x: 3, y: 3, z: 3 }} // Reduced scale to 3x
-                position={{ x: 0, y: -3.6, z: 0 }} // Adjusted position to bring the model downwards
+                scale={{ x: 2, y: 2, z: 2 }}
+                position={{ x: 0, y: -2.6, z: 0 }}
               />
             </Suspense>
             <OrbitControls />

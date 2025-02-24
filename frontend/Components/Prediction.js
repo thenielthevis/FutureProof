@@ -253,7 +253,7 @@ const Prediction = ({ navigation }) => {
   }
 
   return (
-    <LinearGradient colors={['#ffffff', '#72f2b8']} style={styles.container}> {/* Added Linear Gradient here */}
+    <LinearGradient colors={['rgb(20, 36, 59)', 'rgb(119, 243, 187)']} style={styles.container}> {/* Added Linear Gradient here */}
       <Modal
         animationType="slide"
         transparent={true}
@@ -323,7 +323,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#2c3e50',
     borderRadius: isMobile ? 0 : 20, // No border radius for mobile
     padding: 20,
-    marginTop: isMobile ? 20 : 120, // Add margin on top for mobile
+    marginTop: isMobile ? 20 : 75, // Add margin on top for mobile
     marginBottom: isMobile ? 20 : 50, // Add margin at the bottom for mobile
     alignItems: 'center',
     shadowColor: '#000',
