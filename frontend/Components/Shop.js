@@ -1,7 +1,7 @@
 import React, { useState, useEffect, Suspense } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls, useGLTF } from '@react-three/drei';
-import { View, Image, TouchableOpacity, StyleSheet, ScrollView, Text, Alert } from 'react-native';
+import { View, Image, TouchableOpacity, StyleSheet, ScrollView, Text, Alert, ActivityIndicator } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons'; // For icons
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -54,6 +54,7 @@ export default function Shop() {
   const [defaultNoseUri, setDefaultNoseUri] = useState('');
   const [user, setUser] = useState({ coins: 0 });
   const [selectedCategory, setSelectedCategory] = useState(null); // State to track selected category
+  const [loading, setLoading] = useState(true); // Loading state
   const navigation = useNavigation(); // Hook for navigation
 
   useEffect(() => {
@@ -78,6 +79,8 @@ export default function Shop() {
         setAssets(filteredAssets);
       } catch (error) {
         console.error('Error fetching assets:', error);
+      } finally {
+        setLoading(false); // Set loading to false after fetching assets
       }
     };
 
@@ -122,6 +125,14 @@ export default function Shop() {
       Alert.alert('Error', 'Failed to purchase item.');
     }
   };
+
+  if (loading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#4CAF50" />
+      </View>
+    );
+  }
 
   return (
     <LinearGradient colors={['#14243b', '#77f3bb']} style={styles.container}>
@@ -312,5 +323,10 @@ const styles = StyleSheet.create({
     borderRadius: 50,
     zIndex: 10,
     transform: [{ translateY: -25 }], // Adjust to center vertically
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 });

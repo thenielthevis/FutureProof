@@ -65,7 +65,8 @@ async def create_asset(
 async def read_assets() -> list[Asset]:
     try:
         assets = await db.assets.find().to_list(length=None)
-        return [Asset(**asset) for asset in assets]
+        assetArray = [Asset(**asset) for asset in assets]
+        return assetArray
     except Exception as e:
         print(f"Error reading assets: {str(e)}")  # Log error
         raise HTTPException(status_code=400, detail=str(e))

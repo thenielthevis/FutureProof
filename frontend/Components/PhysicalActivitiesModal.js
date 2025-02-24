@@ -7,6 +7,7 @@ import * as Speech from 'expo-speech';
 import { Audio } from 'expo-av';
 import PhysicalActivitiesCongratulationsModal from './PhysicalActivitiesCongratulationsModal';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import TrackPlayer, { usePlaybackState } from 'react-native-track-player';
 
 const { width } = Dimensions.get('window');
 
@@ -92,6 +93,11 @@ const PhysicalActivitiesModal = ({ visible, onClose, onBack }) => {
   };
 
   const stopAudio = async () => {
+    const isSetup = await TrackPlayer.getState().then(state => state !== TrackPlayer.STATE_NONE);
+    if (isSetup) {
+      await TrackPlayer.stop();
+      await TrackPlayer.reset();
+    }
     Speech.stop();
   };
 

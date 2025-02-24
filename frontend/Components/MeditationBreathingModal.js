@@ -153,10 +153,17 @@ const MeditationBreathingModal = ({ visible, onClose, onBack }) => {
   };
    
   const stopAudio = async () => {
-    await TrackPlayer.stop();
-    await TrackPlayer.reset();
+    try {
+      const isSetup = await TrackPlayer.isServiceRunning();
+      if (isSetup) {
+        await TrackPlayer.stop();
+        await TrackPlayer.reset();
+      }
+    } catch (error) {
+      console.warn("TrackPlayer stop failed:", error.message);
+    }
     Speech.stop();
-  };
+  };  
 
   const handleFinish = async () => {
     const xpReward = 25;

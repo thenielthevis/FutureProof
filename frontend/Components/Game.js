@@ -124,7 +124,7 @@ export default function Game() {
   const modelScale = { x: getModelScale().x * 2, y: getModelScale().y * 2, z: getModelScale().z * 2 }; // 2x larger
   const modelPosition = { x: 0, y: -5, z: 0 }; // Adjusted position to move the model downwards
 
-  const handleIconPress = (index) => {
+  const handleIconPress = async (index) => {
     switch (index) {
       case 0:
         navigation.navigate('DailyAssessment');
@@ -137,7 +137,6 @@ export default function Game() {
         break;
       case 3:
         navigation.navigate('Shop');
-        onPress={handleShopPress};
         break;
       case 4:
         setTaskModalVisible(true);
@@ -166,7 +165,11 @@ export default function Game() {
 
   const renderOptions = () => {
     if (!Array.isArray(purchasedItems) || purchasedItems.length === 0) {
-      return <Text style={styles.noAssetsText}>You don't have any accessories. Purchase them from the Shop!</Text>;
+      return (
+        <View style={styles.noAssetsContainer}>
+          <Text style={styles.noAssetsText}>You don't have any accessories. Purchase them from the Shop!</Text>
+        </View>
+      );
     }
 
     switch (activeTab) {
@@ -478,5 +481,10 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginTop: 10,
     color: '#e74c3c',
+  },
+  noAssetsContainer: {
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
   },
 });
