@@ -1,8 +1,14 @@
 from bson import ObjectId
 from fastapi import HTTPException
 from typing import List
-from app.models.daily_reward_model import DailyReward
+from app.models.daily_reward_model import DailyReward, DailyRewardClaim
+from app.models.user_model import UserInDB
 from app.config import get_database
+from datetime import datetime, timedelta
+import logging
+import pytz
+
+logger = logging.getLogger(__name__)
 
 db = get_database()
 
@@ -69,3 +75,68 @@ async def delete_daily_reward(reward_id: str) -> DailyReward:
         return DailyReward(**{**reward, "_id": str(reward["_id"])})  # Convert `_id` to string for response
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
+
+# Function to claim daily reward
+async def claim_daily_reward_service(reward: DailyRewardClaim):
+    logger.info(f"Processing reward claim: {reward}")
+    db = get_database()
+    user = await db["users"].find_one({"_id": ObjectId(reward.user_id)})
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    # Check if the reward has already been claimed
+    reward_id_obj = ObjectId(reward.reward_id)
+    if reward_id_obj in user.get("claimed_rewards", []):
+        raise HTTPException(status_code=400, detail="Reward already claimed for this day")
+
+    # Check if the next claim time has passed
+    if user.get("next_claim_time") and datetime.utcnow() < user["next_claim_time"]:
+        raise HTTPException(status_code=400, detail="Cannot claim reward yet")
+
+    # Update user's coins and XP
+    new_coins = user.get("coins", 0) + reward.coins
+    new_xp = user.get("xp", 0) + reward.xp
+
+    # Update user's avatars if applicable
+    if reward.avatar_id:
+        if "avatars" not in user:
+            user["avatars"] = []
+        user["avatars"].append(ObjectId(reward.avatar_id))
+
+    # Update user's assets if applicable
+    if reward.asset_id:
+        if "assets" not in user:
+            user["assets"] = []
+        user["assets"].append(ObjectId(reward.asset_id))
+
+    # Add the claimed reward to the list and set the next claim time
+    claimed_rewards = user.get("claimed_rewards", [])
+    claimed_rewards.append(reward_id_obj)
+    next_claim_time = datetime.utcnow() + timedelta(hours=24)
+
+    # Convert next_claim_time to Philippines timezone
+    philippines_tz = pytz.timezone('Asia/Manila')
+    next_claim_time_ph = next_claim_time.astimezone(philippines_tz)
+    next_claim_time_str = next_claim_time_ph.strftime('%Y-%m-%d %H:%M:%S %Z%z')
+
+    update_data = {
+        "coins": new_coins,
+        "xp": new_xp,
+        "avatars": user.get("avatars", []),
+        "assets": user.get("assets", []),
+        "claimed_rewards": claimed_rewards,
+        "next_claim_time": next_claim_time_ph
+    }
+
+    await db["users"].update_one({"_id": ObjectId(reward.user_id)}, {"$set": update_data})
+
+    # Convert ObjectId to string for the response
+    updated_user = {
+        "coins": new_coins,
+        "xp": new_xp,
+        "avatars": [str(avatar) for avatar in user.get("avatars", [])],
+        "assets": [str(asset) for asset in user.get("assets", [])],
+        "next_claim_time": next_claim_time_str
+    }
+
+    return updated_user

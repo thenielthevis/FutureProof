@@ -3,15 +3,20 @@ import { View, Text, TouchableOpacity, StyleSheet, Modal, ScrollView, Image } fr
 import Icon from 'react-native-vector-icons/FontAwesome';
 import { FontAwesome5 } from '@expo/vector-icons';
 import { getUser } from '../API/user_api';
-import { getAchievementIcon, claimAvatar,  } from '../API/avatar_api';
-import { readDailyRewards } from '../API/daily_rewards_api';
+import { getAchievementIcon, claimAvatar } from '../API/avatar_api';
+import { readDailyRewards, claimDailyReward } from '../API/daily_rewards_api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import DailyRewardsClaimedModal from './DailyRewardsClaimedModal';
 
 const DailyRewards = ({ visible, onClose }) => {
   const [rewards, setRewards] = useState([]);
   const [avatarIcons, setAvatarIcons] = useState({});
   const [error, setError] = useState('');
   const [currentDay, setCurrentDay] = useState(1); // Assuming day 1 is the current day
+  const [nextClaimTime, setNextClaimTime] = useState(null);
+  const [claimedRewards, setClaimedRewards] = useState([]);
+  const [claimedModalVisible, setClaimedModalVisible] = useState(false);
+  const [claimedReward, setClaimedReward] = useState(null);
 
   useEffect(() => {
     const fetchRewards = async () => {
@@ -53,10 +58,18 @@ const DailyRewards = ({ visible, onClose }) => {
         const token = await AsyncStorage.getItem('token');
         const userData = await getUser(token);
         const claimedAvatars = userData.avatars.map(avatar => avatar.toString());
+        const avatarDetails = {};
+        for (const avatar of userData.avatars) {
+          avatarDetails[avatar._id] = avatar;
+        }
         setRewards(rewards.map(reward => ({
           ...reward,
           claimed: claimedAvatars.includes(reward.avatar_id)
         })));
+        setAvatarIcons(avatarDetails);
+        setClaimedRewards(userData.claimed_rewards.map(reward => reward.toString()));
+        setNextClaimTime(new Date(userData.next_claim_time));
+        setCurrentDay(userData.claimed_rewards.length + 1); // Set the current day to the next unclaimed day
       } catch (error) {
         console.error('Error fetching user avatars:', error);
         setError('Error fetching user avatars');
@@ -68,15 +81,30 @@ const DailyRewards = ({ visible, onClose }) => {
     }
   }, [visible]);
 
-  const claimReward = async (day, avatarId) => {
-    setRewards(rewards.map(reward => reward.day === day ? { ...reward, claimed: true } : reward));
-    if (avatarId) {
-      try {
-        await claimAvatar(avatarId);
-      } catch (error) {
-        console.error('Error claiming avatar:', error);
-        setError('Error claiming avatar');
-      }
+  const claimReward = async (day, reward) => {
+    console.log('Claiming reward:', reward);
+    setRewards(rewards.map(r => r.day === day ? { ...r, claimed: true } : r));
+    
+    try {
+      const token = await AsyncStorage.getItem('token');
+      const userId = await AsyncStorage.getItem('userId');
+      const response = await claimDailyReward(
+        token,
+        userId,
+        reward._id, // Ensure reward._id is being passed correctly
+        reward.coins || 0,
+        reward.xp || 0,
+        reward.avatar || null,
+        reward.asset_id || null
+      );
+      setNextClaimTime(new Date(response.updated_user.next_claim_time));
+      setClaimedRewards([...claimedRewards, reward._id]);
+      setClaimedReward(reward);
+      setClaimedModalVisible(true);
+      setCurrentDay(currentDay + 1); // Move to the next day
+    } catch (error) {
+      console.error('Error claiming daily reward:', error);
+      setError('Error claiming daily reward');
     }
   };
 
@@ -90,77 +118,96 @@ const DailyRewards = ({ visible, onClose }) => {
     }
   };
 
-  return (
-    <Modal visible={visible} transparent={true} animationType="slide">
-      <View style={styles.modalOverlay}>
-        <View style={styles.modalContent}>
-          <TouchableOpacity onPress={onClose} style={styles.closeButton}>
-            <Icon name="close" size={20} color="#fff" />
-          </TouchableOpacity>
+  const getTimeRemaining = () => {
+    if (!nextClaimTime) return '';
+    const now = new Date();
+    const timeDiff = nextClaimTime - now;
+    if (timeDiff <= 0) return 'You can claim your next reward now!';
+    const hours = Math.floor(timeDiff / (1000 * 60 * 60));
+    const minutes = Math.floor((timeDiff % (1000 * 60 * 60)) / (1000 * 60));
+    return `Next reward available in ${hours}h ${minutes}m`;
+  };
 
-          <Text style={styles.modalHeader}>Daily Rewards</Text>
-          {error ? <Text style={styles.errorText}>{error}</Text> : null}
-          <ScrollView contentContainerStyle={styles.scrollViewContent}>
-            <View style={styles.rewardsRow}>
-              {rewards.map((reward) => (
-                <TouchableOpacity
-                  key={reward.day}
-                  style={[
-                    styles.rewardBox,
-                    reward.day === currentDay && styles.currentDayBox,
-                    reward.claimed && styles.claimedBox,
-                  ]}
-                  onPress={() => claimReward(reward.day, reward.avatar_id)}
-                  disabled={reward.claimed || reward.day !== currentDay}
-                >
-                  {/* Reward Content */}
-                  <View style={styles.rewardContent}>
-                    {reward.claimed && (
-                      <Icon name="check-circle" size={24} color="#fff" style={styles.checkedIcon} />
-                    )}
-                    <View style={styles.coinsContainer}>
-                      <Image
-                        source={getCoinImage(reward.coins)}
-                        style={[
-                          styles.coinImage,
-                          !reward.avatar && styles.largeCoinImage // Larger coin image when no avatar
-                        ]}
-                      />
-                      <Text style={[styles.coinsText, !reward.avatar && styles.largeCoinsText]}>
-                        {reward.coins}
+  return (
+    <>
+      <Modal visible={visible} transparent={true} animationType="slide">
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <TouchableOpacity onPress={onClose} style={styles.closeButton}>
+              <Icon name="close" size={20} color="#fff" />
+            </TouchableOpacity>
+
+            <Text style={styles.modalHeader}>Daily Rewards</Text>
+            {error ? <Text style={styles.errorText}>{error}</Text> : null}
+            <Text style={styles.timerText}>{getTimeRemaining()}</Text>
+            <ScrollView contentContainerStyle={styles.scrollViewContent}>
+              <View style={styles.rewardsRow}>
+                {rewards.map((reward) => (
+                  <TouchableOpacity
+                    key={reward.day}
+                    style={[
+                      styles.rewardBox,
+                      reward.day === currentDay && styles.currentDayBox,
+                      reward.claimed && styles.claimedBox,
+                    ]}
+                    onPress={() => claimReward(reward.day, reward)}
+                    disabled={reward.claimed || reward.day !== currentDay || (nextClaimTime && new Date() < nextClaimTime) || claimedRewards.includes(reward._id)}
+                  >
+                    {/* Reward Content */}
+                    <View style={styles.rewardContent}>
+                      {reward.claimed && (
+                        <Icon name="check-circle" size={24} color="#fff" style={styles.checkedIcon} />
+                      )}
+                      <View style={styles.coinsContainer}>
+                        <Image
+                          source={getCoinImage(reward.coins)}
+                          style={[  
+                            styles.coinImage,
+                            !reward.avatar && styles.largeCoinImage // Larger coin image when no avatar
+                          ]}
+                        />
+                        <Text style={[styles.coinsText, !reward.avatar && styles.largeCoinsText]}>
+                          {reward.coins}
+                        </Text>
+                      </View>
+                      {reward.avatar && avatarIcons[reward.avatar] && (
+                        <Image source={{ uri: avatarIcons[reward.avatar] }} style={styles.avatarIcon} />
+                      )}
+                      <Text style={[styles.dayText, reward.claimed && styles.claimedText]}>
+                        Day {reward.day}
                       </Text>
                     </View>
-                    {reward.avatar && avatarIcons[reward.avatar] && (
-                      <Image source={{ uri: avatarIcons[reward.avatar] }} style={styles.avatarIcon} />
+
+                    {/* Overlay for Unclaimed Days */}
+                    {!reward.claimed && reward.day !== currentDay && (
+                      <View style={styles.overlay} />
                     )}
-                    <Text style={[styles.dayText, reward.claimed && styles.claimedText]}>
+                  </TouchableOpacity>
+                ))}
+              </View>
+              <View style={styles.stepperContainer}>
+                {rewards.map((reward, index) => (
+                  <View key={reward.day} style={styles.stepperItem}>
+                    {index > 0 && <View style={[styles.stepperLine, styles.stepperLineLeft]} />}
+                    <View style={[styles.stepperCircle, reward.claimed && styles.stepperCircleClaimed]} />
+                    {index < rewards.length - 1 && <View style={[styles.stepperLine, styles.stepperLineRight]} />}
+                    <Text style={[styles.stepperText, reward.claimed && styles.claimedText]}>
                       Day {reward.day}
                     </Text>
                   </View>
-
-                  {/* Overlay for Unclaimed Days */}
-                  {!reward.claimed && reward.day !== currentDay && (
-                    <View style={styles.overlay} />
-                  )}
-                </TouchableOpacity>
-              ))}
-            </View>
-            <View style={styles.stepperContainer}>
-              {rewards.map((reward, index) => (
-                <View key={reward.day} style={styles.stepperItem}>
-                  {index > 0 && <View style={[styles.stepperLine, styles.stepperLineLeft]} />}
-                  <View style={[styles.stepperCircle, reward.claimed && styles.stepperCircleClaimed]} />
-                  {index < rewards.length - 1 && <View style={[styles.stepperLine, styles.stepperLineRight]} />}
-                  <Text style={[styles.stepperText, reward.claimed && styles.claimedText]}>
-                    Day {reward.day}
-                  </Text>
-                </View>
-              ))}
-            </View>
-          </ScrollView>
+                ))}
+              </View>
+            </ScrollView>
+          </View>
         </View>
-      </View>
-    </Modal>
+      </Modal>
+      <DailyRewardsClaimedModal
+        visible={claimedModalVisible}
+        onClose={() => setClaimedModalVisible(false)}
+        claimedReward={claimedReward}
+        avatarIcons={avatarIcons}
+      />
+    </>
   );
 };
 
@@ -200,6 +247,12 @@ const styles = StyleSheet.create({
     marginBottom: 15,
     textAlign: 'center',
     color: '#fff',
+  },
+  timerText: {
+    fontSize: 16,
+    color: '#fff',
+    textAlign: 'center',
+    marginBottom: 10,
   },
   rewardsRow: {
     flexDirection: 'row',

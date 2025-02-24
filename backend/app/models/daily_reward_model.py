@@ -18,3 +18,12 @@ class DailyReward(BaseModel):
     class Config:
         from_attributes = True  # Needed for MongoDB document conversion
         populate_by_name = True
+
+class DailyRewardClaim(BaseModel):
+    user_id: str
+    reward_id: str  # Ensure reward_id field is included
+    coins: int = 0
+    xp: int = 0
+    avatar_id: Optional[str] = None
+    asset_id: Optional[str] = None
+    next_claim_time: Optional[str] = None

@@ -1,17 +1,19 @@
 import React, { useState, useEffect, Suspense } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls, useGLTF } from '@react-three/drei/native';
-import { View, Text, TouchableOpacity, StyleSheet, Modal, TextInput, Image, ScrollView, Pressable } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Modal, TextInput, Image, ScrollView, Pressable, Animated } from 'react-native';
 import * as THREE from 'three';
 import { FontAwesome } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { LinearGradient } from 'expo-linear-gradient';
-import GameNavbar from '../Navbar/GameNavbar'; // Import GameNavbar
-import DailyRewards from './DailyRewards'; // Import DailyRewards
-import TaskModal from './TaskModal'; // Import TaskModal
-// import Prediction from './Prediction'; // Import Prediction
+import GameNavbar from '../Navbar/GameNavbar';
+import DailyRewards from './DailyRewards';
+import TaskModal from './TaskModal';
+// import Prediction from './Prediction';
 import { FaShoppingCart } from 'react-icons/fa';
-import { readPurchasedItems } from '../API/assets_api'; // Import the API function to fetch purchased items
+import { readPurchasedItems } from '../API/assets_api';
+import { getUser } from '../API/user_api';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // Reusable Model Component with Color
 function Model({ scale, uri, position, color }) {
@@ -62,6 +64,7 @@ export default function Game() {
   const [taskModalVisible, setTaskModalVisible] = useState(false);
   const [predictionVisible, setPredictionVisible] = useState(false);
   const [hoveredIndex, setHoveredIndex] = useState(null);
+  const [hasClaimableReward, setHasClaimableReward] = useState(false); // State to track if there's a claimable reward
   const icons = [
     require('../assets/icons/Navigation/dailyassessment.png'),
     require('../assets/icons/Navigation/dailyrewards.png'),
@@ -69,6 +72,7 @@ export default function Game() {
     require('../assets/icons/Navigation/shop.png'),
     require('../assets/icons/Navigation/task.png')
   ];
+
   const handleShopPress = () => {
     navigation.navigate('Shop');   
   };
@@ -92,6 +96,27 @@ export default function Game() {
     };
 
     fetchPurchasedItems();
+  }, []);
+
+  useEffect(() => {
+    // Fetch user data to check for claimable rewards
+    const fetchUserData = async () => {
+      try {
+        const token = await AsyncStorage.getItem('token');
+        const userData = await getUser(token);
+        const now = new Date();
+        const nextClaimTime = new Date(userData.next_claim_time);
+        if (now >= nextClaimTime) {
+          setHasClaimableReward(true);
+        } else {
+          setHasClaimableReward(false);
+        }
+      } catch (error) {
+        console.error('Error fetching user data:', error);
+      }
+    };
+
+    fetchUserData();
   }, []);
 
   const calculateBmi = () => {
@@ -158,7 +183,7 @@ export default function Game() {
         onHoverOut={() => setHoveredIndex(null)}
         onPress={() => handleIconPress(index)}
       >
-        <Image source={icon} style={styles.additionalIconStyle} />
+        <Image source={icon} style={[styles.additionalIconStyle, index === 1 && hasClaimableReward ? styles.claimableRewardIcon : null]} />
       </Pressable>
     ));
   };
@@ -360,7 +385,13 @@ const styles = StyleSheet.create({
   hoveredIcon: {
     transform: [{ scale: 1.2 }], // Scale up when hovered
     transition: 'transform 0.2s', // Smooth transition
-  },  
+  },
+  claimableRewardIcon: {
+    shadowColor: 'gold',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 1,
+    shadowRadius: 10,
+  },
   rightPanel: {
     position: 'absolute',
     right: 16,

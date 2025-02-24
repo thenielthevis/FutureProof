@@ -90,3 +90,18 @@ export const updateUser = async (token, userData) => {
     throw error.response ? error.response.data : { detail: 'An error occurred' };
   }
 };
+
+export const getCurrentUserId = async () => {
+  try {
+    const token = await AsyncStorage.getItem('token');
+    const response = await axios.get(`${API_URL}/users/me`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    return response.data.user_id;
+  } catch (error) {
+    console.error('Error fetching current user ID:', error.response ? error.response.data : error);
+    throw error.response ? error.response.data : { detail: 'An error occurred' };
+  }
+};

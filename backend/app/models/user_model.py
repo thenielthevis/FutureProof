@@ -1,6 +1,7 @@
 from pydantic import BaseModel, EmailStr, Field
 from bson import ObjectId
 from typing import Optional, List
+from datetime import datetime
 
 # Convert ObjectId to string for serialization
 def str_objectid(id: ObjectId) -> str:
@@ -39,6 +40,8 @@ class UserCreate(BaseModel):
     battery: int = 0
     health: int = 0
     medication: int = 0
+    claimed_rewards: List[ObjectId] = []
+    next_claim_time: Optional[datetime] = None
 
     class Config:
         json_encoders = {
@@ -75,6 +78,8 @@ class UserInDB(ObjectIdModel):
     battery: int = 0
     health: int = 0
     medication: int = 0
+    claimed_rewards: List[ObjectId] = []
+    next_claim_time: Optional[datetime] = None
 
     class Config:
         json_encoders = {

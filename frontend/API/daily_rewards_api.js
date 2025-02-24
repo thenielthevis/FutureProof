@@ -67,3 +67,23 @@ export const deleteDailyReward = async (rewardId) => {
     throw error.response ? error.response.data : { detail: 'An error occurred' };
   }
 };
+
+export const claimDailyReward = async (token, userId, rewardId, coins = 0, xp = 0, avatar_id = null, asset_id = null) => {
+  try {
+    const payload = { user_id: userId, reward_id: rewardId, coins, xp, avatar_id, asset_id };
+    console.log('Payload being sent to backend:', payload);
+    const response = await axios.post(
+      `${API_URL}/claim-daily-reward`,
+      payload,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+    return response.data;
+  } catch (error) {
+    console.error('Error claiming daily reward:', error.response ? error.response.data : error);
+    throw error.response ? error.response.data : { detail: 'An error occurred' };
+  }
+};

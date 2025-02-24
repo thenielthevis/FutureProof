@@ -100,7 +100,7 @@ async def get_user_by_token(token: str) -> UserInDB:
         return None
 
 # Function to update user's coins and XP
-async def update_user_coins_and_xp(user_id: str, coins: int, xp: int):
+async def update_user_coins_and_xp(user_id: str, coins: int = 0, xp: int = 0):
     db = get_database()
     user = await db["users"].find_one({"_id": user_id})
     if not user:
