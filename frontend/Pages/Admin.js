@@ -1,9 +1,11 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
+import { FontAwesome } from '@expo/vector-icons';
 
 const Admin = () => {
   const navigation = useNavigation();
+  console.log('Admin component rendered'); // Add this line
 
   return (
     <View style={styles.container}>
@@ -16,6 +18,14 @@ const Admin = () => {
         </TouchableOpacity>
         <TouchableOpacity style={styles.sidebarItem} onPress={() => navigation.navigate('DailyRewardsCRUD')}>
           <Text style={styles.sidebarText}>Daily Rewards</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.sidebarItem} onPress={() => navigation.navigate('quotes')}>
+          <FontAwesome name="quote-left" size={24} color="white" />
+          <Text style={styles.sidebarText}>Quotes</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.sidebarItem} onPress={() => navigation.navigate('asset')}>
+          <FontAwesome name="quote-left" size={24} color="white" />
+          <Text style={styles.sidebarText}>Assets</Text>
         </TouchableOpacity>
       </View>
       <View style={styles.content}>
@@ -37,10 +47,13 @@ const styles = StyleSheet.create({
   },
   sidebarItem: {
     marginBottom: 20,
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   sidebarText: {
     color: '#F5F5F5',
     fontSize: 18,
+    marginLeft: 10,
   },
   content: {
     flex: 1,

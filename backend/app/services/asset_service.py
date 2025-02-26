@@ -10,8 +10,8 @@ db = get_database()
 async def create_asset(
     name: str = Form(...),
     description: Optional[str] = Form(None),
-    file: UploadFile = File(...),
-    image_file: UploadFile = File(...),
+    file: UploadFile = File(...),  # GLB file
+    image_file: UploadFile = File(...),  # Image file
     price: float = Form(...),
     asset_type: str = Form(...)
 ) -> Asset:
@@ -26,32 +26,33 @@ async def create_asset(
 
         # Validate file presence
         if not file or not file.filename:
-            raise HTTPException(status_code=400, detail="No file uploaded or invalid file format")
+            raise HTTPException(status_code=400, detail="No GLB file uploaded or invalid file format")
         if not image_file or not image_file.filename:
             raise HTTPException(status_code=400, detail="No image file uploaded or invalid file format")
 
         # Log file details before upload
-        print(f"Uploading file: {file.filename}, ContentType: {file.content_type}")
-        print(f"Uploading image_file: {image_file.filename}, ContentType: {image_file.content_type}")
+        print(f"Uploading GLB file: {file.filename}, ContentType: {file.content_type}")
+        print(f"Uploading image file: {image_file.filename}, ContentType: {image_file.content_type}")
 
         # Upload files to Cloudinary directly from UploadFile stream
-        result = cloudinary.uploader.upload(file.file, resource_type="image")
+        glb_result = cloudinary.uploader.upload(file.file, resource_type="raw")
         image_result = cloudinary.uploader.upload(image_file.file, resource_type="image")
 
         # Log Cloudinary response
-        print(f"Cloudinary upload result: {result}")
+        print(f"Cloudinary GLB upload result: {glb_result}")
         print(f"Cloudinary image upload result: {image_result}")
 
         # Create asset object
         asset = Asset(
             name=name,
             description=description,
-            url=result["secure_url"],
-            image_url=image_result["secure_url"],
-            public_id=result["public_id"],
+            url=glb_result["secure_url"],  # GLB file URL
+            image_url=image_result["secure_url"],  # Image file URL
+            public_id=glb_result["public_id"],
             price=price,
             asset_type=asset_type
         )
+        
 
         # Save asset to database
         await db.assets.insert_one(asset.dict())

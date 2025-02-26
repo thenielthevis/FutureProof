@@ -22,15 +22,15 @@ class BuyAssetRequest(BaseModel):
 async def create_asset_route(
     name: str = Form(...),
     description: str = Form(...),
-    file: UploadFile = File(...),
-    image_file: UploadFile = File(...),
+    file: UploadFile = File(...),  # GLB file
+    image_file: UploadFile = File(...),  # Image file
     price: float = Form(...),
     asset_type: str = Form(...),
     current_admin: UserInDB = Depends(get_current_admin)
 ):
     try:
         # Log the received data for debugging
-        print(f"Received data - Name: {name}, Description: {description}, File: {file.filename}, ContentType: {file.content_type}, Image File: {image_file.filename}, ContentType: {image_file.content_type}, Price: {price}, Asset Type: {asset_type}")
+        print(f"Received data - Name: {name}, Description: {description}, GLB File: {file.filename}, ContentType: {file.content_type}, Image File: {image_file.filename}, ContentType: {image_file.content_type}, Price: {price}, Asset Type: {asset_type}")
         return await create_asset(name, description, file, image_file, price, asset_type)
     except HTTPException as e:
         print(f"Error creating asset: {e.detail}")

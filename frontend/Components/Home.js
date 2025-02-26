@@ -250,6 +250,19 @@ const Home = ({ navigation }) => {
                     <Text style={styles.dropdownText}>Admin</Text>
                   </TouchableOpacity>
                 )}
+                
+                <TouchableOpacity
+                  style={styles.dropdownItem}
+                  onPress={() => {
+                    // Navigate to the user dashboard
+                    navigation.navigate('asset');
+                    setProfileModalVisible(false);
+                  }}
+                >
+                  <Icon name="dashboard" size={20} color="#f0fdf7" />
+                  <Text style={styles.dropdownText}>Dashboard</Text>
+                </TouchableOpacity>
+
                 <TouchableOpacity
                   style={styles.dropdownItem}
                   onPress={() => {
@@ -260,6 +273,7 @@ const Home = ({ navigation }) => {
                   <Icon name="gamepad" size={20} color="#f0fdf7" />
                   <Text style={styles.dropdownText}>Game</Text>
                 </TouchableOpacity>
+               
                 <TouchableOpacity
                   style={styles.dropdownItem}
                   onPress={() => {
