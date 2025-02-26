@@ -108,16 +108,16 @@ const DailyRewardsCRUD = () => {
           return { ...reward, imageSrc: null }; // No image available
         })
       );
-  
+
       // HTML content for the PDF
       const logo1 = "https://i.ibb.co/GQygLXT9/tuplogo.png";
       const logo2 = "https://i.ibb.co/YBStKgFC/logo-2.png";
-     
-        // Convert logo URLs to base64
-    const logo1Base64 = await convertImageToBase64(logo1);
-    const logo2Base64 = await convertImageToBase64(logo2);
 
-     
+      // Convert logo URLs to base64
+      const logo1Base64 = await convertImageToBase64(logo1);
+      const logo2Base64 = await convertImageToBase64(logo2);
+
+
       const htmlContent = `
       <div style="font-family: Arial, sans-serif; padding: 20px; background: #fff; max-width: 900px; margin: 0 auto;">
         <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 2px solid #f0f0f0; padding-bottom: 10px;">
@@ -158,60 +158,60 @@ const DailyRewardsCRUD = () => {
       </div>
     `;
 
-    if (Platform.OS === 'web') {
-      // Create a hidden container to render the HTML
-      const container = document.createElement('div');
-      container.style.position = 'absolute';
-      container.style.left = '-9999px';
-      container.innerHTML = htmlContent;
-      document.body.appendChild(container);
+      if (Platform.OS === 'web') {
+        // Create a hidden container to render the HTML
+        const container = document.createElement('div');
+        container.style.position = 'absolute';
+        container.style.left = '-9999px';
+        container.innerHTML = htmlContent;
+        document.body.appendChild(container);
 
-      // Wait for all images to load
-      const waitForImages = () => {
-        const images = container.getElementsByTagName('img');
-        return Promise.all(
-          Array.from(images).map((img) => {
-            if (img.complete) return Promise.resolve();
-            return new Promise((resolve, reject) => {
-              img.onload = resolve;
-              img.onerror = reject;
-            });
-          })
-        );
-      };
+        // Wait for all images to load
+        const waitForImages = () => {
+          const images = container.getElementsByTagName('img');
+          return Promise.all(
+            Array.from(images).map((img) => {
+              if (img.complete) return Promise.resolve();
+              return new Promise((resolve, reject) => {
+                img.onload = resolve;
+                img.onerror = reject;
+              });
+            })
+          );
+        };
 
-      try {
-        await waitForImages(); // Wait for images to load
-        const canvas = await html2canvas(container); // Capture the content as an image
-        const imgData = canvas.toDataURL('image/png'); // Convert canvas to image data URL
+        try {
+          await waitForImages(); // Wait for images to load
+          const canvas = await html2canvas(container); // Capture the content as an image
+          const imgData = canvas.toDataURL('image/png'); // Convert canvas to image data URL
 
-        // Generate PDF
-        const pdf = new jsPDF('p', 'pt', 'a4');
-        const pdfWidth = pdf.internal.pageSize.getWidth();
-        const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
-        pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
-        pdf.save('daily-reward-report.pdf'); // Save the PDF
-      } catch (err) {
-        console.error('Error generating PDF:', err);
-        Alert.alert('Error', 'Failed to generate PDF. Please try again.');
-      } finally {
-        document.body.removeChild(container); // Clean up the hidden container
+          // Generate PDF
+          const pdf = new jsPDF('p', 'pt', 'a4');
+          const pdfWidth = pdf.internal.pageSize.getWidth();
+          const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+          pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+          pdf.save('daily-reward-report.pdf'); // Save the PDF
+        } catch (err) {
+          console.error('Error generating PDF:', err);
+          Alert.alert('Error', 'Failed to generate PDF. Please try again.');
+        } finally {
+          document.body.removeChild(container); // Clean up the hidden container
+        }
+      } else {
+        // For mobile, use expo-print
+        try {
+          const { uri } = await Print.printToFileAsync({ html: htmlContent });
+          await shareAsync(uri, { UTI: '.pdf', mimeType: 'application/pdf' });
+        } catch (error) {
+          console.error('Error generating PDF:', error);
+          Alert.alert('Error', 'Failed to generate PDF. Please try again.');
+        }
       }
-    } else {
-      // For mobile, use expo-print
-      try {
-        const { uri } = await Print.printToFileAsync({ html: htmlContent });
-        await shareAsync(uri, { UTI: '.pdf', mimeType: 'application/pdf' });
-      } catch (error) {
-        console.error('Error generating PDF:', error);
-        Alert.alert('Error', 'Failed to generate PDF. Please try again.');
-      }
+    } catch (error) {
+      console.error('Error in handleExportPDF:', error);
+      Alert.alert('Error', 'Something went wrong. Please try again.');
     }
-  } catch (error) {
-    console.error('Error in handleExportPDF:', error);
-    Alert.alert('Error', 'Something went wrong. Please try again.');
-  }
-};
+  };
 
   const handleCreateReward = async () => {
     try {
@@ -224,20 +224,20 @@ const DailyRewardsCRUD = () => {
       setTop('');
       setBottom('');
       setShoes('');
-    Toast.show({
-           type: 'success',
-           text1: 'Success',
-           text2: 'Reward created successfully!',
-         });
-       } catch (error) {
-         console.error('Error creating reward:', error);
-         Toast.show({
-           type: 'error',
-           text1: 'Error',
-           text2: 'Failed to create reward. Please try again.',
-         });
-       }
-     };
+      Toast.show({
+        type: 'success',
+        text1: 'Success',
+        text2: 'Reward created successfully!',
+      });
+    } catch (error) {
+      console.error('Error creating reward:', error);
+      Toast.show({
+        type: 'error',
+        text1: 'Error',
+        text2: 'Failed to create reward. Please try again.',
+      });
+    }
+  };
 
   const handleUpdateReward = async () => {
     try {
@@ -254,19 +254,19 @@ const DailyRewardsCRUD = () => {
       setShoes('');
       setModalVisible(false);
       Toast.show({
-           type: 'success',
-           text1: 'Success',
-           text2: 'Reward updated successfully!',
-         });
-       } catch (error) {
-         console.error('Error updating reward:', error);
-         Toast.show({
-           type: 'error',
-           text1: 'Error',
-           text2: 'Failed to update reward. Please try again.',
-         });
-       }
-     };
+        type: 'success',
+        text1: 'Success',
+        text2: 'Reward updated successfully!',
+      });
+    } catch (error) {
+      console.error('Error updating reward:', error);
+      Toast.show({
+        type: 'error',
+        text1: 'Error',
+        text2: 'Failed to update reward. Please try again.',
+      });
+    }
+  };
 
   const handleDeleteReward = async (rewardId) => {
     try {
@@ -274,20 +274,20 @@ const DailyRewardsCRUD = () => {
       const updatedRewards = rewards.filter(reward => reward._id !== rewardId);
       setRewards(updatedRewards);
       setFilteredAvatars(updatedRewards); // Update filteredAvatars
-   Toast.show({
-           type: 'success',
-           text1: 'Success',
-           text2: 'Reward deleted successfully!',
-         });
-       } catch (error) {
-         console.error('Error deleting reward:', error);
-         Toast.show({
-           type: 'error',
-           text1: 'Error',
-           text2: 'Failed to delete reward. Please try again.',
-         });
-       }
-     };
+      Toast.show({
+        type: 'success',
+        text1: 'Success',
+        text2: 'Reward deleted successfully!',
+      });
+    } catch (error) {
+      console.error('Error deleting reward:', error);
+      Toast.show({
+        type: 'error',
+        text1: 'Error',
+        text2: 'Failed to delete reward. Please try again.',
+      });
+    }
+  };
 
   const handleEditReward = (reward) => {
     setEditingReward(reward);
@@ -297,7 +297,7 @@ const DailyRewardsCRUD = () => {
     setTop(reward.top);
     setBottom(reward.bottom);
     setShoes(reward.shoes);
-    setModalVisible(true); 
+    setModalVisible(true);
   };
 
   const handleOpenModal = () => {
@@ -329,7 +329,7 @@ const DailyRewardsCRUD = () => {
     setSidebarCollapsed(!sidebarCollapsed);
   };
 
-  
+
 
   return (
     <View style={styles.container}>
@@ -342,21 +342,22 @@ const DailyRewardsCRUD = () => {
         </View>
         {!sidebarCollapsed && (
           <View style={styles.sidebarContent}>
-            <TouchableOpacity style={styles.sidebarItem} onPress={() => navigation.navigate('AvatarCRUD')}>
-              <FontAwesome name="dashboard" size={24} color="white" />
-              <Text style={styles.sidebarText}>DASHBOARD</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.sidebarItem} onPress={() => navigation.navigate('Home')}>
-              <FontAwesome name="home" size={24} color="white" />
+            <TouchableOpacity style={styles.sidebarItem} onPress={() => navigation.navigate('Admin')}>
               <Text style={styles.sidebarText}>Home</Text>
             </TouchableOpacity>
             <TouchableOpacity style={styles.sidebarItem} onPress={() => navigation.navigate('AvatarCRUD')}>
-              <FontAwesome name="user" size={24} color="white" />
               <Text style={styles.sidebarText}>Avatars</Text>
             </TouchableOpacity>
             <TouchableOpacity style={styles.sidebarItem} onPress={() => navigation.navigate('DailyRewardsCRUD')}>
-              <FontAwesome5 name="gift" size={24} color="white" />
               <Text style={styles.sidebarText}>Daily Rewards</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.sidebarItem} onPress={() => navigation.navigate('quotes')}>
+              <FontAwesome name="quote-left" size={24} color="white" />
+              <Text style={styles.sidebarText}>Quotes</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.sidebarItem} onPress={() => navigation.navigate('asset')}>
+              <FontAwesome name="quote-left" size={24} color="white" />
+              <Text style={styles.sidebarText}>Assets</Text>
             </TouchableOpacity>
           </View>
         )}
@@ -374,10 +375,10 @@ const DailyRewardsCRUD = () => {
           >
             <Text style={styles.openModalButtonText}>Create Reward</Text>
           </TouchableOpacity>
-        
+
           <TouchableOpacity style={styles.exportButton} onPress={handleExportPDF}>
-        <Text style={styles.exportButtonText}>Export PDF</Text>
-      </TouchableOpacity>
+            <Text style={styles.exportButtonText}>Export PDF</Text>
+          </TouchableOpacity>
 
           <View style={styles.searchContainer}>
             <TextInput
@@ -552,7 +553,7 @@ const styles = StyleSheet.create({
   sidebarCollapsed: {
     width: 80,
     padding: 20,
-   
+
   },
   sidebarItem: {
     marginBottom: 30,
@@ -565,7 +566,7 @@ const styles = StyleSheet.create({
     marginLeft: 10,
   },
   sidebarTop: {
-    width: '100%', 
+    width: '100%',
     alignItems: 'flex-end',
   },
   sidebarContent: {
@@ -726,14 +727,14 @@ const styles = StyleSheet.create({
     padding: 15,
     borderRadius: 5,
     alignItems: 'center',
-  
+
   },
   openModalButtonText: {
     color: '#fff',
     fontWeight: 'bold',
     alignItems: 'center',
   },
-   searchCreateContainer: {
+  searchCreateContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',

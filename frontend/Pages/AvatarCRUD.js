@@ -309,31 +309,25 @@ const AvatarCRUD = () => {
     <View style={styles.container}>
       {/* Sidebar */}
       <LinearGradient colors={['#003C2C', '#005C3C']} style={[styles.sidebar, sidebarCollapsed && styles.sidebarCollapsed]}>
-        <View style={styles.sidebarTop}>
-          <TouchableOpacity style={styles.sidebarItem} onPress={toggleSidebar}>
-            <FontAwesome name="bars" size={24} color="white" />
-          </TouchableOpacity>
-        </View>
-        {!sidebarCollapsed && (
-          <View style={styles.sidebarContent}>
-            <TouchableOpacity style={styles.sidebarItem} onPress={() => navigation.navigate('AvatarCRUD')}>
-              <FontAwesome name="dashboard" size={24} color="white" />
-              <Text style={styles.sidebarText}>DASHBOARD</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.sidebarItem} onPress={() => navigation.navigate('Home')}>
-              <FontAwesome name="home" size={24} color="white" />
-              <Text style={styles.sidebarText}>Home</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.sidebarItem} onPress={() => navigation.navigate('AvatarCRUD')}>
-              <FontAwesome name="user" size={24} color="white" />
-              <Text style={styles.sidebarText}>Avatars</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.sidebarItem} onPress={() => navigation.navigate('DailyRewardsCRUD')}>
-              <FontAwesome5 name="gift" size={24} color="white" />
-              <Text style={styles.sidebarText}>Daily Rewards</Text>
-            </TouchableOpacity>
-          </View>
-        )}
+            <View style={styles.sidebar}>
+              <TouchableOpacity style={styles.sidebarItem} onPress={() => navigation.navigate('Admin')}>
+                <Text style={styles.sidebarText}>Home</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.sidebarItem} onPress={() => navigation.navigate('AvatarCRUD')}>
+                <Text style={styles.sidebarText}>Avatars</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.sidebarItem} onPress={() => navigation.navigate('DailyRewardsCRUD')}>
+                <Text style={styles.sidebarText}>Daily Rewards</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.sidebarItem} onPress={() => navigation.navigate('quotes')}>
+                    <FontAwesome name="quote-left" size={24} color="white" />
+                    <Text style={styles.sidebarText}>Quotes</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity style={styles.sidebarItem} onPress={() => navigation.navigate('asset')}>
+                    <FontAwesome name="quote-left" size={24} color="white" />
+                    <Text style={styles.sidebarText}>Assets</Text>
+                  </TouchableOpacity>
+            </View>
       </LinearGradient>
 
       {/* Main Content */}
