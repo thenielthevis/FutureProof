@@ -10,39 +10,42 @@ import { readAssets, buyAsset, purchaseItem } from '../API/assets_api'; // Impor
 import { getUser } from '../API/user_api';
 import { LinearGradient } from 'expo-linear-gradient'; // Import LinearGradient
 
-// Load 3D model component
 function Model({ bodyUri, headUri, outfitUri, eyesUri, noseUri, scale, position }) {
-  const body = useGLTF(bodyUri);
-  const head = useGLTF(headUri);
-  const outfit = outfitUri ? useGLTF(outfitUri) : null;
-  const eyes = useGLTF(eyesUri);
-  const nose = useGLTF(noseUri);
+  if (!bodyUri || !headUri || !eyesUri || !noseUri) {
+    console.error("Missing required model URIs", { bodyUri, headUri, eyesUri, noseUri, outfitUri });
+    return null; // Prevents the model from rendering if URIs are missing
+  }
 
-  body.scene.scale.set(scale.x, scale.y, scale.z);
-  body.scene.position.set(position.x, position.y, position.z);
+  const { scene: bodyScene } = useGLTF(bodyUri, true);
+  const { scene: headScene } = useGLTF(headUri, true);
+  const { scene: eyesScene } = useGLTF(eyesUri, true);
+  const { scene: noseScene } = useGLTF(noseUri, true);
+  const outfitScene = outfitUri ? useGLTF(outfitUri, true).scene : null;
 
-  head.scene.scale.set(scale.x, scale.y, scale.z);
-  head.scene.position.set(position.x, position.y, position.z); // Adjust head position
+  console.log("Models loaded successfully!");
 
-  eyes.scene.scale.set(scale.x, scale.y, scale.z);
-  eyes.scene.position.set(position.x, position.y, position.z); // Adjust eyes position
+  bodyScene.scale.set(scale.x, scale.y, scale.z);
+  bodyScene.position.set(position.x, position.y, position.z);
+  headScene.scale.set(scale.x, scale.y, scale.z);
+  headScene.position.set(position.x, position.y, position.z);
+  eyesScene.scale.set(scale.x, scale.y, scale.z);
+  eyesScene.position.set(position.x, position.y, position.z);
+  noseScene.scale.set(scale.x, scale.y, scale.z);
+  noseScene.position.set(position.x, position.y, position.z);
 
-  nose.scene.scale.set(scale.x, scale.y, scale.z);
-  nose.scene.position.set(position.x, position.y, position.z); // Adjust nose position
-
-  if (outfit) {
-    outfit.scene.scale.set(scale.x, scale.y, scale.z);
-    outfit.scene.position.set(position.x, position.y, position.z); // Adjust outfit position
+  if (outfitScene) {
+    outfitScene.scale.set(scale.x, scale.y, scale.z);
+    outfitScene.position.set(position.x, position.y, position.z);
   }
 
   return (
-    <>
-      <primitive object={body.scene} />
-      <primitive object={head.scene} />
-      <primitive object={eyes.scene} />
-      <primitive object={nose.scene} />
-      {outfit && <primitive object={outfit.scene} />}
-    </>
+    <group>
+      <primitive object={bodyScene} />
+      <primitive object={headScene} />
+      <primitive object={eyesScene} />
+      <primitive object={noseScene} />
+      {outfitScene && <primitive object={outfitScene} />}
+    </group>
   );
 }
 
