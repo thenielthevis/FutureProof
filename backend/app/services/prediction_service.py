@@ -40,7 +40,7 @@ def format_user_info(user: UserInDB) -> str:
         f"### 2. Positive Habits\n"
         f"### 3. Areas for Improvement\n"
         f"### 4. Recommendations\n"
-        f"Use bulleted lists for each section without any bold text."
+        f"Use bulleted lists for each section without usinng any bold text to condition name and details."
     )
 
 async def predict_disease(user: UserInDB) -> dict:

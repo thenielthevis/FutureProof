@@ -3,6 +3,8 @@ import { View, Text, TouchableOpacity, StyleSheet, Modal, Dimensions } from 'rea
 import { FontAwesome5 } from '@expo/vector-icons';
 import ConfettiCannon from 'react-native-confetti-cannon';
 import { Audio } from 'expo-av';
+import { createTaskCompletion } from '../API/task_completion_api'; // Import the API
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const { width, height } = Dimensions.get("window");
 
@@ -26,6 +28,33 @@ const QuizCongratulationsModal = ({ visible, onClose, score, totalQuestions, coi
     await sound.playAsync();
   }
 
+  useEffect(() => {
+    return sound
+      ? () => {
+          sound.unloadAsync();
+        }
+      : undefined;
+  }, [sound]);
+
+  const handleContinue = async () => {
+    const userId = await AsyncStorage.getItem('userId');
+    const taskCompletionData = {
+      user_id: userId, // Store as string
+      task_type: 'health_quiz',
+      score: score,
+      total_questions: totalQuestions,
+      coins_received: coins,
+      xp_received: xp,
+      date_completed: new Date().toISOString()
+    };
+    try {
+      await createTaskCompletion(taskCompletionData);
+      onClose();
+    } catch (error) {
+      console.error('Error creating task completion:', error);
+    }
+  };
+
   return (
     <>
       <Modal visible={visible} transparent={true} animationType="slide">
@@ -40,7 +69,7 @@ const QuizCongratulationsModal = ({ visible, onClose, score, totalQuestions, coi
             <Text style={styles.xpText}>
               <FontAwesome5 name="star" size={20} color="gold" /> + {xp} XP
             </Text>
-            <TouchableOpacity onPress={onClose} style={styles.closeButton}>
+            <TouchableOpacity onPress={handleContinue} style={styles.closeButton}>
               <Text style={styles.buttonText}>Continue</Text>
             </TouchableOpacity>
           </View>

@@ -9,6 +9,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import GameNavbar from '../Navbar/GameNavbar';
 import DailyRewards from './DailyRewards';
 import TaskModal from './TaskModal';
+import DailyAssessment from './DailyAssessment';
 // import Prediction from './Prediction';
 import { FaShoppingCart } from 'react-icons/fa';
 import { readPurchasedItems } from '../API/assets_api';
@@ -61,6 +62,7 @@ export default function Game() {
   const [activeTab, setActiveTab] = useState('hair');
   const [purchasedItems, setPurchasedItems] = useState([]); // Ensure it's initialized as an array
   const [dailyRewardsVisible, setDailyRewardsVisible] = useState(false);
+  const [dailyAssessmentVisible, setDailyAssessmentVisible] = useState(false);
   const [taskModalVisible, setTaskModalVisible] = useState(false);
   const [predictionVisible, setPredictionVisible] = useState(false);
   const [hoveredIndex, setHoveredIndex] = useState(null);
@@ -152,7 +154,7 @@ export default function Game() {
   const handleIconPress = async (index) => {
     switch (index) {
       case 0:
-        navigation.navigate('DailyAssessment');
+        setDailyAssessmentVisible(true);
         break;
       case 1:
         setDailyRewardsVisible(true);
@@ -318,6 +320,8 @@ export default function Game() {
         </View>
       </Modal>
 
+      {/* Daily Assessment Modal */}
+      <DailyAssessment visible={dailyAssessmentVisible} onClose={() => setDailyAssessmentVisible(false)} />
       {/* Daily Rewards Modal */}
       <DailyRewards visible={dailyRewardsVisible} onClose={() => setDailyRewardsVisible(false)} />
 

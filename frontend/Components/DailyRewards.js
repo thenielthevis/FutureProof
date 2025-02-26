@@ -64,7 +64,7 @@ const DailyRewards = ({ visible, onClose }) => {
         }
         setRewards(rewards.map(reward => ({
           ...reward,
-          claimed: claimedAvatars.includes(reward.avatar_id)
+          claimed: claimedAvatars.includes(reward.avatar_id) || userData.claimed_rewards.includes(reward._id)
         })));
         setAvatarIcons(avatarDetails);
         setClaimedRewards(userData.claimed_rewards.map(reward => reward.toString()));
@@ -338,10 +338,10 @@ const styles = StyleSheet.create({
     width: '14.7%',
   },
   stepperCircle: {
-    width: 15,
-    height: 15,
-    borderRadius: 7.5,
-    backgroundColor: '#444',
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    background: 'transparent',
     borderWidth: 2,
     borderColor: 'gold',
   },
@@ -357,10 +357,10 @@ const styles = StyleSheet.create({
   },
   stepperLine: {
     position: 'absolute',
-    width: '50%',
+    width: '45%',
     height: 2,
     backgroundColor: 'gold',
-    top: 6,
+    top: 10,
   },
   stepperLineLeft: {
     left: 0,

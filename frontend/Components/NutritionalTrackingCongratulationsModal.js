@@ -3,6 +3,8 @@ import { View, Text, TouchableOpacity, StyleSheet, Modal, Dimensions, FlatList }
 import { FontAwesome5 } from '@expo/vector-icons';
 import ConfettiCannon from 'react-native-confetti-cannon';
 import { Audio } from 'expo-av';
+import { createTaskCompletion } from '../API/task_completion_api'; // Import the API
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const { width, height } = Dimensions.get("window");
 
@@ -34,6 +36,24 @@ const NutritionalTrackingCongratulationsModal = ({ visible, onClose, rewards, ex
       : undefined;
   }, [sound]);
 
+  const handleContinue = async () => {
+    const userId = await AsyncStorage.getItem('userId');
+    const taskCompletionData = {
+      user_id: userId, // Store as string
+      task_type: 'nutritional_tracking',
+      time_spent: timeSpent,
+      coins_received: rewards.coins,
+      xp_received: rewards.xp,
+      date_completed: new Date().toISOString()
+    };
+    try {
+      await createTaskCompletion(taskCompletionData);
+      onClose();
+    } catch (error) {
+      console.error('Error creating task completion:', error);
+    }
+  };
+
   return (
     <>
       <Modal visible={visible} transparent={true} animationType="slide">
@@ -47,7 +67,7 @@ const NutritionalTrackingCongratulationsModal = ({ visible, onClose, rewards, ex
             <Text style={styles.rewardsText}>
               <FontAwesome5 name="coins" size={20} color="gold" /> + {rewards.coins} Coins
             </Text>
-            <TouchableOpacity onPress={onClose} style={styles.closeButton}>
+            <TouchableOpacity onPress={handleContinue} style={styles.closeButton}>
               <Text style={styles.buttonText}>Continue</Text>
             </TouchableOpacity>
           </View>

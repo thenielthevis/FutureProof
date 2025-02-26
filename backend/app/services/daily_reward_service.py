@@ -109,15 +109,10 @@ async def claim_daily_reward_service(reward: DailyRewardClaim):
             user["assets"] = []
         user["assets"].append(ObjectId(reward.asset_id))
 
-    # Add the claimed reward to the list and set the next claim time
+    # Add the claimed reward to the list and set the next claim time (Stored in UTC)
     claimed_rewards = user.get("claimed_rewards", [])
     claimed_rewards.append(reward_id_obj)
-    next_claim_time = datetime.utcnow() + timedelta(hours=24)
-
-    # Convert next_claim_time to Philippines timezone
-    philippines_tz = pytz.timezone('Asia/Manila')
-    next_claim_time_ph = next_claim_time.astimezone(philippines_tz)
-    next_claim_time_str = next_claim_time_ph.strftime('%Y-%m-%d %H:%M:%S %Z%z')
+    next_claim_time_utc = datetime.utcnow() + timedelta(hours=24)
 
     update_data = {
         "coins": new_coins,
@@ -125,10 +120,15 @@ async def claim_daily_reward_service(reward: DailyRewardClaim):
         "avatars": user.get("avatars", []),
         "assets": user.get("assets", []),
         "claimed_rewards": claimed_rewards,
-        "next_claim_time": next_claim_time_ph
+        "next_claim_time": next_claim_time_utc  # Store in UTC
     }
 
     await db["users"].update_one({"_id": ObjectId(reward.user_id)}, {"$set": update_data})
+
+    # Convert UTC to Philippine Time for Response
+    philippines_tz = pytz.timezone('Asia/Manila')
+    next_claim_time_ph = next_claim_time_utc.replace(tzinfo=pytz.utc).astimezone(philippines_tz)
+    next_claim_time_str = next_claim_time_ph.strftime('%Y-%m-%d %H:%M:%S %Z%z')
 
     # Convert ObjectId to string for the response
     updated_user = {
@@ -136,7 +136,7 @@ async def claim_daily_reward_service(reward: DailyRewardClaim):
         "xp": new_xp,
         "avatars": [str(avatar) for avatar in user.get("avatars", [])],
         "assets": [str(asset) for asset in user.get("assets", [])],
-        "next_claim_time": next_claim_time_str
+        "next_claim_time": next_claim_time_str  # Show in Philippine Time
     }
 
     return updated_user

@@ -3,18 +3,29 @@ import { View, Text, TouchableOpacity, StyleSheet, Modal, ScrollView, Image, Dim
 import Icon from 'react-native-vector-icons/FontAwesome';
 import ConfettiCannon from 'react-native-confetti-cannon';
 import { FontAwesome5 } from '@expo/vector-icons';
+import { Audio } from 'expo-av';
 
 const { width, height } = Dimensions.get("window");
 
 const DailyRewardsClaimedModal = ({ visible, onClose, claimedReward, avatarIcons }) => {
   const [showConfetti, setShowConfetti] = useState(false);
   const confettiRef = useRef(null);
+  const [sound, setSound] = useState();
 
   useEffect(() => {
     if (visible) {
       setShowConfetti(true);
+      playSound();
     }
   }, [visible]);
+
+  async function playSound() {
+    const { sound } = await Audio.Sound.createAsync(
+      require('../assets/sound-effects/success.mp3')
+    );
+    setSound(sound);
+    await sound.playAsync();
+  }
 
   return (
     <>
@@ -69,7 +80,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#2c3e50',
     padding: 20,
     borderRadius: 15,
-    width: '80%',
+    width: '30%',
     maxHeight: '80%',
     position: 'relative',
   },

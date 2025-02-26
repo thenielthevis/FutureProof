@@ -235,7 +235,7 @@ const styles = StyleSheet.create({
   },
   categoryButtonsContainer: {
     paddingVertical: 10,
-    marginTop: 50
+    marginTop: 70
   },
   cardsContainer: {
     flexDirection: 'row',
