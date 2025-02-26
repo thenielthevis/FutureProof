@@ -38,33 +38,38 @@ const QuotesCRUD = () => {
 
   const handleExportPDF = async () => {
     try {
+      const logo1Base64 = await convertImageToBase64("https://i.ibb.co/GQygLXT9/tuplogo.png");
+      const logo2Base64 = await convertImageToBase64("https://i.ibb.co/YBStKgFC/logo-2.png");
+
       const htmlContent = `
-      <div style="font-family: Arial, sans-serif; padding: 20px; background: #fff; max-width: 600px; margin: 0 auto;">
-        <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 2px solid #f0f0f0; padding-bottom: 10px;">
-          <div style="flex: 1; text-align: center;">
-            <h1 style="font-size: 20px; margin: 0; color: red;">FUTUREPROOF: A Gamified AI Platform for Predictive Health and Preventive Wellness</h1>
-            <h2 style="font-size: 16px; margin: 0;">Quotes Report</h2>
-            <h4 style="font-size: 14px; margin: 5px 0 0;">${new Date().toLocaleDateString()}</h4>
+        <div style="font-family: Arial, sans-serif; padding: 20px; background: #fff; max-width: 900px; margin: 0 auto; text-align: center;">
+          <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 2px solid #f0f0f0; padding-bottom: 10px;">
+            <img src="${logo1Base64}" alt="Logo 1" style="height: 60px; width: auto;">
+            <div style="flex: 1; text-align: center;">
+              <h1 style="font-size: 20px; margin: 0; color: red;">FUTUREPROOF: A Gamified AI Platform for Predictive Health and Preventive Wellness</h1>
+              <h2 style="font-size: 16px; margin: 0;">Quotes Report</h2>
+              <h4 style="font-size: 14px; margin: 5px 0 0;">${new Date().toLocaleDateString()}</h4>
+            </div>
+            <img src="${logo2Base64}" alt="Logo 2" style="height: 60px; width: auto;">
           </div>
-        </div>
-        <table style="width: 100%; border-collapse: collapse; margin-top: 20px;">
-          <thead>
-            <tr>
-              <th style="padding: 15px; border: 1px solid #ddd; text-align: left; background-color: #f8f9fa;">Text</th>
-              <th style="padding: 15px; border: 1px solid #ddd; text-align: left; background-color: #f8f9fa;">Author</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${quotes.map((quote, index) => `
-              <tr style="background-color: ${index % 2 === 0 ? "#fff" : "#f9f9f9"};">
-                <td style="padding: 15px; border: 1px solid #ddd;">${quote.text || '-'}</td>
-                <td style="padding: 15px; border: 1px solid #ddd;">${quote.author || '-'}</td>
+          <table style="width: 100%; border-collapse: collapse; margin-top: 20px;">
+            <thead>
+              <tr>
+                <th style="padding: 12px; border: 1px solid #ddd; text-align: left; background-color: #f8f9fa;">Text</th>
+                <th style="padding: 12px; border: 1px solid #ddd; text-align: left; background-color: #f8f9fa;">Author</th>
               </tr>
-            `).join('')}
-          </tbody>
-        </table>
-      </div>
-    `;
+            </thead>
+            <tbody>
+              ${quotes.map((quote, index) => `
+                <tr style="background-color: ${index % 2 === 0 ? "#fff" : "#f9f9f9"};">
+                  <td style="padding: 12px; border: 1px solid #ddd;">${quote.text || '-'}</td>
+                  <td style="padding: 12px; border: 1px solid #ddd;">${quote.author || '-'}</td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        </div>
+      `;
 
       if (Platform.OS === 'web') {
         const container = document.createElement('div');
@@ -78,39 +83,51 @@ const QuotesCRUD = () => {
           return Promise.all(
             Array.from(images).map((img) => {
               if (img.complete) return Promise.resolve();
-              return new Promise((resolve, reject) => {
-                img.onload = resolve;
-                img.onerror = reject;
+              return new Promise((resolve) => {
+                img.onload = img.onerror = resolve;
               });
             })
           );
         };
 
-        try {
-          await waitForImages();
-          const canvas = await html2canvas(container);
-          const imgData = canvas.toDataURL('image/png');
-          const pdf = new jsPDF();
-          pdf.addImage(imgData, 'PNG', 0, 0);
-          pdf.save('quotes_report.pdf');
-        } catch (err) {
-          console.error('Error generating PDF:', err);
-        } finally {
-          document.body.removeChild(container);
-        }
+        await waitForImages();
+        const canvas = await html2canvas(container);
+        const imgData = canvas.toDataURL('image/png');
+        const pdf = new jsPDF();
+        pdf.addImage(imgData, 'PNG', 0, 0);
+        pdf.save('quotes_report.pdf');
+        document.body.removeChild(container);
       } else {
-        try {
-          const { uri } = await Print.printToFileAsync({ html: htmlContent });
-          await shareAsync(uri, { UTI: '.pdf', mimeType: 'application/pdf' });
-        } catch (error) {
-          console.error('Error generating PDF:', error);
-        }
+        const { uri } = await Print.printToFileAsync({ html: htmlContent });
+        await shareAsync(uri, { UTI: '.pdf', mimeType: 'application/pdf' });
       }
     } catch (error) {
       console.error('Error in handleExportPDF:', error);
       Alert.alert('Error', 'Something went wrong. Please try again.');
     }
   };
+
+  const convertImageToBase64 = async (uri) => {
+    try {
+      if (uri.startsWith('http://') || uri.startsWith('https://')) {
+        const response = await fetch(uri);
+        const blob = await response.blob();
+        return new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onloadend = () => resolve(reader.result);
+          reader.onerror = reject;
+          reader.readAsDataURL(blob);
+        });
+      } else {
+        const base64 = await FileSystem.readAsStringAsync(uri, { encoding: FileSystem.EncodingType.Base64 });
+        return `data:image/png;base64,${base64}`;
+      }
+    } catch (error) {
+      console.error('Error converting image:', error);
+      return null;
+    }
+  };
+
 
   const handleCreateQuote = async () => {
     try {
@@ -219,13 +236,20 @@ const QuotesCRUD = () => {
         </View>
         {!sidebarCollapsed && (
           <View style={styles.sidebarContent}>
-            <TouchableOpacity style={styles.sidebarItem} onPress={() => navigation.navigate('Admin')}>
+               <TouchableOpacity style={styles.sidebarItem} onPress={() => navigation.navigate('AvatarCRUD')}>
+              <FontAwesome name="dashboard" size={24} color="white" />
+              <Text style={styles.sidebarText}>DASHBOARD</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.sidebarItem} onPress={() => navigation.navigate('Home')}>
+              <FontAwesome name="home" size={24} color="white" />
               <Text style={styles.sidebarText}>Home</Text>
             </TouchableOpacity>
             <TouchableOpacity style={styles.sidebarItem} onPress={() => navigation.navigate('AvatarCRUD')}>
+              <FontAwesome name="user" size={24} color="white" />
               <Text style={styles.sidebarText}>Avatars</Text>
             </TouchableOpacity>
             <TouchableOpacity style={styles.sidebarItem} onPress={() => navigation.navigate('DailyRewardsCRUD')}>
+              <FontAwesome5 name="gift" size={24} color="white" />
               <Text style={styles.sidebarText}>Daily Rewards</Text>
             </TouchableOpacity>
             <TouchableOpacity style={styles.sidebarItem} onPress={() => navigation.navigate('quotes')}>
@@ -233,8 +257,16 @@ const QuotesCRUD = () => {
               <Text style={styles.sidebarText}>Quotes</Text>
             </TouchableOpacity>
             <TouchableOpacity style={styles.sidebarItem} onPress={() => navigation.navigate('asset')}>
-              <FontAwesome name="quote-left" size={24} color="white" />
+              <FontAwesome name="archive" size={24} color="white" />
               <Text style={styles.sidebarText}>Assets</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.sidebarItem} onPress={() => navigation.navigate('physicalactivities')}>
+              <FontAwesome5 name="running" size={24} color="white" />
+              <Text style={styles.sidebarText}>Physical Activities</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.sidebarItem} onPress={() => navigation.navigate('meditation')}>
+              <FontAwesome5 name="spa" size={24} color="white" />
+              <Text style={styles.sidebarText}>Meditation Breathing</Text>
             </TouchableOpacity>
           </View>
         )}

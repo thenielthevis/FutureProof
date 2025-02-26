@@ -23,6 +23,8 @@ import DailyRewards from './Components/DailyRewards';
 import TaskModal from './Components/TaskModal';
 import asset from './Pages/asset';
 import quotes from './Pages/quotes';
+import physicalactivities from './Pages/physicalactivities';
+import meditation from './Pages/meditation';
 
 const Stack = createStackNavigator();
 const { width, height } = Dimensions.get('window');
@@ -62,6 +64,8 @@ export default function App() {
               <Stack.Screen name="TaskModal" component={TaskModal} />
               <Stack.Screen name="asset" component={asset} />
               <Stack.Screen name="quotes" component={quotes} />
+              <Stack.Screen name="physicalactivities" component={physicalactivities} />
+              <Stack.Screen name="meditation" component={meditation} />
             </Stack.Navigator>
           </NavigationContainer>
         </ScrollView>

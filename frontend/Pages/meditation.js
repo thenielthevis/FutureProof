@@ -1,11 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import {
-  View, Text, TouchableOpacity, StyleSheet, TextInput, Image, ScrollView, Modal, Alert, Platform, Picker
+  View, Text, TouchableOpacity, StyleSheet, TextInput, Image, ScrollView, Modal, Alert, Platform, Button
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import { createAsset, readAssets, updateAsset, deleteAsset } from '../API/assets_api';
+import { createMeditationBreathing, readMeditationBreathing, updateMeditationBreathing, deleteMeditationBreathing } from '../API/meditation_api';
 import * as ImagePicker from 'expo-image-picker';
-import * as DocumentPicker from 'expo-document-picker';
 import * as FileSystem from 'expo-file-system';
 import { LinearGradient } from 'expo-linear-gradient';
 import { FontAwesome, FontAwesome5 } from '@expo/vector-icons';
@@ -15,32 +14,30 @@ import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import Toast from 'react-native-toast-message';
 
-const AssetCRUD = () => {
+const MeditationCRUD = () => {
   const navigation = useNavigation();
-  const [assets, setAssets] = useState([]);
+  const [meditations, setMeditations] = useState([]);
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
-  const [file, setFile] = useState(null); // For image file
-  const [glbFile, setGlbFile] = useState(null); // For GLB file
-  const [price, setPrice] = useState('');
-  const [assetType, setAssetType] = useState('top');
-  const [editingAsset, setEditingAsset] = useState(null);
+  const [file, setFile] = useState(null);
+  const [instructions, setInstructions] = useState('');
+  const [editingMeditation, setEditingMeditation] = useState(null);
   const [modalVisible, setModalVisible] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [filteredAssets, setFilteredAssets] = useState([]);
+  const [filteredMeditations, setFilteredMeditations] = useState([]);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   useEffect(() => {
-    const fetchAssets = async () => {
+    const fetchMeditations = async () => {
       try {
-        const assetsData = await readAssets();
-        setAssets(assetsData);
-        setFilteredAssets(assetsData);
+        const meditationsData = await readMeditationBreathing();
+        setMeditations(meditationsData);
+        setFilteredMeditations(meditationsData);
       } catch (error) {
-        console.error('Error fetching assets:', error);
+        console.error('Error fetching meditations:', error);
       }
     };
-    fetchAssets();
+    fetchMeditations();
   }, []);
 
   const convertImageToBase64 = async (uri) => {
@@ -55,7 +52,7 @@ const AssetCRUD = () => {
           reader.readAsDataURL(blob);
         });
       } else {
-        const base64 = await FileSystem.readAsStringAsync(uri, { encoding: 'base64' });
+        const base64 = await FileSystem.readAsStringAsync(uri, { encoding: FileSystem.EncodingType.Base64 });
         return `data:image/png;base64,${base64}`;
       }
     } catch (error) {
@@ -66,18 +63,10 @@ const AssetCRUD = () => {
 
   const handleExportPDF = async () => {
     try {
-      const assetsWithImages = await Promise.all(
-        assets.map(async (asset) => {
-          if (asset.url) {
-            try {
-              const imageSrc = await convertImageToBase64(asset.url);
-              return { ...asset, imageSrc };
-            } catch (error) {
-              console.error('Error converting image:', error);
-              return { ...asset, imageSrc: null };
-            }
-          }
-          return { ...asset, imageSrc: null };
+      const meditationsWithImages = await Promise.all(
+        meditations.map(async (meditation) => {
+          const imageSrc = await convertImageToBase64(meditation.url);
+          return { ...meditation, imageSrc };
         })
       );
 
@@ -85,12 +74,12 @@ const AssetCRUD = () => {
       const logo2Base64 = await convertImageToBase64("https://i.ibb.co/YBStKgFC/logo-2.png");
 
       const htmlContent = `
-        <div style="font-family: Arial, sans-serif; padding: 20px; background: #fff; max-width: 900px; margin: 0 auto; text-align: center;">
+        <div style="font-family: Arial, sans-serif; padding: 20px; background: #fff; max-width: 900px; margin: 0 auto;">
           <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 2px solid #f0f0f0; padding-bottom: 10px;">
             <img src="${logo1Base64}" alt="Logo 1" style="height: 60px; width: auto;">
             <div style="flex: 1; text-align: center;">
               <h1 style="font-size: 20px; margin: 0; color: red;">FUTUREPROOF: A Gamified AI Platform for Predictive Health and Preventive Wellness</h1>
-              <h2 style="font-size: 16px; margin: 0;">Asset Report</h2>
+              <h2 style="font-size: 16px; margin: 0;">Meditation Report</h2>
               <h4 style="font-size: 14px; margin: 5px 0 0;">${new Date().toLocaleDateString()}</h4>
             </div>
             <img src="${logo2Base64}" alt="Logo 2" style="height: 60px; width: auto;">
@@ -101,20 +90,16 @@ const AssetCRUD = () => {
                 <th style="padding: 12px; border: 1px solid #ddd; text-align: left; background-color: #f8f9fa;">Image</th>
                 <th style="padding: 12px; border: 1px solid #ddd; text-align: left; background-color: #f8f9fa;">Name</th>
                 <th style="padding: 12px; border: 1px solid #ddd; text-align: left; background-color: #f8f9fa;">Description</th>
-                <th style="padding: 12px; border: 1px solid #ddd; text-align: left; background-color: #f8f9fa;">Price</th>
-                <th style="padding: 12px; border: 1px solid #ddd; text-align: left; background-color: #f8f9fa;">Type</th>
               </tr>
             </thead>
             <tbody>
-              ${assetsWithImages.map((asset, index) => `
+              ${meditationsWithImages.map((meditation, index) => `
                 <tr style="background-color: ${index % 2 === 0 ? "#fff" : "#f9f9f9"};">
                   <td style="padding: 12px; border: 1px solid #ddd;">
-                    ${asset.imageSrc ? `<img src="${asset.imageSrc}" alt="Asset" style="max-width: 80px; max-height: 60px;">` : 'No Image'}
+                    ${meditation.imageSrc ? `<img src="${meditation.imageSrc}" alt="Meditation" style="max-width: 80px; max-height: 60px;">` : 'No Image'}
                   </td>
-                  <td style="padding: 12px; border: 1px solid #ddd;">${asset.name || '-'}</td>
-                  <td style="padding: 12px; border: 1px solid #ddd;">${asset.description || '-'}</td>
-                  <td style="padding: 12px; border: 1px solid #ddd;">${asset.price || '-'}</td>
-                  <td style="padding: 12px; border: 1px solid #ddd;">${asset.asset_type || '-'}</td>
+                  <td style="padding: 12px; border: 1px solid #ddd;">${meditation.name || '-'}</td>
+                  <td style="padding: 12px; border: 1px solid #ddd;">${meditation.description || '-'}</td>
                 </tr>
               `).join('')}
             </tbody>
@@ -133,10 +118,11 @@ const AssetCRUD = () => {
           const images = container.getElementsByTagName('img');
           return Promise.all(
             Array.from(images).map((img) => {
-              if (img.complete) return Promise.resolve();
+              if (img.complete) {
+                return Promise.resolve();
+              }
               return new Promise((resolve) => {
-                img.onload = resolve;
-                img.onerror = resolve;
+                img.onload = img.onerror = resolve;
               });
             })
           );
@@ -145,11 +131,9 @@ const AssetCRUD = () => {
         await waitForImages();
         const canvas = await html2canvas(container);
         const imgData = canvas.toDataURL('image/png');
-        const pdf = new jsPDF('p', 'pt', 'a4');
-        const pdfWidth = pdf.internal.pageSize.getWidth();
-        const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
-        pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
-        pdf.save('asset-report.pdf');
+        const pdf = new jsPDF();
+        pdf.addImage(imgData, 'PNG', 0, 0);
+        pdf.save('meditations_report.pdf');
         document.body.removeChild(container);
       } else {
         const { uri } = await Print.printToFileAsync({ html: htmlContent });
@@ -162,7 +146,7 @@ const AssetCRUD = () => {
   };
 
   const handlePickImage = async () => {
-    let result = await ImagePicker.launchImageLibraryAsync({
+    const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
       allowsEditing: true,
       aspect: [4, 3],
@@ -177,7 +161,7 @@ const AssetCRUD = () => {
       }
       let fileUri = pickedFile.uri;
       if (Platform.OS !== 'web') {
-        const fileName = `asset_${Date.now()}.png`;
+        const fileName = `meditation_${Date.now()}.png`;
         fileUri = `${FileSystem.cacheDirectory}${fileName}`;
         try {
           await FileSystem.moveAsync({
@@ -191,160 +175,108 @@ const AssetCRUD = () => {
       setFile({
         uri: fileUri,
         type: 'image/png',
-        name: `asset_${Date.now()}.png`,
+        name: `meditation_${Date.now()}.png`,
       });
     }
   };
 
-  const handlePickGlbFile = async () => {
+  const handleCreateMeditation = async () => {
     try {
-      const result = await DocumentPicker.getDocumentAsync({
-        type: 'model/gltf-binary',
-        copyToCacheDirectory: true,
-      });
-
-      if (result.type === 'success') {
-        const pickedFile = result;
-
-        if (!pickedFile.name.toLowerCase().endsWith('.glb')) {
-          console.error('Selected file is not a .glb file:', pickedFile);
-          Alert.alert('Invalid File', 'Please select a valid .glb file.');
-          return;
-        }
-
-        let fileUri = pickedFile.uri;
-
-        if (Platform.OS !== 'web') {
-          const fileName = `asset_${Date.now()}.glb`;
-          fileUri = `${FileSystem.cacheDirectory}${fileName}`;
-          try {
-            await FileSystem.moveAsync({
-              from: pickedFile.uri,
-              to: fileUri,
-            });
-          } catch (error) {
-            console.error('Error moving file:', error);
-            return;
-          }
-        }
-
-        setGlbFile({
-          uri: fileUri,
-          type: 'model/gltf-binary',
-          name: `asset_${Date.now()}.glb`,
-        });
-      } else {
-        console.log('Document picking was canceled or failed.');
-        Alert.alert('Canceled', 'Document picking was canceled or failed.');
-      }
-    } catch (error) {
-      console.error('Error picking document:', error);
-      Alert.alert('Error', 'An error occurred while picking the file.');
-    }
-  };
-
-  const handleCreateAsset = async () => {
-    try {
-      const newAsset = await createAsset({ name, description, price, assetType, file, imageFile: glbFile });
-      setAssets([...assets, newAsset]);
-      setFilteredAssets([...assets, newAsset]);
+      const newMeditation = await createMeditationBreathing({ name, description, file, instructions });
+      setMeditations([...meditations, newMeditation]);
+      setFilteredMeditations([...meditations, newMeditation]);
       setModalVisible(false);
       setName('');
       setDescription('');
       setFile(null);
-      setGlbFile(null);  // Reset GLB file
-      setPrice('');
-      setAssetType('');
+      setInstructions('');
       Toast.show({
         type: 'success',
         text1: 'Success',
-        text2: 'Asset created successfully!',
+        text2: 'Meditation created successfully!',
       });
     } catch (error) {
-      console.error('Error creating asset:', error);
+      console.error('Error creating meditation:', error);
       Toast.show({
         type: 'error',
         text1: 'Error',
-        text2: 'Failed to create asset. Please try again.',
+        text2: 'Failed to create meditation. Please try again.',
       });
     }
   };
 
-  const handleUpdateAsset = async () => {
+  const handleUpdateMeditation = async () => {
     try {
-      const updatedAsset = await updateAsset(editingAsset._id, { name, description, file, price, assetType });
-      const updatedAssets = assets.map(asset => (asset._id === editingAsset._id ? updatedAsset : asset));
-      setAssets(updatedAssets);
-      setFilteredAssets(updatedAssets);
+      const updatedMeditation = await updateMeditationBreathing(editingMeditation._id, { name, description, file, instructions });
+      const updatedMeditations = meditations.map(meditation => (meditation._id === editingMeditation._id ? updatedMeditation : meditation));
+      setMeditations(updatedMeditations);
+      setFilteredMeditations(updatedMeditations);
       setModalVisible(false);
-      setEditingAsset(null);
+      setEditingMeditation(null);
       setName('');
       setDescription('');
       setFile(null);
-      setPrice('');
-      setAssetType('');
+      setInstructions('');
       Toast.show({
         type: 'success',
         text1: 'Success',
-        text2: 'Asset updated successfully!',
+        text2: 'Meditation updated successfully!',
       });
     } catch (error) {
-      console.error('Error updating asset:', error);
+      console.error('Error updating meditation:', error);
       Toast.show({
         type: 'error',
         text1: 'Error',
-        text2: 'Failed to update asset. Please try again.',
+        text2: 'Failed to update meditation. Please try again.',
       });
     }
   };
 
-  const handleDeleteAsset = async (assetId) => {
+  const handleDeleteMeditation = async (meditationId) => {
     try {
-      await deleteAsset(assetId);
-      const updatedAssets = assets.filter(asset => asset._id !== assetId);
-      setAssets(updatedAssets);
-      setFilteredAssets(updatedAssets);
+      await deleteMeditationBreathing(meditationId);
+      const updatedMeditations = meditations.filter(meditation => meditation._id !== meditationId);
+      setMeditations(updatedMeditations);
+      setFilteredMeditations(updatedMeditations);
       Toast.show({
         type: 'success',
         text1: 'Success',
-        text2: 'Asset deleted successfully!',
+        text2: 'Meditation deleted successfully!',
       });
     } catch (error) {
-      console.error('Error deleting asset:', error);
+      console.error('Error deleting meditation:', error);
       Toast.show({
         type: 'error',
         text1: 'Error',
-        text2: 'Failed to delete asset. Please try again.',
+        text2: 'Failed to delete meditation. Please try again.',
       });
     }
   };
 
-  const handleEditAsset = (asset) => {
-    setEditingAsset(asset);
-    setName(asset.name);
-    setDescription(asset.description);
+  const handleEditMeditation = (meditation) => {
+    setEditingMeditation(meditation);
+    setName(meditation.name);
+    setDescription(meditation.description);
     setFile(null);
-    setPrice(asset.price.toString());
-    setAssetType(asset.asset_type);
+    setInstructions(meditation.instructions.join('\n'));
     setModalVisible(true);
   };
 
   const handleOpenModal = () => {
-    setEditingAsset(null);
+    setEditingMeditation(null);
     setName('');
     setDescription('');
     setFile(null);
-    setPrice('');
-    setAssetType('');
+    setInstructions('');
     setModalVisible(true);
   };
 
   const handleSearch = () => {
-    const filtered = assets.filter(asset =>
-      asset.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      asset.description.toLowerCase().includes(searchQuery.toLowerCase())
+    const filtered = meditations.filter(meditation =>
+      meditation.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      meditation.description.toLowerCase().includes(searchQuery.toLowerCase())
     );
-    setFilteredAssets(filtered);
+    setFilteredMeditations(filtered);
   };
 
   const toggleSidebar = () => {
@@ -362,7 +294,7 @@ const AssetCRUD = () => {
         </View>
         {!sidebarCollapsed && (
           <View style={styles.sidebarContent}>
-            <TouchableOpacity style={styles.sidebarItem} onPress={() => navigation.navigate('AvatarCRUD')}>
+             <TouchableOpacity style={styles.sidebarItem} onPress={() => navigation.navigate('AvatarCRUD')}>
               <FontAwesome name="dashboard" size={24} color="white" />
               <Text style={styles.sidebarText}>DASHBOARD</Text>
             </TouchableOpacity>
@@ -399,10 +331,10 @@ const AssetCRUD = () => {
       </LinearGradient>
 
       <View style={styles.content}>
-        <Text style={styles.header}>Assets Management</Text>
+        <Text style={styles.header}>Meditation Management</Text>
         <View style={styles.searchCreateContainer}>
           <TouchableOpacity style={styles.openModalButton} onPress={handleOpenModal}>
-            <Text style={styles.openModalButtonText}>Create Asset</Text>
+            <Text style={styles.openModalButtonText}>Create Meditation</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.exportButton} onPress={handleExportPDF}>
             <Text style={styles.exportButtonText}>Export PDF</Text>
@@ -410,7 +342,7 @@ const AssetCRUD = () => {
           <View style={styles.searchContainer}>
             <TextInput
               style={styles.searchInput}
-              placeholder="Search Assets"
+              placeholder="Search Meditations"
               value={searchQuery}
               onChangeText={setSearchQuery}
             />
@@ -420,28 +352,25 @@ const AssetCRUD = () => {
           </View>
         </View>
 
-        <ScrollView contentContainerStyle={styles.assetGrid}>
+        {/* Meditation List */}
+        <ScrollView contentContainerStyle={styles.meditationGrid}>
           <View style={styles.tableContainer}>
             <View style={styles.tableHeader}>
               <Text style={styles.tableHeaderText}>Image</Text>
               <Text style={styles.tableHeaderText}>Name</Text>
               <Text style={styles.tableHeaderText}>Description</Text>
-              <Text style={styles.tableHeaderText}>Price</Text>
-              <Text style={styles.tableHeaderText}>Type</Text>
               <Text style={styles.tableHeaderText}>Actions</Text>
             </View>
-            {filteredAssets.map((item) => (
+            {filteredMeditations.map((item) => (
               <View style={styles.tableRow} key={item._id}>
-                <Image source={{ uri: item.url }} style={styles.assetImage} />
+                <Image source={{ uri: item.url }} style={styles.meditationImage} />
                 <Text style={styles.tableCell}>{item.name}</Text>
                 <Text style={styles.tableCell}>{item.description}</Text>
-                <Text style={styles.tableCell}>{item.price}</Text>
-                <Text style={styles.tableCell}>{item.asset_type}</Text>
                 <View style={styles.tableCell}>
-                  <TouchableOpacity style={styles.buttonEdit} onPress={() => handleEditAsset(item)}>
+                  <TouchableOpacity style={styles.buttonEdit} onPress={() => handleEditMeditation(item)}>
                     <Text style={styles.buttonText}>Edit</Text>
                   </TouchableOpacity>
-                  <TouchableOpacity style={styles.buttonDelete} onPress={() => handleDeleteAsset(item._id)}>
+                  <TouchableOpacity style={styles.buttonDelete} onPress={() => handleDeleteMeditation(item._id)}>
                     <Text style={styles.buttonText}>Delete</Text>
                   </TouchableOpacity>
                 </View>
@@ -450,6 +379,7 @@ const AssetCRUD = () => {
           </View>
         </ScrollView>
 
+        {/* Modal for Create/Update Meditation */}
         <Modal
           animationType="slide"
           transparent={true}
@@ -460,87 +390,65 @@ const AssetCRUD = () => {
             <View style={styles.modalContent}>
               <LinearGradient colors={['#1A3B32', '#1A3B32']} style={styles.modalHeader}>
                 <Text style={styles.modalHeaderText}>
-                  {editingAsset ? 'Update Asset' : 'Create Asset'}
+                  {editingMeditation ? 'Update Meditation' : 'Create Meditation'}
                 </Text>
                 <TouchableOpacity style={styles.closeButton} onPress={() => setModalVisible(false)}>
                   <Text style={styles.closeButtonText}>X</Text>
                 </TouchableOpacity>
               </LinearGradient>
 
+              {/* Name Input */}
               <View style={styles.inputGroup}>
                 <Text style={styles.label}>Name</Text>
                 <TextInput
                   style={styles.input}
-                  placeholder="Enter asset name"
+                  placeholder="Enter meditation name"
                   value={name}
                   onChangeText={setName}
                 />
               </View>
 
+              {/* Description Input */}
               <View style={styles.inputGroup}>
                 <Text style={styles.label}>Description</Text>
                 <TextInput
                   style={styles.input}
-                  placeholder="Enter asset description"
+                  placeholder="Enter meditation description"
                   value={description}
                   onChangeText={setDescription}
                 />
               </View>
 
+              {/* Instructions Input */}
               <View style={styles.inputGroup}>
-                <Text style={styles.label}>Price</Text>
+                <Text style={styles.label}>Instructions</Text>
                 <TextInput
                   style={styles.input}
-                  placeholder="Enter asset price"
-                  value={price}
-                  onChangeText={setPrice}
-                  keyboardType="numeric"
+                  placeholder="Enter meditation instructions"
+                  value={instructions}
+                  onChangeText={setInstructions}
                 />
               </View>
 
+              {/* Image Picker */}
               <View style={styles.inputGroup}>
-                <Text style={styles.label}>Type</Text>
-                <Picker
-                  selectedValue={assetType}
-                  onValueChange={(itemValue) => setAssetType(itemValue)}
-                  style={styles.picker}
-                >
-                  <Picker.Item label="Top" value="top" />
-              <Picker.Item label="Head" value="head" />
-              <Picker.Item label="Bottom" value="bottom" />
-            </Picker>
+                <Text style={styles.label}>Meditation Image</Text>
+                <TouchableOpacity style={styles.button} onPress={handlePickImage}>
+                  <Text style={styles.buttonText}>Pick an Image</Text>
+                </TouchableOpacity>
+                {file ? (
+                  <Image source={{ uri: file.uri }} style={styles.imagePreview} />
+                ) : (
+                  <Text style={styles.noImageText}>No image selected</Text>
+                )}
               </View>
 
-              <View style={styles.inputGroup}>
-  <Text style={styles.label}>Asset Image</Text>
-  <TouchableOpacity style={styles.button} onPress={handlePickImage}>
-    <Text style={styles.buttonText}>Pick Image</Text>
-  </TouchableOpacity>
-  {file ? (
-    <Image source={{ uri: file.uri }} style={styles.imagePreview} />
-  ) : (
-    <Text style={styles.noImageText}>No image selected</Text>
-  )}
-</View>
-
-<View style={styles.inputGroup}>
-  <Text style={styles.label}>GLB File</Text>
-  <TouchableOpacity style={styles.button} onPress={handlePickGlbFile}>
-    <Text style={styles.buttonText}>Pick GLB File</Text>
-  </TouchableOpacity>
-  {glbFile ? (
-    <Text style={styles.fileName}>{glbFile.name}</Text>
-  ) : (
-    <Text style={styles.noFileText}>No GLB file selected</Text>
-  )}
-</View>
-
               <TouchableOpacity
-                style={styles.submitButton}
-                onPress={editingAsset ? handleUpdateAsset : handleCreateAsset}
+                style={styles.buttonPrimary}
+                onPress={editingMeditation ? handleUpdateMeditation : handleCreateMeditation}
               >
-                <Text style={styles.submitButtonText}>
-                  {editingAsset ? 'Update Asset' : 'Create Asset'}
+                <Text style={styles.buttonText}>
+                  {editingMeditation ? 'Update Meditation' : 'Create Meditation'}
                 </Text>
               </TouchableOpacity>
             </View>
@@ -555,41 +463,130 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     flexDirection: 'row',
+    backgroundColor: '#F5F5F5',
   },
   sidebar: {
-    width: 250,
-    backgroundColor: '#003C2C',
-    paddingVertical: 20,
-  },
-  sidebarCollapsed: {
-    width: 80,
-  },
-  sidebarTop: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingHorizontal: 20,
+    width: '20%',
+    padding: 20,
+    alignItems: 'flex-start',
   },
   sidebarItem: {
+    marginBottom: 30,
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 10,
-    paddingHorizontal: 20,
   },
   sidebarText: {
-    color: 'white',
+    color: '#F5F5F5',
+    fontSize: 15,
     marginLeft: 10,
   },
-  sidebarContent: {
-    marginTop: 20,
+  sidebarTop: {
+    width: '100%',
+    alignItems: 'flex-end',
   },
   content: {
     flex: 1,
     padding: 20,
   },
   header: {
-    fontSize: 24,
+    fontSize: 20,
     fontWeight: 'bold',
     marginBottom: 20,
+  },
+  input: {
+    borderWidth: 1,
+    borderColor: '#ccc',
+    borderRadius: 5,
+    padding: 10,
+    marginBottom: 10,
+    backgroundColor: '#fff',
+    width: '100%',
+  },
+  button: {
+    backgroundColor: '#2E7D32',
+    padding: 10,
+    borderRadius: 5,
+    alignItems: 'center',
+    marginBottom: 10,
+    width: '100%',
+  },
+  buttonPrimary: {
+    backgroundColor: '#3b88c3',
+    padding: 10,
+    borderRadius: 5,
+    alignItems: 'center',
+    marginBottom: 10,
+    width: '100%',
+  },
+  buttonText: {
+    color: '#fff',
+    fontWeight: 'bold',
+  },
+  imagePreview: {
+    width: 100,
+    height: 100,
+    marginBottom: 10,
+    borderRadius: 5,
+  },
+  meditationGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+  },
+  tableContainer: {
+    width: '100%',
+    backgroundColor: '#fff',
+    borderRadius: 10,
+    overflow: 'hidden',
+    marginBottom: 20,
+  },
+  tableHeader: {
+    flexDirection: 'row',
+    backgroundColor: '#2E7D32',
+    padding: 15,
+  },
+  tableHeaderText: {
+    flex: 1,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    color: '#fff',
+  },
+  tableRow: {
+    flexDirection: 'row',
+    padding: 15,
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee',
+    backgroundColor: '#fff',
+    marginLeft: 120,
+  },
+  tableCell: {
+    flex: 1,
+    textAlign: 'center',
+    justifyContent: 'center',
+    marginLeft: 150,
+  },
+  meditationImage: {
+    width: 50,
+    height: 50,
+    borderRadius: 5,
+    alignSelf: 'center',
+  },
+  buttonEdit: {
+    backgroundColor: '#3498db',
+    padding: 8,
+    borderRadius: 5,
+    marginRight: 5,
+    marginBottom: 5,
+    width: '45%',
+    alignItems: 'center',
+  },
+  buttonDelete: {
+    backgroundColor: '#e74c3c',
+    padding: 8,
+    borderRadius: 5,
+    marginBottom: 5,
+    width: '45%',
+    alignItems: 'center',
   },
   searchCreateContainer: {
     flexDirection: 'row',
@@ -598,95 +595,52 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   openModalButton: {
-    backgroundColor: '#005C3C',
-    paddingVertical: 10,
-    paddingHorizontal: 20,
+    backgroundColor: '#3498db',
+    padding: 15,
     borderRadius: 5,
+    alignItems: 'center',
+    width: 120,
   },
   openModalButtonText: {
-    color: 'white',
+    color: '#fff',
     fontWeight: 'bold',
   },
   exportButton: {
-    backgroundColor: '#005C3C',
-    paddingVertical: 10,
-    paddingHorizontal: 20,
+    backgroundColor: '#3498db',
+    padding: 15,
     borderRadius: 5,
+    alignItems: 'center',
+    marginLeft: 1,
   },
   exportButtonText: {
-    color: 'white',
+    color: '#fff',
     fontWeight: 'bold',
+    fontSize: 16,
   },
   searchContainer: {
     flexDirection: 'row',
     alignItems: 'center',
+    width: '50%',
   },
   searchInput: {
+    flex: 1,
     borderWidth: 1,
     borderColor: '#ccc',
     borderRadius: 5,
-    paddingVertical: 5,
-    paddingHorizontal: 10,
+    padding: 15,
     marginRight: 10,
+    backgroundColor: '#fff',
   },
   searchButton: {
-    backgroundColor: '#005C3C',
-    paddingVertical: 10,
-    paddingHorizontal: 20,
+    backgroundColor: '#3498db',
+    padding: 15,
     borderRadius: 5,
+    alignItems: 'center',
   },
   searchButtonText: {
-    color: 'white',
+    color: '#fff',
     fontWeight: 'bold',
-  },
-  assetGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-  },
-  tableContainer: {
-    width: '100%',
-  },
-  tableHeader: {
-    flexDirection: 'row',
-    backgroundColor: '#f8f9fa',
-    paddingVertical: 10,
-    paddingHorizontal: 5,
-  },
-  tableHeaderText: {
-    flex: 1,
-    fontWeight: 'bold',
-  },
-  tableRow: {
-    flexDirection: 'row',
-    paddingVertical: 10,
-    paddingHorizontal: 5,
-    borderBottomWidth: 1,
-    borderBottomColor: '#ddd',
-  },
-  tableCell: {
-    flex: 1,
-  },
-  assetImage: {
-    width: 80,
-    height: 60,
-    resizeMode: 'cover',
-  },
-  buttonEdit: {
-    backgroundColor: '#005C3C',
-    paddingVertical: 5,
-    paddingHorizontal: 10,
-    borderRadius: 5,
-    marginRight: 5,
-  },
-  buttonDelete: {
-    backgroundColor: '#d9534f',
-    paddingVertical: 5,
-    paddingHorizontal: 10,
-    borderRadius: 5,
-  },
-  buttonText: {
-    color: 'white',
-    fontWeight: 'bold',
+    fontSize: 16,
   },
   modalOverlay: {
     flex: 1,
@@ -695,73 +649,81 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
   },
   modalContent: {
-    width: '80%',
-    backgroundColor: 'white',
+    width: '50%',
+    backgroundColor: '#1A3B32',
+    padding: 20,
     borderRadius: 10,
-    overflow: 'hidden',
+    alignItems: 'center',
   },
   modalHeader: {
-    padding: 15,
+    width: '100%',
+    backgroundColor: '#2E7D32',
+    padding: 10,
+    borderTopLeftRadius: 10,
+    borderTopRightRadius: 10,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
-    justifyContent: 'center',
+    marginBottom: 20,
   },
   modalHeaderText: {
-    color: 'white',
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: 'bold',
+    color: '#fff',
   },
   closeButton: {
-    position: 'absolute',
-    top: 10,
-    right: 10,
+    padding: 10,
+    backgroundColor: '#fff',
+    borderRadius: 20,
   },
   closeButtonText: {
-    color: 'white',
     fontSize: 18,
+    color: '#333',
+  },
+  sidebarCollapsed: {
+    width: 80,
+  },
+  sidebarContent: {
+    width: '100%',
+    alignItems: 'flex-start',
   },
   inputGroup: {
-    padding: 15,
+    marginBottom: 15,
+    width: '100%',
   },
   label: {
+    color: '#fff',
+    marginBottom: 8,
     fontSize: 16,
-    fontWeight: 'bold',
-    marginBottom: 5,
+    fontWeight: '600',
   },
   input: {
     borderWidth: 1,
     borderColor: '#ccc',
     borderRadius: 5,
-    paddingVertical: 5,
-    paddingHorizontal: 10,
-    marginBottom: 10,
+    padding: 12,
+    backgroundColor: '#fff',
+    fontSize: 16,
+  },
+  noImageText: {
+    color: '#fff',
+    fontSize: 14,
+    marginTop: 8,
+    textAlign: 'center',
+  },
+  imagePreview: {
+    width: 120,
+    height: 120,
+    marginVertical: 10,
+    borderRadius: 8,
+    alignSelf: 'center',
   },
   button: {
-    backgroundColor: '#005C3C',
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    borderRadius: 5,
+    backgroundColor: '#2E7D32',
+    padding: 12,
+    borderRadius: 6,
     alignItems: 'center',
-  },
-  buttonText: {
-    color: 'white',
-    fontWeight: 'bold',
-  },
-  submitButton: {
-    backgroundColor: '#005C3C',
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    borderRadius: 5,
-    alignItems: 'center',
-    margin: 15,
-  },
-  submitButtonText: {
-    color: 'white',
-    fontWeight: 'bold',
-  },
-  picker: {
-    height: 50,
-    width: '100%',
+    marginVertical: 8,
   },
 });
-
-export default AssetCRUD;
+export default MeditationCRUD;
