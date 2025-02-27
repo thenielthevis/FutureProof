@@ -120,6 +120,43 @@ export const readOwnedAssets = async () => {
   }
 };
 
+// Add an owned asset
+export const addOwnedAsset = async (assetIds) => {
+  try {
+    const token = await AsyncStorage.getItem('token');
+    const asset_ids = Array.isArray(assetIds) ? assetIds : [assetIds];
+    console.log('Sending asset IDs to addOwnedAsset:', asset_ids); // Log asset IDs
+    const response = await axios.post(`${API_URL}/owned_assets/`, { asset_ids }, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    console.log('Response from addOwnedAsset:', response.data); // Log response
+    return response.data;
+  } catch (error) {
+    console.error('Error adding owned asset:', error.response ? error.response.data : error);
+    throw error.response ? error.response.data : { detail: 'An error occurred' };
+  }
+};
+
+// Get owned assets
+export const getOwnedAssets = async () => {
+  try {
+    const token = await AsyncStorage.getItem('token');
+    console.log('Fetching owned assets for user'); // Log fetching action
+    const response = await axios.get(`${API_URL}/owned_assets/`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    console.log('Response from getOwnedAssets:', response.data); // Log response
+    return response.data;
+  } catch (error) {
+    console.error('Error getting owned assets:', error.response ? error.response.data : error);
+    throw error.response ? error.response.data : { detail: 'An error occurred' };
+  }
+};
+
 // Buy an asset
 export const buyAsset = async (assetUrl) => {
   try {
@@ -154,4 +191,40 @@ export const readPurchasedItems = async () => {
     headers: { Authorization: `Bearer ${token}` }
   });
   return response.data;
+};
+
+// Equip an asset
+export const equipAsset = async (assetType, assetId) => {
+  try {
+    const token = await AsyncStorage.getItem('token');
+    console.log('Sending asset type and ID to equipAsset:', assetType, assetId); // Log asset type and ID
+    const response = await axios.post(`${API_URL}/equip_asset/`, { asset_type: assetType, asset_id: assetId }, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    console.log('Response from equipAsset:', response.data); // Log response
+    return response.data;
+  } catch (error) {
+    console.error('Error equipping asset:', error.response ? error.response.data : error);
+    throw error.response ? error.response.data : { detail: 'An error occurred' };
+  }
+};
+
+// Get equipped assets
+export const getEquippedAssets = async () => {
+  try {
+    const token = await AsyncStorage.getItem('token');
+    console.log('Fetching equipped assets for user'); // Log fetching action
+    const response = await axios.get(`${API_URL}/equipped_assets/`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    console.log('Response from getEquippedAssets:', response.data); // Log response
+    return response.data.equipped_assets;
+  } catch (error) {
+    console.error('Error getting equipped assets:', error.response ? error.response.data : error);
+    throw error.response ? error.response.data : { detail: 'An error occurred' };
+  }
 };

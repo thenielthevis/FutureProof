@@ -12,7 +12,7 @@ import TaskModal from './TaskModal';
 import DailyAssessment from './DailyAssessment';
 // import Prediction from './Prediction';
 import { FaShoppingCart } from 'react-icons/fa';
-import { readPurchasedItems } from '../API/assets_api';
+import { readPurchasedItems, getEquippedAssets } from '../API/assets_api';
 import { getUser } from '../API/user_api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
@@ -67,6 +67,7 @@ export default function Game() {
   const [predictionVisible, setPredictionVisible] = useState(false);
   const [hoveredIndex, setHoveredIndex] = useState(null);
   const [hasClaimableReward, setHasClaimableReward] = useState(false); // State to track if there's a claimable reward
+  const [equippedAssets, setEquippedAssets] = useState({}); // State to track equipped assets
   const icons = [
     require('../assets/icons/Navigation/dailyassessment.png'),
     require('../assets/icons/Navigation/dailyrewards.png'),
@@ -97,7 +98,18 @@ export default function Game() {
       }
     };
 
+    // Fetch equipped assets
+    const fetchEquippedAssets = async () => {
+      try {
+        const equippedAssets = await getEquippedAssets();
+        setEquippedAssets(equippedAssets); // Assuming setEquippedAssets is a state setter for equipped assets
+      } catch (error) {
+        console.error('Error fetching equipped assets:', error);
+      }
+    };
+
     fetchPurchasedItems();
+    fetchEquippedAssets();
   }, []);
 
   useEffect(() => {
@@ -245,6 +257,15 @@ export default function Game() {
             {selectedTop && <Model scale={modelScale} uri={selectedTop} position={modelPosition} color={colors.top} />}
             {selectedBottom && <Model scale={modelScale} uri={selectedBottom} position={modelPosition} color={colors.bottom} />}
             {selectedShoes && <Model scale={modelScale} uri={selectedShoes} position={modelPosition} color={colors.shoes} />}
+            {Object.keys(equippedAssets).map(assetType => (
+              <Model
+                key={assetType}
+                scale={modelScale}
+                uri={equippedAssets[assetType].url}
+                position={modelPosition}
+                color={colors[assetType]}
+              />
+            ))}
           </Suspense>
           <OrbitControls enableDamping maxPolarAngle={Math.PI} minDistance={10} maxDistance={15} />
         </Canvas>
