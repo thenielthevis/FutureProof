@@ -228,3 +228,21 @@ export const getEquippedAssets = async () => {
     throw error.response ? error.response.data : { detail: 'An error occurred' };
   }
 };
+
+export const unequipAsset = async (assetType) => {
+  const token = await AsyncStorage.getItem('token');
+  const response = await fetch(`${API_URL}/unequip_asset/`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`,
+    },
+    body: JSON.stringify({ asset_type: assetType }),
+  });
+
+  if (!response.ok) {
+    throw new Error('Failed to unequip asset');
+  }
+
+  return await response.json();
+};

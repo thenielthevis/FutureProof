@@ -4,7 +4,7 @@ import { OrbitControls, useGLTF } from '@react-three/drei/native';
 import { View, Text, TouchableOpacity, StyleSheet, Modal, TextInput, Image, ScrollView, Pressable, Animated } from 'react-native';
 import * as THREE from 'three';
 import { FontAwesome } from '@expo/vector-icons';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { LinearGradient } from 'expo-linear-gradient';
 import GameNavbar from '../Navbar/GameNavbar';
 import DailyRewards from './DailyRewards';
@@ -17,27 +17,19 @@ import { getUser } from '../API/user_api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // Reusable Model Component with Color
-function Model({ scale, uri, position, color }) {
+function Model({ scale, uri, position }) { // Removed color prop
   const { scene } = useGLTF(uri);
   scene.scale.set(scale.x, scale.y, scale.z);
   scene.position.set(position.x, position.y, position.z);
-
-  if (color) {
-    scene.traverse((child) => {
-      if (child.isMesh && child.material) {
-        child.material = new THREE.MeshStandardMaterial({ color: new THREE.Color(color) });
-      }
-    });
-  }
 
   return <primitive object={scene} />;
 }
 
 // Reusable Option Button Component
-function OptionButton({ label, onPress, isSelected, color, preview }) {
+function OptionButton({ label, onPress, isSelected, preview }) {
   return (
     <TouchableOpacity
-      style={[styles.optionButton, { backgroundColor: isSelected ? color : '#ddd' }]}
+      style={[styles.optionButton, { backgroundColor: isSelected ? '#27ae60' : '#ddd' }]}
       onPress={onPress}
     >
       <Image source={{ uri: preview }} style={styles.previewImage} />
@@ -78,13 +70,6 @@ export default function Game() {
 
   const handleShopPress = () => {
     navigation.navigate('Shop');   
-  };
-
-  const colors = {
-    hair: "#000000",
-    head: "#ff0000",  // Add color for head
-    bottom: "#0000ff",
-    shoes: "#000000",
   };
 
   useEffect(() => {
@@ -132,6 +117,21 @@ export default function Game() {
 
     fetchUserData();
   }, []);
+
+  useFocusEffect(
+    React.useCallback(() => {
+      const fetchEquippedAssets = async () => {
+        try {
+          const equippedAssets = await getEquippedAssets();
+          setEquippedAssets(equippedAssets);
+        } catch (error) {
+          console.error('Error fetching equipped assets:', error);
+        }
+      };
+
+      fetchEquippedAssets();
+    }, [])
+  );
 
   const calculateBmi = () => {
     const heightInMeters = height / 100;
@@ -214,23 +214,23 @@ export default function Game() {
     switch (activeTab) {
       case 'hair':
         return purchasedItems.filter(item => item.asset_type === 'hair').map((hair) => (
-          <OptionButton key={hair._id} label={hair.name} onPress={() => setSelectedHair(hair.url)} isSelected={hair.url === selectedHair} color="#27ae60" preview={hair.image_url} />
+          <OptionButton key={hair._id} label={hair.name} onPress={() => setSelectedHair(hair.url)} isSelected={hair.url === selectedHair} preview={hair.image_url} />
         ));
       case 'head':  // Add case for head
         return purchasedItems.filter(item => item.asset_type === 'head').map((head) => (
-          <OptionButton key={head._id} label={head.name} onPress={() => setSelectedHead(head.url)} isSelected={head.url === selectedHead} color="#ff0000" preview={head.image_url} />
+          <OptionButton key={head._id} label={head.name} onPress={() => setSelectedHead(head.url)} isSelected={head.url === selectedHead} preview={head.image_url} />
         ));
       case 'top':
         return purchasedItems.filter(item => item.asset_type === 'top').map((top) => (
-          <OptionButton key={top._id} label={top.name} onPress={() => setSelectedTop(top.url)} isSelected={top.url === selectedTop} color="#3498db" preview={top.image_url} />
+          <OptionButton key={top._id} label={top.name} onPress={() => setSelectedTop(top.url)} isSelected={top.url === selectedTop} preview={top.image_url} />
         ));
       case 'bottom':
         return purchasedItems.filter(item => item.asset_type === 'bottom').map((bottom) => (
-          <OptionButton key={bottom._id} label={bottom.name} onPress={() => setSelectedBottom(bottom.url)} isSelected={bottom.url === selectedBottom} color="#e74c3c" preview={bottom.image_url} />
+          <OptionButton key={bottom._id} label={bottom.name} onPress={() => setSelectedBottom(bottom.url)} isSelected={bottom.url === selectedBottom} preview={bottom.image_url} />
         ));
       case 'shoes':
         return purchasedItems.filter(item => item.asset_type === 'shoes').map((shoes) => (
-          <OptionButton key={shoes._id} label={shoes.name} onPress={() => setSelectedShoes(shoes.url)} isSelected={shoes.url === selectedShoes} color="#f39c12" preview={shoes.image_url} />
+          <OptionButton key={shoes._id} label={shoes.name} onPress={() => setSelectedShoes(shoes.url)} isSelected={shoes.url === selectedShoes} preview={shoes.image_url} />
         ));
       default:
         return null;
@@ -252,18 +252,17 @@ export default function Game() {
             <Model scale={modelScale} uri='https://res.cloudinary.com/dv4vzq7pv/image/upload/v1739961163/Head.001_p5sjoz.glb' position={modelPosition} />
             <Model scale={modelScale} uri='https://res.cloudinary.com/dv4vzq7pv/image/upload/v1739961141/Eyes.001_uab6p6.glb' position={modelPosition} /> {/* Eyes */}
             <Model scale={modelScale} uri='https://res.cloudinary.com/dv4vzq7pv/image/upload/v1739961165/Nose.001_s4fxsi.glb' position={modelPosition} /> {/* Nose */}
-            {selectedHair && <Model scale={modelScale} uri={selectedHair} position={modelPosition} color={colors.hair} />}
-            {selectedHead && <Model scale={modelScale} uri={selectedHead} position={modelPosition} color={colors.head} />}  {/* Add selectedHead */}
-            {selectedTop && <Model scale={modelScale} uri={selectedTop} position={modelPosition} color={colors.top} />}
-            {selectedBottom && <Model scale={modelScale} uri={selectedBottom} position={modelPosition} color={colors.bottom} />}
-            {selectedShoes && <Model scale={modelScale} uri={selectedShoes} position={modelPosition} color={colors.shoes} />}
+            {selectedHair && <Model scale={modelScale} uri={selectedHair} position={modelPosition} />}
+            {selectedHead && <Model scale={modelScale} uri={selectedHead} position={modelPosition} />}  {/* Add selectedHead */}
+            {selectedTop && <Model scale={modelScale} uri={selectedTop} position={modelPosition} />}
+            {selectedBottom && <Model scale={modelScale} uri={selectedBottom} position={modelPosition} />}
+            {selectedShoes && <Model scale={modelScale} uri={selectedShoes} position={modelPosition} />}
             {Object.keys(equippedAssets).map(assetType => (
               <Model
                 key={assetType}
                 scale={modelScale}
                 uri={equippedAssets[assetType].url}
                 position={modelPosition}
-                color={colors[assetType]}
               />
             ))}
           </Suspense>
