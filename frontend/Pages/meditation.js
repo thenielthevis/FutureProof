@@ -3,7 +3,7 @@ import {
   View, Text, TouchableOpacity, StyleSheet, TextInput, Image, ScrollView, Modal, Alert, Platform, Button
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import { createMeditationBreathing, readMeditationBreathing, updateMeditationBreathing, deleteMeditationBreathing } from '../API/meditation_api';
+import { createMeditationBreathingExercise, getMeditationBreathingExercises, updateMeditationBreathingExercise, deleteMeditationBreathingExercise } from '../API/meditation_api';
 import * as ImagePicker from 'expo-image-picker';
 import * as FileSystem from 'expo-file-system';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -30,7 +30,7 @@ const MeditationCRUD = () => {
   useEffect(() => {
     const fetchMeditations = async () => {
       try {
-        const meditationsData = await readMeditationBreathing();
+        const meditationsData = await getMeditationBreathingExercises();
         setMeditations(meditationsData);
         setFilteredMeditations(meditationsData);
       } catch (error) {
@@ -182,7 +182,7 @@ const MeditationCRUD = () => {
 
   const handleCreateMeditation = async () => {
     try {
-      const newMeditation = await createMeditationBreathing({ name, description, file, instructions });
+      const newMeditation = await createMeditationBreathingExercise({ name, description, file, instructions });
       setMeditations([...meditations, newMeditation]);
       setFilteredMeditations([...meditations, newMeditation]);
       setModalVisible(false);
@@ -207,7 +207,7 @@ const MeditationCRUD = () => {
 
   const handleUpdateMeditation = async () => {
     try {
-      const updatedMeditation = await updateMeditationBreathing(editingMeditation._id, { name, description, file, instructions });
+      const updatedMeditation = await updateMeditationBreathingExercise(editingMeditation._id, { name, description, file, instructions });
       const updatedMeditations = meditations.map(meditation => (meditation._id === editingMeditation._id ? updatedMeditation : meditation));
       setMeditations(updatedMeditations);
       setFilteredMeditations(updatedMeditations);
@@ -234,7 +234,7 @@ const MeditationCRUD = () => {
 
   const handleDeleteMeditation = async (meditationId) => {
     try {
-      await deleteMeditationBreathing(meditationId);
+      await deleteMeditationBreathingExercise(meditationId);
       const updatedMeditations = meditations.filter(meditation => meditation._id !== meditationId);
       setMeditations(updatedMeditations);
       setFilteredMeditations(updatedMeditations);
