@@ -129,7 +129,7 @@ export default function Shop() {
       }
 
       console.log('Selected asset for purchase:', selectedAsset); // Log selected asset
-      await purchaseItem(selectedAsset._id.toString());
+      await buyAsset(selectedAsset._id.toString());
       await addOwnedAsset(selectedAsset._id.toString()); // Add the asset to owned assets
       Alert.alert('Success', 'Item purchased successfully!');
       setUser(prevUser => ({ ...prevUser, coins: prevUser.coins - selectedAsset.price }));

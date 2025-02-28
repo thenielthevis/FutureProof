@@ -5,6 +5,8 @@ from app.models.asset_model import Asset
 from app.models.user_model import UserInDB
 from app.dependencies import get_current_admin, get_current_user  # Import get_current_user
 from app.services.asset_service import create_asset, read_assets, read_asset_by_id, update_asset, delete_asset
+from app.services.user_service import update_user_coins_and_xp  # Import the function to update user's coins and XP
+from app.services.owned_asset_service import add_owned_asset  # Import the function to add owned assets
 
 router = APIRouter()
 
@@ -15,7 +17,7 @@ class AssetCreate(BaseModel):
     asset_type: str
 
 class BuyAssetRequest(BaseModel):
-    asset_url: str
+    asset_id: str
 
 # Create an asset
 @router.post("/create/asset/", response_model=Asset)
@@ -87,4 +89,28 @@ async def delete_asset_route(asset_id: str, current_admin: UserInDB = Depends(ge
         return await delete_asset(asset_id)
     except Exception as e:
         print(f"Error deleting asset: {str(e)}")
+        raise HTTPException(status_code=500, detail="Internal Server Error")
+
+# Buy an asset
+@router.post("/buy_asset/")
+async def buy_asset_route(request: BuyAssetRequest, current_user: UserInDB = Depends(get_current_user)):
+    try:
+        # Fetch the asset details
+        asset = await read_asset_by_id(request.asset_id)
+        if not asset:
+            raise HTTPException(status_code=404, detail="Asset not found")
+
+        # Check if the user has enough coins
+        if current_user.coins < asset.price:
+            raise HTTPException(status_code=400, detail="Not enough coins")
+
+        # Deduct the asset price from the user's coins
+        await update_user_coins_and_xp(str(current_user.id), coins=-asset.price)
+
+        # Add the asset to the user's owned assets
+        await add_owned_asset(current_user.id, request.asset_id)
+
+        return {"message": "Asset purchased successfully"}
+    except Exception as e:
+        print(f"Error buying asset: {str(e)}")
         raise HTTPException(status_code=500, detail="Internal Server Error")

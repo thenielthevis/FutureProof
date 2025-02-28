@@ -158,22 +158,18 @@ export const getOwnedAssets = async () => {
 };
 
 // Buy an asset
-export const buyAsset = async (assetUrl) => {
+export const buyAsset = async (assetId) => {
   try {
     const token = await AsyncStorage.getItem('token');
-    const response = await axios.post(
-      'http://localhost:8000/buy_asset',
-      { asset_url: assetUrl },  // Send asset_url in the request body
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      }
-    );
+    const response = await axios.post(`${API_URL}/buy_asset/`, { asset_id: assetId }, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
     return response.data;
   } catch (error) {
-    console.error('Error buying asset:', error.response.data);
-    throw error;
+    console.error('Error buying asset:', error.response ? error.response.data : error);
+    throw error.response ? error.response.data : { detail: 'An error occurred' };
   }
 };
 
