@@ -119,3 +119,7 @@ async def verify_user_otp(email: str, otp: str):
 
     await db.users.update_one({"email": email}, {"$set": {"verified": True, "otp": None}})
     return {"message": "User verified successfully"}
+
+async def count_total_users():
+    total_users = await db.users.count_documents({})
+    return total_users

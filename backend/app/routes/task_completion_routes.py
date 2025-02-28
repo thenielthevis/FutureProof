@@ -2,6 +2,9 @@ from fastapi import APIRouter, HTTPException
 from app.services.task_completion_service import TaskCompletionService
 from app.models.task_completion_model import TaskCompletion
 from typing import List
+import logging
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
@@ -30,9 +33,12 @@ def get_task_completions_by_user(user_id: str):
         raise HTTPException(status_code=400, detail=str(e))
 
 @router.get("/task-completion", response_model=List[TaskCompletion])
-def get_all_task_completions():
+async def get_all_task_completions():
     try:
-        task_completions = TaskCompletionService.get_all_task_completions()
+        logger.info("Fetching all task completions")
+        task_completions = await TaskCompletionService.get_all_task_completions()
+        logger.info(f"Fetched {len(task_completions)} task completions")
         return task_completions
     except Exception as e:
+        logger.error(f"Error fetching task completions: {str(e)}")
         raise HTTPException(status_code=400, detail=str(e))

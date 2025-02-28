@@ -35,13 +35,6 @@ class UserCreate(BaseModel):
     sleep_hours: str
     activeness: str
     verified: bool = False
-    isasleep: bool = False
-    sleep: int = 0
-    battery: int = 0
-    health: int = 0
-    medication: int = 0
-    claimed_rewards: List[ObjectId] = []
-    next_claim_time: Optional[datetime] = None
 
     class Config:
         json_encoders = {

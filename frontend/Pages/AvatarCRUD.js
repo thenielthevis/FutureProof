@@ -316,7 +316,7 @@ const AvatarCRUD = () => {
            </View>
              {!sidebarCollapsed && (
                     <View style={styles.sidebarContent}>
-                       <TouchableOpacity style={styles.sidebarItem} onPress={() => navigation.navigate('AvatarCRUD')}>
+            <TouchableOpacity style={styles.sidebarItem} onPress={() => navigation.navigate('Admin')}>
               <FontAwesome name="dashboard" size={24} color="white" />
               <Text style={styles.sidebarText}>DASHBOARD</Text>
             </TouchableOpacity>

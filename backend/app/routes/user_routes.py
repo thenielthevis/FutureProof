@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException, Depends
 from fastapi.security import OAuth2PasswordBearer
 from pydantic import BaseModel
-from app.services.user_service import register_user, login_user, get_user_by_token
+from app.services.user_service import register_user, login_user, get_user_by_token, count_total_users
 from app.services.prediction_service import predict_disease
 from app.models.user_model import UserCreate, UserLogin, UserInDB
 from app.mailtrap_client import send_otp_email
@@ -44,6 +44,11 @@ async def get_user(token: str = Depends(oauth2_scheme)):
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     return user
+
+@router.get("/total-users")
+async def get_total_users():
+    total_users = await count_total_users()
+    return {"total_users": total_users}
 
 @router.post("/send-otp/")
 async def send_otp(request: OTPRequest):
