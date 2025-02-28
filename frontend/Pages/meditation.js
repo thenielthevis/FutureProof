@@ -3,7 +3,7 @@ import {
   View, Text, TouchableOpacity, StyleSheet, TextInput, Image, ScrollView, Modal, Alert, Platform, Button
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import { createAvatar, readAvatars, updateAvatar, deleteAvatar } from '../API/avatar_api';
+import { createMeditationBreathingExercise, getMeditationBreathingExercises, updateMeditationBreathingExercise, deleteMeditationBreathingExercise } from '../API/meditation_api';
 import * as ImagePicker from 'expo-image-picker';
 import * as FileSystem from 'expo-file-system';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -14,37 +14,35 @@ import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import Toast from 'react-native-toast-message';
 
-
-const AvatarCRUD = () => {
+const MeditationCRUD = () => {
   const navigation = useNavigation();
-  const [avatars, setAvatars] = useState([]);
+  const [meditations, setMeditations] = useState([]);
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [file, setFile] = useState(null);
-  const [editingAvatar, setEditingAvatar] = useState(null);
+  const [instructions, setInstructions] = useState('');
+  const [editingMeditation, setEditingMeditation] = useState(null);
   const [modalVisible, setModalVisible] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [filteredAvatars, setFilteredAvatars] = useState([]);
+  const [filteredMeditations, setFilteredMeditations] = useState([]);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   useEffect(() => {
-    const fetchAvatars = async () => {
+    const fetchMeditations = async () => {
       try {
-        const avatarsData = await readAvatars();
-        setAvatars(avatarsData);
-        setFilteredAvatars(avatarsData);
+        const meditationsData = await getMeditationBreathingExercises();
+        setMeditations(meditationsData);
+        setFilteredMeditations(meditationsData);
       } catch (error) {
-        console.error('Error fetching avatars:', error);
+        console.error('Error fetching meditations:', error);
       }
     };
-    fetchAvatars();
+    fetchMeditations();
   }, []);
 
-  // Convert a local image to a Base64 string (or return remote URL)
   const convertImageToBase64 = async (uri) => {
     try {
       if (uri.startsWith('http://') || uri.startsWith('https://')) {
-        // Fetch remote image and convert to base64
         const response = await fetch(uri);
         const blob = await response.blob();
         return new Promise((resolve, reject) => {
@@ -54,8 +52,7 @@ const AvatarCRUD = () => {
           reader.readAsDataURL(blob);
         });
       } else {
-        // Convert local image to base64
-        const base64 = await FileSystem.readAsStringAsync(uri, { encoding: 'base64' });
+        const base64 = await FileSystem.readAsStringAsync(uri, { encoding: FileSystem.EncodingType.Base64 });
         return `data:image/png;base64,${base64}`;
       }
     } catch (error) {
@@ -66,29 +63,23 @@ const AvatarCRUD = () => {
 
   const handleExportPDF = async () => {
     try {
-      // Convert all avatar images to base64
-      const avatarsWithImages = await Promise.all(
-        avatars.map(async (avatar) => {
-          if (avatar.url) {
-            const imageSrc = await convertImageToBase64(avatar.url);
-            return { ...avatar, imageSrc };
-          }
-          return { ...avatar, imageSrc: null }; // No image available
+      const meditationsWithImages = await Promise.all(
+        meditations.map(async (meditation) => {
+          const imageSrc = await convertImageToBase64(meditation.url);
+          return { ...meditation, imageSrc };
         })
       );
 
-      // Convert logo URLs to base64
       const logo1Base64 = await convertImageToBase64("https://i.ibb.co/GQygLXT9/tuplogo.png");
       const logo2Base64 = await convertImageToBase64("https://i.ibb.co/YBStKgFC/logo-2.png");
 
-      // HTML content for the PDF
       const htmlContent = `
         <div style="font-family: Arial, sans-serif; padding: 20px; background: #fff; max-width: 900px; margin: 0 auto;">
           <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 2px solid #f0f0f0; padding-bottom: 10px;">
             <img src="${logo1Base64}" alt="Logo 1" style="height: 60px; width: auto;">
             <div style="flex: 1; text-align: center;">
               <h1 style="font-size: 20px; margin: 0; color: red;">FUTUREPROOF: A Gamified AI Platform for Predictive Health and Preventive Wellness</h1>
-              <h2 style="font-size: 16px; margin: 0;">Avatar Report</h2>
+              <h2 style="font-size: 16px; margin: 0;">Meditation Report</h2>
               <h4 style="font-size: 14px; margin: 5px 0 0;">${new Date().toLocaleDateString()}</h4>
             </div>
             <img src="${logo2Base64}" alt="Logo 2" style="height: 60px; width: auto;">
@@ -102,13 +93,13 @@ const AvatarCRUD = () => {
               </tr>
             </thead>
             <tbody>
-              ${avatarsWithImages.map((avatar, index) => `
+              ${meditationsWithImages.map((meditation, index) => `
                 <tr style="background-color: ${index % 2 === 0 ? "#fff" : "#f9f9f9"};">
                   <td style="padding: 12px; border: 1px solid #ddd;">
-                    ${avatar.imageSrc ? `<img src="${avatar.imageSrc}" alt="Avatar" style="max-width: 80px; max-height: 60px;">` : 'No Image'}
+                    ${meditation.imageSrc ? `<img src="${meditation.imageSrc}" alt="Meditation" style="max-width: 80px; max-height: 60px;">` : 'No Image'}
                   </td>
-                  <td style="padding: 12px; border: 1px solid #ddd;">${avatar.name || '-'}</td>
-                  <td style="padding: 12px; border: 1px solid #ddd;">${avatar.description || '-'}</td>
+                  <td style="padding: 12px; border: 1px solid #ddd;">${meditation.name || '-'}</td>
+                  <td style="padding: 12px; border: 1px solid #ddd;">${meditation.description || '-'}</td>
                 </tr>
               `).join('')}
             </tbody>
@@ -117,53 +108,36 @@ const AvatarCRUD = () => {
       `;
 
       if (Platform.OS === 'web') {
-        // Create a hidden container to render the HTML
         const container = document.createElement('div');
         container.style.position = 'absolute';
         container.style.left = '-9999px';
         container.innerHTML = htmlContent;
         document.body.appendChild(container);
 
-        // Wait for all images to load
         const waitForImages = () => {
           const images = container.getElementsByTagName('img');
           return Promise.all(
             Array.from(images).map((img) => {
-              if (img.complete) return Promise.resolve();
-              return new Promise((resolve, reject) => {
-                img.onload = resolve;
-                img.onerror = reject;
+              if (img.complete) {
+                return Promise.resolve();
+              }
+              return new Promise((resolve) => {
+                img.onload = img.onerror = resolve;
               });
             })
           );
         };
 
-        try {
-          await waitForImages(); // Wait for images to load
-          const canvas = await html2canvas(container); // Capture the content as an image
-          const imgData = canvas.toDataURL('image/png'); // Convert canvas to image data URL
-
-          // Generate PDF
-          const pdf = new jsPDF('p', 'pt', 'a4');
-          const pdfWidth = pdf.internal.pageSize.getWidth();
-          const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
-          pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
-          pdf.save('avatar-report.pdf'); // Save the PDF
-        } catch (err) {
-          console.error('Error generating PDF:', err);
-          Alert.alert('Error', 'Failed to generate PDF. Please try again.');
-        } finally {
-          document.body.removeChild(container); // Clean up the hidden container
-        }
+        await waitForImages();
+        const canvas = await html2canvas(container);
+        const imgData = canvas.toDataURL('image/png');
+        const pdf = new jsPDF();
+        pdf.addImage(imgData, 'PNG', 0, 0);
+        pdf.save('meditations_report.pdf');
+        document.body.removeChild(container);
       } else {
-        // For mobile, use expo-print
-        try {
-          const { uri } = await Print.printToFileAsync({ html: htmlContent });
-          await shareAsync(uri, { UTI: '.pdf', mimeType: 'application/pdf' });
-        } catch (error) {
-          console.error('Error generating PDF:', error);
-          Alert.alert('Error', 'Failed to generate PDF. Please try again.');
-        }
+        const { uri } = await Print.printToFileAsync({ html: htmlContent });
+        await shareAsync(uri, { UTI: '.pdf', mimeType: 'application/pdf' });
       }
     } catch (error) {
       console.error('Error in handleExportPDF:', error);
@@ -173,7 +147,7 @@ const AvatarCRUD = () => {
 
   const handlePickImage = async () => {
     const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaType.Images, 
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
       allowsEditing: true,
       aspect: [4, 3],
       quality: 1,
@@ -187,7 +161,7 @@ const AvatarCRUD = () => {
       }
       let fileUri = pickedFile.uri;
       if (Platform.OS !== 'web') {
-        const fileName = `avatar_${Date.now()}.png`;
+        const fileName = `meditation_${Date.now()}.png`;
         fileUri = `${FileSystem.cacheDirectory}${fileName}`;
         try {
           await FileSystem.moveAsync({
@@ -201,104 +175,108 @@ const AvatarCRUD = () => {
       setFile({
         uri: fileUri,
         type: 'image/png',
-        name: `avatar_${Date.now()}.png`,
+        name: `meditation_${Date.now()}.png`,
       });
     }
   };
 
-  const handleCreateAvatar = async () => {
+  const handleCreateMeditation = async () => {
     try {
-      const newAvatar = await createAvatar({ name, description, file });
-      setAvatars([...avatars, newAvatar]);
-      setFilteredAvatars([...avatars, newAvatar]);
+      const newMeditation = await createMeditationBreathingExercise({ name, description, file, instructions });
+      setMeditations([...meditations, newMeditation]);
+      setFilteredMeditations([...meditations, newMeditation]);
       setModalVisible(false);
       setName('');
       setDescription('');
       setFile(null);
+      setInstructions('');
       Toast.show({
         type: 'success',
         text1: 'Success',
-        text2: 'Avatar created successfully!',
+        text2: 'Meditation created successfully!',
       });
     } catch (error) {
-      console.error('Error creating avatar:', error);
+      console.error('Error creating meditation:', error);
       Toast.show({
         type: 'error',
         text1: 'Error',
-        text2: 'Failed to create avatar. Please try again.',
+        text2: 'Failed to create meditation. Please try again.',
       });
     }
   };
 
-  const handleUpdateAvatar = async () => {
+  const handleUpdateMeditation = async () => {
     try {
-      const updatedAvatar = await updateAvatar(editingAvatar._id, { name, description, file });
-      const updatedAvatars = avatars.map(avatar => (avatar._id === editingAvatar._id ? updatedAvatar : avatar));
-      setAvatars(updatedAvatars);
-      setFilteredAvatars(updatedAvatars);
+      const updatedMeditation = await updateMeditationBreathingExercise(editingMeditation._id, { name, description, file, instructions });
+      const updatedMeditations = meditations.map(meditation => (meditation._id === editingMeditation._id ? updatedMeditation : meditation));
+      setMeditations(updatedMeditations);
+      setFilteredMeditations(updatedMeditations);
       setModalVisible(false);
-      setEditingAvatar(null);
+      setEditingMeditation(null);
       setName('');
       setDescription('');
       setFile(null);
+      setInstructions('');
       Toast.show({
         type: 'success',
         text1: 'Success',
-        text2: 'Avatar updated successfully!',
+        text2: 'Meditation updated successfully!',
       });
     } catch (error) {
-      console.error('Error updating avatar:', error);
+      console.error('Error updating meditation:', error);
       Toast.show({
         type: 'error',
         text1: 'Error',
-        text2: 'Failed to update avatar. Please try again.',
+        text2: 'Failed to update meditation. Please try again.',
       });
     }
   };
 
-  const handleDeleteAvatar = async (avatarId) => {
+  const handleDeleteMeditation = async (meditationId) => {
     try {
-      await deleteAvatar(avatarId); // Call the API to delete the avatar
-      const updatedAvatars = avatars.filter(avatar => avatar._id !== avatarId); // Remove the avatar from the local state
-      setAvatars(updatedAvatars);
-      setFilteredAvatars(updatedAvatars);
+      await deleteMeditationBreathingExercise(meditationId);
+      const updatedMeditations = meditations.filter(meditation => meditation._id !== meditationId);
+      setMeditations(updatedMeditations);
+      setFilteredMeditations(updatedMeditations);
       Toast.show({
         type: 'success',
         text1: 'Success',
-        text2: 'Avatar deleted successfully!',
+        text2: 'Meditation deleted successfully!',
       });
     } catch (error) {
-      console.error('Error deleting avatar:', error);
+      console.error('Error deleting meditation:', error);
       Toast.show({
         type: 'error',
         text1: 'Error',
-        text2: 'Failed to delete avatar. Please try again.',
+        text2: 'Failed to delete meditation. Please try again.',
       });
     }
   };
 
-  const handleEditAvatar = (avatar) => {
-    setEditingAvatar(avatar);
-    setName(avatar.name);
-    setDescription(avatar.description);
+  const handleEditMeditation = (meditation) => {
+    setEditingMeditation(meditation);
+    setName(meditation.name);
+    setDescription(meditation.description);
     setFile(null);
+    setInstructions(meditation.instructions.join('\n'));
     setModalVisible(true);
   };
 
   const handleOpenModal = () => {
-    setEditingAvatar(null);
+    setEditingMeditation(null);
     setName('');
     setDescription('');
     setFile(null);
+    setInstructions('');
     setModalVisible(true);
   };
 
   const handleSearch = () => {
-    const filtered = avatars.filter(avatar =>
-      avatar.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      avatar.description.toLowerCase().includes(searchQuery.toLowerCase())
+    const filtered = meditations.filter(meditation =>
+      meditation.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      meditation.description.toLowerCase().includes(searchQuery.toLowerCase())
     );
-    setFilteredAvatars(filtered);
+    setFilteredMeditations(filtered);
   };
 
   const toggleSidebar = () => {
@@ -307,15 +285,15 @@ const AvatarCRUD = () => {
 
   return (
     <View style={styles.container}>
-         {/* Sidebar */}
-         <LinearGradient colors={['#003C2C', '#005C3C']} style={[styles.sidebar, sidebarCollapsed && styles.sidebarCollapsed]}>
-           <View style={styles.sidebarTop}>
-             <TouchableOpacity style={styles.sidebarItem} onPress={toggleSidebar}>
-               <FontAwesome name="bars" size={24} color="white" />
-             </TouchableOpacity>
-           </View>
-             {!sidebarCollapsed && (
-                    <View style={styles.sidebarContent}>
+      {/* Sidebar */}
+      <LinearGradient colors={['#003C2C', '#005C3C']} style={[styles.sidebar, sidebarCollapsed && styles.sidebarCollapsed]}>
+        <View style={styles.sidebarTop}>
+          <TouchableOpacity style={styles.sidebarItem} onPress={toggleSidebar}>
+            <FontAwesome name="bars" size={24} color="white" />
+          </TouchableOpacity>
+        </View>
+        {!sidebarCollapsed && (
+          <View style={styles.sidebarContent}>
             <TouchableOpacity style={styles.sidebarItem} onPress={() => navigation.navigate('Admin')}>
               <FontAwesome name="dashboard" size={24} color="white" />
               <Text style={styles.sidebarText}>DASHBOARD</Text>
@@ -348,16 +326,15 @@ const AvatarCRUD = () => {
               <FontAwesome5 name="spa" size={24} color="white" />
               <Text style={styles.sidebarText}>Meditation Breathing</Text>
             </TouchableOpacity>
-             </View>
-           )}
-         </LinearGradient>
-         
-      {/* Main Content */}
+          </View>
+        )}
+      </LinearGradient>
+
       <View style={styles.content}>
-        <Text style={styles.header}>Avatars Management</Text>
+        <Text style={styles.header}>Meditation Management</Text>
         <View style={styles.searchCreateContainer}>
           <TouchableOpacity style={styles.openModalButton} onPress={handleOpenModal}>
-            <Text style={styles.openModalButtonText}>Create Avatar</Text>
+            <Text style={styles.openModalButtonText}>Create Meditation</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.exportButton} onPress={handleExportPDF}>
             <Text style={styles.exportButtonText}>Export PDF</Text>
@@ -365,7 +342,7 @@ const AvatarCRUD = () => {
           <View style={styles.searchContainer}>
             <TextInput
               style={styles.searchInput}
-              placeholder="Search Avatars"
+              placeholder="Search Meditations"
               value={searchQuery}
               onChangeText={setSearchQuery}
             />
@@ -375,8 +352,8 @@ const AvatarCRUD = () => {
           </View>
         </View>
 
-        {/* Avatar List */}
-        <ScrollView contentContainerStyle={styles.avatarGrid}>
+        {/* Meditation List */}
+        <ScrollView contentContainerStyle={styles.meditationGrid}>
           <View style={styles.tableContainer}>
             <View style={styles.tableHeader}>
               <Text style={styles.tableHeaderText}>Image</Text>
@@ -384,16 +361,16 @@ const AvatarCRUD = () => {
               <Text style={styles.tableHeaderText}>Description</Text>
               <Text style={styles.tableHeaderText}>Actions</Text>
             </View>
-            {filteredAvatars.map((item) => (
+            {filteredMeditations.map((item) => (
               <View style={styles.tableRow} key={item._id}>
-                <Image source={{ uri: item.url }} style={styles.avatarImage} />
+                <Image source={{ uri: item.url }} style={styles.meditationImage} />
                 <Text style={styles.tableCell}>{item.name}</Text>
                 <Text style={styles.tableCell}>{item.description}</Text>
                 <View style={styles.tableCell}>
-                  <TouchableOpacity style={styles.buttonEdit} onPress={() => handleEditAvatar(item)}>
+                  <TouchableOpacity style={styles.buttonEdit} onPress={() => handleEditMeditation(item)}>
                     <Text style={styles.buttonText}>Edit</Text>
                   </TouchableOpacity>
-                  <TouchableOpacity style={styles.buttonDelete} onPress={() => handleDeleteAvatar(item._id)}>
+                  <TouchableOpacity style={styles.buttonDelete} onPress={() => handleDeleteMeditation(item._id)}>
                     <Text style={styles.buttonText}>Delete</Text>
                   </TouchableOpacity>
                 </View>
@@ -402,7 +379,7 @@ const AvatarCRUD = () => {
           </View>
         </ScrollView>
 
-        {/* Modal for Create/Update Avatar */}
+        {/* Modal for Create/Update Meditation */}
         <Modal
           animationType="slide"
           transparent={true}
@@ -413,7 +390,7 @@ const AvatarCRUD = () => {
             <View style={styles.modalContent}>
               <LinearGradient colors={['#1A3B32', '#1A3B32']} style={styles.modalHeader}>
                 <Text style={styles.modalHeaderText}>
-                  {editingAvatar ? 'Update Avatar' : 'Create Avatar'}
+                  {editingMeditation ? 'Update Meditation' : 'Create Meditation'}
                 </Text>
                 <TouchableOpacity style={styles.closeButton} onPress={() => setModalVisible(false)}>
                   <Text style={styles.closeButtonText}>X</Text>
@@ -425,7 +402,7 @@ const AvatarCRUD = () => {
                 <Text style={styles.label}>Name</Text>
                 <TextInput
                   style={styles.input}
-                  placeholder="Enter avatar name"
+                  placeholder="Enter meditation name"
                   value={name}
                   onChangeText={setName}
                 />
@@ -436,15 +413,26 @@ const AvatarCRUD = () => {
                 <Text style={styles.label}>Description</Text>
                 <TextInput
                   style={styles.input}
-                  placeholder="Enter avatar description"
+                  placeholder="Enter meditation description"
                   value={description}
                   onChangeText={setDescription}
                 />
               </View>
 
+              {/* Instructions Input */}
+              <View style={styles.inputGroup}>
+                <Text style={styles.label}>Instructions</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder="Enter meditation instructions"
+                  value={instructions}
+                  onChangeText={setInstructions}
+                />
+              </View>
+
               {/* Image Picker */}
               <View style={styles.inputGroup}>
-                <Text style={styles.label}>Avatar Image</Text>
+                <Text style={styles.label}>Meditation Image</Text>
                 <TouchableOpacity style={styles.button} onPress={handlePickImage}>
                   <Text style={styles.buttonText}>Pick an Image</Text>
                 </TouchableOpacity>
@@ -457,10 +445,10 @@ const AvatarCRUD = () => {
 
               <TouchableOpacity
                 style={styles.buttonPrimary}
-                onPress={editingAvatar ? handleUpdateAvatar : handleCreateAvatar}
+                onPress={editingMeditation ? handleUpdateMeditation : handleCreateMeditation}
               >
                 <Text style={styles.buttonText}>
-                  {editingAvatar ? 'Update Avatar' : 'Create Avatar'}
+                  {editingMeditation ? 'Update Meditation' : 'Create Meditation'}
                 </Text>
               </TouchableOpacity>
             </View>
@@ -540,7 +528,7 @@ const styles = StyleSheet.create({
     marginBottom: 10,
     borderRadius: 5,
   },
-  avatarGrid: {
+  meditationGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'space-between',
@@ -577,7 +565,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginLeft: 150,
   },
-  avatarImage: {
+  meditationImage: {
     width: 50,
     height: 50,
     borderRadius: 5,
@@ -738,4 +726,4 @@ const styles = StyleSheet.create({
     marginVertical: 8,
   },
 });
-export default AvatarCRUD;
+export default MeditationCRUD;

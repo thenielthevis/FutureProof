@@ -69,8 +69,13 @@ const AssetCRUD = () => {
       const assetsWithImages = await Promise.all(
         assets.map(async (asset) => {
           if (asset.url) {
-            const imageSrc = await convertImageToBase64(asset.url);
-            return { ...asset, imageSrc };
+            try {
+              const imageSrc = await convertImageToBase64(asset.url);
+              return { ...asset, imageSrc };
+            } catch (error) {
+              console.error('Error converting image:', error);
+              return { ...asset, imageSrc: null };
+            }
           }
           return { ...asset, imageSrc: null };
         })
@@ -80,7 +85,7 @@ const AssetCRUD = () => {
       const logo2Base64 = await convertImageToBase64("https://i.ibb.co/YBStKgFC/logo-2.png");
 
       const htmlContent = `
-        <div style="font-family: Arial, sans-serif; padding: 20px; background: #fff; max-width: 900px; margin: 0 auto;">
+        <div style="font-family: Arial, sans-serif; padding: 20px; background: #fff; max-width: 900px; margin: 0 auto; text-align: center;">
           <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 2px solid #f0f0f0; padding-bottom: 10px;">
             <img src="${logo1Base64}" alt="Logo 1" style="height: 60px; width: auto;">
             <div style="flex: 1; text-align: center;">
@@ -129,38 +134,26 @@ const AssetCRUD = () => {
           return Promise.all(
             Array.from(images).map((img) => {
               if (img.complete) return Promise.resolve();
-              return new Promise((resolve, reject) => {
+              return new Promise((resolve) => {
                 img.onload = resolve;
-                img.onerror = reject;
+                img.onerror = resolve;
               });
             })
           );
         };
 
-        try {
-          await waitForImages();
-          const canvas = await html2canvas(container);
-          const imgData = canvas.toDataURL('image/png');
-
-          const pdf = new jsPDF('p', 'pt', 'a4');
-          const pdfWidth = pdf.internal.pageSize.getWidth();
-          const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
-          pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
-          pdf.save('asset-report.pdf');
-        } catch (err) {
-          console.error('Error generating PDF:', err);
-          Alert.alert('Error', 'Failed to generate PDF. Please try again.');
-        } finally {
-          document.body.removeChild(container);
-        }
+        await waitForImages();
+        const canvas = await html2canvas(container);
+        const imgData = canvas.toDataURL('image/png');
+        const pdf = new jsPDF('p', 'pt', 'a4');
+        const pdfWidth = pdf.internal.pageSize.getWidth();
+        const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+        pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+        pdf.save('asset-report.pdf');
+        document.body.removeChild(container);
       } else {
-        try {
-          const { uri } = await Print.printToFileAsync({ html: htmlContent });
-          await shareAsync(uri, { UTI: '.pdf', mimeType: 'application/pdf' });
-        } catch (error) {
-          console.error('Error generating PDF:', error);
-          Alert.alert('Error', 'Failed to generate PDF. Please try again.');
-        }
+        const { uri } = await Print.printToFileAsync({ html: htmlContent });
+        await shareAsync(uri, { UTI: '.pdf', mimeType: 'application/pdf' });
       }
     } catch (error) {
       console.error('Error in handleExportPDF:', error);
@@ -209,18 +202,18 @@ const AssetCRUD = () => {
         type: 'model/gltf-binary',
         copyToCacheDirectory: true,
       });
-  
+
       if (result.type === 'success') {
         const pickedFile = result;
-  
+
         if (!pickedFile.name.toLowerCase().endsWith('.glb')) {
           console.error('Selected file is not a .glb file:', pickedFile);
           Alert.alert('Invalid File', 'Please select a valid .glb file.');
           return;
         }
-  
+
         let fileUri = pickedFile.uri;
-  
+
         if (Platform.OS !== 'web') {
           const fileName = `asset_${Date.now()}.glb`;
           fileUri = `${FileSystem.cacheDirectory}${fileName}`;
@@ -234,7 +227,7 @@ const AssetCRUD = () => {
             return;
           }
         }
-  
+
         setGlbFile({
           uri: fileUri,
           type: 'model/gltf-binary',
@@ -360,26 +353,49 @@ const AssetCRUD = () => {
 
   return (
     <View style={styles.container}>
+      {/* Sidebar */}
       <LinearGradient colors={['#003C2C', '#005C3C']} style={[styles.sidebar, sidebarCollapsed && styles.sidebarCollapsed]}>
-        <View style={styles.sidebar}>
-          <TouchableOpacity style={styles.sidebarItem} onPress={() => navigation.navigate('Admin')}>
-            <Text style={styles.sidebarText}>Home</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.sidebarItem} onPress={() => navigation.navigate('AvatarCRUD')}>
-            <Text style={styles.sidebarText}>Avatars</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.sidebarItem} onPress={() => navigation.navigate('DailyRewardsCRUD')}>
-            <Text style={styles.sidebarText}>Daily Rewards</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.sidebarItem} onPress={() => navigation.navigate('quotes')}>
-            <FontAwesome name="quote-left" size={24} color="white" />
-            <Text style={styles.sidebarText}>Quotes</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.sidebarItem} onPress={() => navigation.navigate('asset')}>
-            <FontAwesome name="quote-left" size={24} color="white" />
-            <Text style={styles.sidebarText}>Assets</Text>
+        <View style={styles.sidebarTop}>
+          <TouchableOpacity style={styles.sidebarItem} onPress={toggleSidebar}>
+            <FontAwesome name="bars" size={24} color="white" />
           </TouchableOpacity>
         </View>
+        {!sidebarCollapsed && (
+          <View style={styles.sidebarContent}>
+            <TouchableOpacity style={styles.sidebarItem} onPress={() => navigation.navigate('AvatarCRUD')}>
+              <FontAwesome name="dashboard" size={24} color="white" />
+              <Text style={styles.sidebarText}>DASHBOARD</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.sidebarItem} onPress={() => navigation.navigate('Home')}>
+              <FontAwesome name="home" size={24} color="white" />
+              <Text style={styles.sidebarText}>Home</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.sidebarItem} onPress={() => navigation.navigate('AvatarCRUD')}>
+              <FontAwesome name="user" size={24} color="white" />
+              <Text style={styles.sidebarText}>Avatars</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.sidebarItem} onPress={() => navigation.navigate('DailyRewardsCRUD')}>
+              <FontAwesome5 name="gift" size={24} color="white" />
+              <Text style={styles.sidebarText}>Daily Rewards</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.sidebarItem} onPress={() => navigation.navigate('quotes')}>
+              <FontAwesome name="quote-left" size={24} color="white" />
+              <Text style={styles.sidebarText}>Quotes</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.sidebarItem} onPress={() => navigation.navigate('asset')}>
+              <FontAwesome name="archive" size={24} color="white" />
+              <Text style={styles.sidebarText}>Assets</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.sidebarItem} onPress={() => navigation.navigate('physicalactivities')}>
+              <FontAwesome5 name="running" size={24} color="white" />
+              <Text style={styles.sidebarText}>Physical Activities</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.sidebarItem} onPress={() => navigation.navigate('meditation')}>
+              <FontAwesome5 name="spa" size={24} color="white" />
+              <Text style={styles.sidebarText}>Meditation Breathing</Text>
+            </TouchableOpacity>
+          </View>
+        )}
       </LinearGradient>
 
       <View style={styles.content}>
@@ -416,7 +432,7 @@ const AssetCRUD = () => {
             </View>
             {filteredAssets.map((item) => (
               <View style={styles.tableRow} key={item._id}>
-                <Image source={{ uri: item.url }} style={styles.Image} />
+                <Image source={{ uri: item.url }} style={styles.assetImage} />
                 <Text style={styles.tableCell}>{item.name}</Text>
                 <Text style={styles.tableCell}>{item.description}</Text>
                 <Text style={styles.tableCell}>{item.price}</Text>

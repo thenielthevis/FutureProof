@@ -106,6 +106,20 @@ export const getCurrentUserId = async () => {
   }
 };
 
+export const getTotalUsers = async (token) => {
+  try {
+    const response = await axios.get(`${API_URL}/total-users`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    return response.data.total_users;
+  } catch (error) {
+    console.error('Error getting total users:', error.response ? error.response.data : error);
+    throw error.response ? error.response.data : { detail: 'An error occurred' };
+  }
+};
+
 // Update user information
 export const updateUserSleep = async (token, userData) => {
   try {

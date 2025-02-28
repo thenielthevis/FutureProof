@@ -2,8 +2,10 @@ from app.models.task_completion_model import TaskCompletion
 from datetime import datetime
 from app.config import get_database
 from typing import Optional, List
+import logging
 
 db = get_database()
+logger = logging.getLogger(__name__)
 
 class TaskCompletionService:
     @staticmethod
@@ -32,3 +34,16 @@ class TaskCompletionService:
         task_completions_cursor = db.task_completions.find()
         task_completions = await task_completions_cursor.to_list(length=None)  # Convert cursor to list
         return [TaskCompletion(**task_completion) for task_completion in task_completions]
+    
+    # async def get_all_task_completions():
+    #     try:
+    #         logger.info("Querying database for all task completions")
+    #         task_completions_cursor = db.task_completions.find()
+    #         task_completions = await task_completions_cursor.to_list(length=None)  # Convert cursor to list
+    #         task_completion_list = [TaskCompletion(**task_completion) for task_completion in task_completions]
+    #         logger.info(f"Found {len(task_completion_list)} task completions")
+    #         return task_completion_list
+    #     except Exception as e:
+    #         logger.error(f"Error querying database for task completions: {str(e)}")
+    #         raise e
+

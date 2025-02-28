@@ -6,7 +6,7 @@ import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons'; // For icons
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import GameNavbar from '../Navbar/GameNavbar';
-import { readAssets, buyAsset, purchaseItem } from '../API/assets_api'; // Import the API functions to fetch and buy assets
+import { readAssets, buyAsset, purchaseItem, addOwnedAsset, getOwnedAssets, equipAsset, getEquippedAssets, unequipAsset } from '../API/assets_api'; // Import the API functions to fetch and buy assets
 import { getUser } from '../API/user_api';
 import { LinearGradient } from 'expo-linear-gradient'; // Import LinearGradient
 
@@ -21,8 +21,6 @@ function Model({ bodyUri, headUri, outfitUri, eyesUri, noseUri, scale, position 
   const { scene: eyesScene } = useGLTF(eyesUri, true);
   const { scene: noseScene } = useGLTF(noseUri, true);
   const outfitScene = outfitUri ? useGLTF(outfitUri, true).scene : null;
-
-  console.log("Models loaded successfully!");
 
   bodyScene.scale.set(scale.x, scale.y, scale.z);
   bodyScene.position.set(position.x, position.y, position.z);
@@ -59,6 +57,8 @@ export default function Shop() {
   const [user, setUser] = useState({ coins: 0 });
   const [selectedCategory, setSelectedCategory] = useState(null); // State to track selected category
   const [loading, setLoading] = useState(true); // Loading state
+  const [ownedAssets, setOwnedAssets] = useState([]); // State to track owned assets
+  const [equippedAssets, setEquippedAssets] = useState({}); // State to track equipped assets
   const navigation = useNavigation(); // Hook for navigation
 
   useEffect(() => {
@@ -94,6 +94,14 @@ export default function Shop() {
         const token = await AsyncStorage.getItem('token');
         const userData = await getUser(token);
         setUser(userData);
+
+        // Fetch owned assets
+        const ownedAssets = await getOwnedAssets();
+        setOwnedAssets(ownedAssets.asset_ids); // Assuming setOwnedAssets is a state setter for owned assets
+
+        // Fetch equipped assets
+        const equippedAssets = await getEquippedAssets();
+        setEquippedAssets(equippedAssets); // Assuming setEquippedAssets is a state setter for equipped assets
       } catch (error) {
         console.error('Error fetching user data:', error);
       }
@@ -120,13 +128,56 @@ export default function Shop() {
         return;
       }
 
-      await purchaseItem(selectedAsset._id);
+      console.log('Selected asset for purchase:', selectedAsset); // Log selected asset
+      await buyAsset(selectedAsset._id.toString());
+      await addOwnedAsset(selectedAsset._id.toString()); // Add the asset to owned assets
       Alert.alert('Success', 'Item purchased successfully!');
       setUser(prevUser => ({ ...prevUser, coins: prevUser.coins - selectedAsset.price }));
       setSelectedOutfit(null); // Reset selected outfit after purchase
+      setOwnedAssets(prevOwnedAssets => [...prevOwnedAssets, selectedAsset._id.toString()]); // Update owned assets state
     } catch (error) {
       console.error('Error buying asset:', error);
       Alert.alert('Error', 'Failed to purchase item.');
+    }
+  };
+
+  const handleEquip = async (assetType, assetId) => {
+    try {
+      console.log('Equipping asset:', assetType, assetId); // Log equipping action
+      await equipAsset(assetType, assetId);
+      Alert.alert('Success', 'Item equipped successfully!');
+      setEquippedAssets(prevEquippedAssets => {
+        const updatedEquippedAssets = { ...prevEquippedAssets };
+        if (assetType === 'costume') {
+          // Deselect other items when a costume is equipped
+          Object.keys(updatedEquippedAssets).forEach(type => {
+            if (type !== 'costume') {
+              delete updatedEquippedAssets[type];
+            }
+          });
+        }
+        updatedEquippedAssets[assetType] = { _id: assetId, url: assets.find(asset => asset._id.toString() === assetId).url };
+        return updatedEquippedAssets;
+      });
+    } catch (error) {
+      console.error('Error equipping asset:', error);
+      Alert.alert('Error', 'Failed to equip item.');
+    }
+  };
+
+  const handleUnequip = async (assetType) => {
+    try {
+      console.log('Unequipping asset:', assetType); // Log unequipping action
+      await unequipAsset(assetType);
+      Alert.alert('Success', 'Item unequipped successfully!');
+      setEquippedAssets(prevEquippedAssets => {
+        const updatedEquippedAssets = { ...prevEquippedAssets };
+        delete updatedEquippedAssets[assetType];
+        return updatedEquippedAssets;
+      }); // Update equipped assets state
+    } catch (error) {
+      console.error('Error unequipping asset:', error);
+      Alert.alert('Error', 'Failed to unequip item.');
     }
   };
 
@@ -164,6 +215,18 @@ export default function Shop() {
                 scale={{ x: 2.5, y: 2.5, z: 2.5 }}
                 position={{ x: 0, y: -3, z: 0 }}
               />
+              {Object.keys(equippedAssets).map(assetType => (
+                <Model
+                  key={assetType}
+                  bodyUri={defaultBodyUri}
+                  headUri={defaultHeadUri}
+                  eyesUri={defaultEyesUri}
+                  noseUri={defaultNoseUri}
+                  outfitUri={equippedAssets[assetType].url}
+                  scale={{ x: 2, y: 2, z: 2 }}
+                  position={{ x: 0, y: -2.6, z: 0 }}
+                />
+              ))}
             </Suspense>
             <OrbitControls />
           </Canvas>
@@ -190,7 +253,11 @@ export default function Shop() {
                         setSelectedOutfit(null); // Reset first
                         setTimeout(() => setSelectedOutfit(asset ? asset.url : null), 10); // Then update after a short delay
                       }}
-                      style={[styles.card, selectedOutfit === asset?.url && styles.selectedCard]}
+                      style={[
+                        styles.card,
+                        selectedOutfit === asset?.url && styles.selectedCard,
+                        equippedAssets[asset.asset_type] && equippedAssets[asset.asset_type]._id === asset._id.toString() && styles.equippedCard
+                      ]}
                       disabled={!asset}
                     >
                       {asset ? (
@@ -200,6 +267,32 @@ export default function Shop() {
                             <Ionicons name="logo-bitcoin" size={16} color="gold" />
                             <Text style={styles.priceText}>{asset.price}</Text>
                           </View>
+                          {ownedAssets.includes(asset._id.toString()) ? (
+                            <>
+                              <TouchableOpacity
+                                style={styles.equipButton}
+                                onPress={() => handleEquip(asset.asset_type, asset._id.toString())}
+                              >
+                                <Text style={styles.equipButtonText}>Equip</Text>
+                              </TouchableOpacity>
+                              {equippedAssets[asset.asset_type] && equippedAssets[asset.asset_type]._id === asset._id.toString() && (
+                                <TouchableOpacity
+                                  style={styles.unequipButton}
+                                  onPress={() => handleUnequip(asset.asset_type)}
+                                >
+                                  <Text style={styles.unequipButtonText}>Unequip</Text>
+                                </TouchableOpacity>
+                              )}
+                            </>
+                          ) : (
+                            <TouchableOpacity
+                              style={styles.buyButton}
+                              onPress={handleBuy}
+                              disabled={ownedAssets.includes(asset._id.toString())}
+                            >
+                              <Text style={styles.buyButtonText}>Buy</Text>
+                            </TouchableOpacity>
+                          )}
                         </>
                       ) : null}
                     </TouchableOpacity>
@@ -209,13 +302,6 @@ export default function Shop() {
             </View>
           ))}
         </ScrollView>
-
-        {/* Buy Button */}
-        {selectedOutfit && (
-          <TouchableOpacity style={styles.buyButton} onPress={handleBuy}>
-            <Text style={styles.buyButtonText}>Buy</Text>
-          </TouchableOpacity>
-        )}
       </View>
     </LinearGradient>
   );
@@ -262,12 +348,13 @@ const styles = StyleSheet.create({
   },
   card: {
     width: '45%',
-    height: 120,
+    height: 'auto',
     backgroundColor: '#ffffff',
     borderRadius: 10,
     justifyContent: 'center',
     alignItems: 'center',
     margin: 5,
+    padding: 10,
     shadowColor: '#000',
     shadowOpacity: 0.2,
     shadowOffset: { width: 0, height: 2 },
@@ -277,6 +364,9 @@ const styles = StyleSheet.create({
   selectedCard: {
     borderColor: 'gold',
     borderWidth: 3,
+  },
+  equippedCard: {
+    backgroundColor: '#4CAF50', // Green color for equipped items
   },
   previewImage: {
     width: 80,
@@ -295,22 +385,38 @@ const styles = StyleSheet.create({
     color: '#333',
   },
   buyButton: {
-    position: 'absolute',
-    bottom: 20,
-    left: '50%',
-    transform: [{ translateX: -50 }],
     backgroundColor: '#ff9800',
-    paddingVertical: 10,
-    paddingHorizontal: 30,
-    borderRadius: 20,
-    shadowColor: '#000',
-    shadowOpacity: 0.3,
-    shadowOffset: { width: 0, height: 3 },
-    shadowRadius: 5,
-    elevation: 5,
+    paddingVertical: 5,
+    paddingHorizontal: 10,
+    borderRadius: 5,
+    marginTop: 5,
   },
   buyButtonText: {
-    fontSize: 18,
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: 'white',
+  },
+  equipButton: {
+    backgroundColor: '#4CAF50',
+    paddingVertical: 5,
+    paddingHorizontal: 10,
+    borderRadius: 5,
+    marginTop: 5,
+  },
+  equipButtonText: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: 'white',
+  },
+  unequipButton: {
+    backgroundColor: '#f44336',
+    paddingVertical: 5,
+    paddingHorizontal: 10,
+    borderRadius: 5,
+    marginTop: 5,
+  },
+  unequipButtonText: {
+    fontSize: 14,
     fontWeight: 'bold',
     color: 'white',
   },

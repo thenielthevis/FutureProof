@@ -11,6 +11,7 @@ export const createTaskCompletion = async (taskCompletionData) => {
   try {
     const token = await AsyncStorage.getItem('token');
     const userId = await AsyncStorage.getItem('userId');
+
     if (userId) {
       taskCompletionData.user_id = userId;
     }
@@ -59,6 +60,21 @@ export const getTodayTaskCompletionsByUser = async () => {
     return todayTasks;
   } catch (error) {
     console.error('Error fetching today\'s task completions:', error.response ? error.response.data : error);
+    throw error;
+  }
+};
+
+export const getAllTaskCompletions = async () => {
+  try {
+    const token = await AsyncStorage.getItem('token');
+    const response = await axios.get(`${API_URL}/task-completion`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    return response.data;
+  } catch (error) {
+    console.error('Error creating task completion:', error);
     throw error;
   }
 };

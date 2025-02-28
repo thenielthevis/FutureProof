@@ -103,14 +103,14 @@ async def get_user_by_token(token: str) -> UserInDB:
 # Function to update user's coins and XP
 async def update_user_coins_and_xp(user_id: str, coins: int = 0, xp: int = 0):
     db = get_database()
-    user = await db["users"].find_one({"_id": user_id})
+    user = await db["users"].find_one({"_id": ObjectId(user_id)})
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
 
     new_coins = user.get("coins", 0) + coins
     new_xp = user.get("xp", 0) + xp
 
-    await db["users"].update_one({"_id": user_id}, {"$set": {"coins": new_coins, "xp": new_xp}})
+    await db["users"].update_one({"_id": ObjectId(user_id)}, {"$set": {"coins": new_coins, "xp": new_xp}})
     return {"coins": new_coins, "xp": new_xp}
 
 async def verify_user_otp(email: str, otp: str):
@@ -120,6 +120,10 @@ async def verify_user_otp(email: str, otp: str):
 
     await db.users.update_one({"email": email}, {"$set": {"verified": True, "otp": None}})
     return {"message": "User verified successfully"}
+
+async def count_total_users():
+    total_users = await db.users.count_documents({})
+    return total_users
 
 async def toggle_sleep_status(user_id: str):
     db = get_database()
