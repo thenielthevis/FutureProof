@@ -181,3 +181,32 @@ export const updateUserHealth = async (token, health) => {
     throw error;
   }
 };
+
+export const getUserRegistrations = async (token) => {
+  try {
+    const response = await axios.get(`${API_URL}/user-registrations`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    return response.data;
+  } catch (error) {
+    console.error('Error getting user registrations:', error.response ? error.response.data : error);
+    throw error.response ? error.response.data : { detail: 'An error occurred' };
+  }
+};
+
+// Get user registrations categorized by weekday and month
+export const getUserRegistrationsByDate = async (token) => {
+  try {
+    const response = await axios.get(`${API_URL}/user-registrations-by-date`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    return response.data;
+  } catch (error) {
+    console.error('Error getting user registrations by date:', error.response ? error.response.data : error);
+    throw error.response ? error.response.data : { detail: 'An error occurred' };
+  }
+};

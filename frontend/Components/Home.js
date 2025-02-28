@@ -242,7 +242,7 @@ const Home = ({ navigation }) => {
                   <TouchableOpacity
                     style={styles.dropdownItem}
                     onPress={() => {
-                      navigation.navigate('AvatarCRUD');
+                      navigation.navigate('Admin');
                       setProfileModalVisible(false);
                     }}
                   >

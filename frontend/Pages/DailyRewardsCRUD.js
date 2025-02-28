@@ -342,13 +342,13 @@ const DailyRewardsCRUD = () => {
         </View>
           {!sidebarCollapsed && (
                  <View style={styles.sidebarContent}>
-            <TouchableOpacity style={styles.sidebarItem} onPress={() => navigation.navigate('Admin')}>
-              <FontAwesome name="dashboard" size={24} color="white" />
-              <Text style={styles.sidebarText}>DASHBOARD</Text>
-            </TouchableOpacity>
             <TouchableOpacity style={styles.sidebarItem} onPress={() => navigation.navigate('Home')}>
               <FontAwesome name="home" size={24} color="white" />
               <Text style={styles.sidebarText}>Home</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.sidebarItem} onPress={() => navigation.navigate('Admin')}>
+              <FontAwesome name="dashboard" size={24} color="white" />
+              <Text style={styles.sidebarText}>Dashboard</Text>
             </TouchableOpacity>
             <TouchableOpacity style={styles.sidebarItem} onPress={() => navigation.navigate('AvatarCRUD')}>
               <FontAwesome name="user" size={24} color="white" />
@@ -562,30 +562,21 @@ const styles = StyleSheet.create({
   },
   sidebar: {
     width: '20%',
+    backgroundColor: '#1A3B32',
     padding: 20,
-    justifyContent: 'flex-start',
   },
   sidebarCollapsed: {
-    width: 80,
-    padding: 20,
-
+    width: '5%',
   },
   sidebarItem: {
-    marginBottom: 30,
+    marginBottom: 20,
     flexDirection: 'row',
     alignItems: 'center',
   },
   sidebarText: {
     color: '#F5F5F5',
-    fontSize: 15,
+    fontSize: 18,
     marginLeft: 10,
-  },
-  sidebarTop: {
-    width: '100%',
-    alignItems: 'flex-end',
-  },
-  sidebarContent: {
-    width: '100%',
   },
   content: {
     flex: 1,

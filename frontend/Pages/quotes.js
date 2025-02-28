@@ -236,13 +236,13 @@ const QuotesCRUD = () => {
         </View>
         {!sidebarCollapsed && (
           <View style={styles.sidebarContent}>
-            <TouchableOpacity style={styles.sidebarItem} onPress={() => navigation.navigate('Admin')}>
-              <FontAwesome name="dashboard" size={24} color="white" />
-              <Text style={styles.sidebarText}>DASHBOARD</Text>
-            </TouchableOpacity>
             <TouchableOpacity style={styles.sidebarItem} onPress={() => navigation.navigate('Home')}>
               <FontAwesome name="home" size={24} color="white" />
               <Text style={styles.sidebarText}>Home</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.sidebarItem} onPress={() => navigation.navigate('Admin')}>
+              <FontAwesome name="dashboard" size={24} color="white" />
+              <Text style={styles.sidebarText}>Dashboard</Text>
             </TouchableOpacity>
             <TouchableOpacity style={styles.sidebarItem} onPress={() => navigation.navigate('AvatarCRUD')}>
               <FontAwesome name="user" size={24} color="white" />
@@ -379,22 +379,21 @@ const styles = StyleSheet.create({
   },
   sidebar: {
     width: '20%',
+    backgroundColor: '#1A3B32',
     padding: 20,
-    alignItems: 'flex-start',
+  },
+  sidebarCollapsed: {
+    width: '5%',
   },
   sidebarItem: {
-    marginBottom: 30,
+    marginBottom: 20,
     flexDirection: 'row',
     alignItems: 'center',
   },
   sidebarText: {
     color: '#F5F5F5',
-    fontSize: 15,
+    fontSize: 18,
     marginLeft: 10,
-  },
-  sidebarTop: {
-    width: '100%',
-    alignItems: 'flex-end',
   },
   content: {
     flex: 1,
@@ -468,6 +467,7 @@ const styles = StyleSheet.create({
     flex: 1,
     textAlign: 'center',
     justifyContent: 'center',
+    marginLeft: 25,
   },
   buttonEdit: {
     backgroundColor: '#3498db',
@@ -475,7 +475,7 @@ const styles = StyleSheet.create({
     borderRadius: 5,
     marginRight: 5,
     marginBottom: 5,
-    width: '45%',
+    width: '70%',
     alignItems: 'center',
   },
   buttonDelete: {
@@ -483,7 +483,7 @@ const styles = StyleSheet.create({
     padding: 8,
     borderRadius: 5,
     marginBottom: 5,
-    width: '45%',
+    width: '70%',
     alignItems: 'center',
   },
   searchCreateContainer: {

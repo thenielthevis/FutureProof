@@ -134,3 +134,25 @@ async def predict_disease(user: UserInDB) -> dict:
         return prediction_result
     else:
         raise Exception(f"GroqCloud API error: {response.status_code} - {response.text}")
+
+async def get_most_predicted_disease() -> str:
+    pipeline = [
+        {"$unwind": "$predicted_diseases"},
+        {"$group": {"_id": "$predicted_diseases.condition", "count": {"$sum": 1}}},
+        {"$sort": {"count": -1}},
+        {"$limit": 1}
+    ]
+    result = await predictions_collection.aggregate(pipeline).to_list(length=1)
+    if result:
+        return result[0]["_id"]
+    return "No predictions available"
+
+async def get_top_predicted_diseases() -> list:
+    pipeline = [
+        {"$unwind": "$predicted_diseases"},
+        {"$group": {"_id": "$predicted_diseases.condition", "count": {"$sum": 1}}},
+        {"$sort": {"count": -1}},
+        {"$limit": 5}
+    ]
+    result = await predictions_collection.aggregate(pipeline).to_list(length=5)
+    return [{"condition": item["_id"], "count": item["count"]} for item in result]

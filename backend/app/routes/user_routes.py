@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException, Depends
 from fastapi.security import OAuth2PasswordBearer
 from pydantic import BaseModel
-from app.services.user_service import (register_user, login_user, get_user_by_token, toggle_sleep_status, increase_medication, count_total_users)
+from app.services.user_service import (register_user, login_user, get_user_by_token, toggle_sleep_status, increase_medication, count_total_users, get_user_registrations, get_user_registrations_by_date)
 from app.services.prediction_service import predict_disease
 from app.models.user_model import UserCreate, UserLogin, UserInDB
 from app.mailtrap_client import send_otp_email
@@ -107,3 +107,19 @@ async def update_user_health(health_update: HealthUpdateRequest, current_user: U
     except Exception as e:
         print("Error updating user health:", str(e))
         raise HTTPException(status_code=400, detail="Failed to update user health")
+
+@router.get("/user-registrations")
+async def user_registrations():
+    try:
+        registrations = await get_user_registrations()
+        return registrations
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.get("/user-registrations-by-date")
+async def user_registrations_by_date():
+    try:
+        registrations = await get_user_registrations_by_date()
+        return registrations
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))

@@ -180,6 +180,63 @@ async def increase_medication(user_id: str):
 
     return {"medication": new_medication}
 
+async def get_user_registrations():
+    db = get_database()
+    now = datetime.utcnow()
+    one_week_ago = now - timedelta(weeks=1)
+    one_month_ago = now - timedelta(days=30)
+
+    weekly_registrations = await db.users.count_documents({"registerDate": {"$gte": one_week_ago}})
+    monthly_registrations = await db.users.count_documents({"registerDate": {"$gte": one_month_ago}})
+
+    return {
+        "weekly_registrations": weekly_registrations,
+        "monthly_registrations": monthly_registrations,
+    }
+
+async def get_user_registrations_by_date():
+    db = get_database()
+    now = datetime.utcnow()
+    one_week_ago = now - timedelta(weeks=1)
+    one_month_ago = now - timedelta(days=30)
+
+    pipeline = [
+        {
+            "$match": {
+                "registerDate": {"$gte": one_month_ago}
+            }
+        },
+        {
+            "$group": {
+                "_id": {
+                    "dayOfWeek": {"$dayOfWeek": "$registerDate"},
+                    "month": {"$month": "$registerDate"}
+                },
+                "count": {"$sum": 1}
+            }
+        }
+    ]
+
+    registrations = await db.users.aggregate(pipeline).to_list(length=None)
+
+    weekly_registrations = [0] * 7
+    monthly_registrations = [0] * 12
+
+    for reg in registrations:
+        day_of_week = reg["_id"]["dayOfWeek"] - 1  # MongoDB's $dayOfWeek returns 1 (Sunday) to 7 (Saturday)
+        month = reg["_id"]["month"] - 1  # MongoDB's $month returns 1 (January) to 12 (December)
+        count = reg["count"]
+
+        if day_of_week >= 0 and day_of_week < 7:
+            weekly_registrations[day_of_week] += count
+        if month >= 0 and month < 12:
+            monthly_registrations[month] += count
+
+    return {
+        "weekly_registrations": weekly_registrations,
+        "monthly_registrations": monthly_registrations,
+    }
+
 class UserService:
     @staticmethod
     async def update_user_battery(user_id: str, battery: int) -> UserInDB:

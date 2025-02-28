@@ -35,10 +35,12 @@ class UserCreate(BaseModel):
     sleep_hours: str
     activeness: str
     verified: bool = False
+    registerDate: datetime = Field(default_factory=datetime.utcnow)  # Add registerDate field
 
     class Config:
         json_encoders = {
-            ObjectId: str_objectid
+            ObjectId: str_objectid,
+            datetime: lambda dt: dt.isoformat(),
         }
         arbitrary_types_allowed = True
 
@@ -73,10 +75,12 @@ class UserInDB(ObjectIdModel):
     medication: int = Field(0, le=100)
     claimed_rewards: List[ObjectId] = []
     next_claim_time: Optional[datetime] = None
+    registerDate: datetime = Field(default_factory=datetime.utcnow)  # Add registerDate field
 
     class Config:
         json_encoders = {
-            ObjectId: str_objectid
+            ObjectId: str_objectid,
+            datetime: lambda dt: dt.isoformat(),
         }
         arbitrary_types_allowed = True
 

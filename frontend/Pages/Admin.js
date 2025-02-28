@@ -1,16 +1,18 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, ScrollView, FlatList } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, FlatList, ScrollView } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { FontAwesome, FontAwesome5 } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { getTotalUsers } from '../API/user_api';
+import { getTotalUsers, getUserRegistrationsByDate } from '../API/user_api';
 import { readAssets } from '../API/assets_api';
 import { readAvatars } from '../API/avatar_api';
 import { getMeditationBreathingExercises } from '../API/meditation_api';
 import { getPhysicalActivities } from '../API/physical_activities_api';
 import { readQuotes } from '../API/quotes_api';
 import { getAllTaskCompletions } from '../API/task_completion_api';
+import { getMostPredictedDisease, getTopPredictedDiseases } from '../API/prediction_api';
+import { PieChart, LineChart } from 'react-native-chart-kit';
 
 const Admin = () => {
   const navigation = useNavigation();
@@ -23,6 +25,10 @@ const Admin = () => {
     totalQuotes: 0,
     mostPredictedDiseases: [],
     totalTaskCompletions: 0,
+    assetsByType: {},
+    weeklyRegistrations: Array(7).fill(0),  // Initialize with 7 days
+    monthlyRegistrations: Array(12).fill(0),  // Initialize with 12 months
+    topPredictedDiseases: [],
   });
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
@@ -37,6 +43,10 @@ const Admin = () => {
         const totalUsers = await getTotalUsers(token);
         const assets = await readAssets();
         const totalAssets = assets.length;
+        const assetsByType = assets.reduce((acc, asset) => {
+          acc[asset.asset_type] = (acc[asset.asset_type] || 0) + 1;
+          return acc;
+        }, {});
         const avatars = await readAvatars();
         const totalAvatars = avatars.length;
         const meditationExercises = await getMeditationBreathingExercises();
@@ -47,6 +57,9 @@ const Admin = () => {
         const totalQuotes = quotes.length;
         const taskCompletions = await getAllTaskCompletions();
         const totalTaskCompletions = taskCompletions.length;
+        const mostPredictedDisease = await getMostPredictedDisease(token);
+        const topPredictedDiseases = await getTopPredictedDiseases(token);
+        const registrations = await getUserRegistrationsByDate(token);
 
         setDashboardData((prevData) => ({
           ...prevData,
@@ -57,6 +70,11 @@ const Admin = () => {
           totalPhysicalActivities,
           totalQuotes,
           totalTaskCompletions,
+          mostPredictedDisease,
+          assetsByType,
+          weeklyRegistrations: registrations.weekly_registrations,
+          monthlyRegistrations: registrations.monthly_registrations,
+          topPredictedDiseases,
         }));
       } catch (error) {
         console.error('Error fetching dashboard data:', error);
@@ -74,7 +92,28 @@ const Admin = () => {
     { title: 'Total Physical Activities', value: dashboardData.totalPhysicalActivities },
     { title: 'Total Quotes', value: dashboardData.totalQuotes },
     { title: 'Total Task Completions', value: dashboardData.totalTaskCompletions },
+    { title: 'Most Predicted Disease', value: dashboardData.mostPredictedDisease },
   ];
+
+  const chartColors = [
+    '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#FF9F40', '#C9CBCF', '#00CC99',
+  ];
+
+  const assetChartData = Object.keys(dashboardData.assetsByType).map((key, index) => ({
+    name: key,
+    population: dashboardData.assetsByType[key],
+    color: chartColors[index % chartColors.length],
+    legendFontColor: '#7F7F7F',
+    legendFontSize: 15,
+  }));
+
+  const diseaseChartData = dashboardData.topPredictedDiseases.map((disease, index) => ({
+    name: disease.condition,
+    population: disease.count,
+    color: chartColors[index % chartColors.length],
+    legendFontColor: '#7F7F7F',
+    legendFontSize: 15,
+  }));
 
   return (
     <View style={styles.container}>
@@ -86,13 +125,13 @@ const Admin = () => {
         </View>
         {!sidebarCollapsed && (
           <View style={styles.sidebarContent}>
-            <TouchableOpacity style={styles.sidebarItem} onPress={() => navigation.navigate('AvatarCRUD')}>
-              <FontAwesome name="dashboard" size={24} color="white" />
-              <Text style={styles.sidebarText}>DASHBOARD</Text>
-            </TouchableOpacity>
             <TouchableOpacity style={styles.sidebarItem} onPress={() => navigation.navigate('Home')}>
               <FontAwesome name="home" size={24} color="white" />
               <Text style={styles.sidebarText}>Home</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.sidebarItem} onPress={() => navigation.navigate('Admin')}>
+              <FontAwesome name="dashboard" size={24} color="white" />
+              <Text style={styles.sidebarText}>Dashboard</Text>
             </TouchableOpacity>
             <TouchableOpacity style={styles.sidebarItem} onPress={() => navigation.navigate('AvatarCRUD')}>
               <FontAwesome name="user" size={24} color="white" />
@@ -123,19 +162,117 @@ const Admin = () => {
       </LinearGradient>
 
       <ScrollView style={styles.content}>
-        <Text style={styles.contentText}>Welcome to the Admin Page</Text>
         <View style={styles.dashboard}>
-          <Text style={styles.dashboardTitle}>Dashboard Overview</Text>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-            <View style={styles.dashboardRow}>
-              {dashboardCards.map((card, index) => (
-                <View key={index} style={styles.dashboardCard}>
-                  <Text style={styles.dashboardCardTitle}>{card.title}</Text>
-                  <Text style={styles.dashboardCardValue}>{card.value}</Text>
-                </View>
-              ))}
+          <Text style={styles.dashboardTitle}>Admin Dashboard</Text>
+          <FlatList
+            data={dashboardCards}
+            numColumns={2}
+            keyExtractor={(item, index) => index.toString()}
+            renderItem={({ item }) => (
+              <View style={styles.dashboardCard}>
+                <Text style={styles.dashboardCardTitle}>{item.title}</Text>
+                <Text style={styles.dashboardCardValue}>{item.value}</Text>
+              </View>
+            )}
+          />
+          <View style={styles.chartGrid}>
+            <View style={styles.chartContainer}>
+              <Text style={styles.chartTitle}>Assets by Type</Text>
+              <PieChart
+                data={assetChartData}
+                width={500}
+                height={220}
+                chartConfig={{
+                  backgroundColor: '#ffffff',
+                  backgroundGradientFrom: '#ffffff',
+                  backgroundGradientTo: '#ffffff',
+                  decimalPlaces: 2,
+                  color: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
+                  style: {
+                    borderRadius: 16,
+                  },
+                }}
+                accessor="population"
+                backgroundColor="transparent"
+                paddingLeft="15"
+                absolute
+              />
             </View>
-          </ScrollView>
+            <View style={styles.chartContainer}>
+              <Text style={styles.chartTitle}>Weekly User Registrations</Text>
+              <LineChart
+                data={{
+                  labels: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
+                  datasets: [
+                    {
+                      data: dashboardData.weeklyRegistrations,
+                    },
+                  ],
+                }}
+                width={500}
+                height={220}
+                chartConfig={{
+                  backgroundColor: '#ffffff',
+                  backgroundGradientFrom: '#ffffff',
+                  backgroundGradientTo: '#ffffff',
+                  decimalPlaces: 2,
+                  color: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
+                  style: {
+                    borderRadius: 16,
+                  },
+                }}
+                verticalLabelRotation={30}
+              />
+            </View>
+            <View style={styles.chartContainer}>
+              <Text style={styles.chartTitle}>Monthly User Registrations</Text>
+              <LineChart
+                data={{
+                  labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+                  datasets: [
+                    {
+                      data: dashboardData.monthlyRegistrations,
+                    },
+                  ],
+                }}
+                width={500}
+                height={220}
+                chartConfig={{
+                  backgroundColor: '#1cc910',
+                  backgroundGradientFrom: '#eff3ff',
+                  backgroundGradientTo: '#efefef',
+                  decimalPlaces: 2,
+                  color: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
+                  style: {
+                    borderRadius: 16,
+                  },
+                }}
+                verticalLabelRotation={30}
+              />
+            </View>
+            <View style={styles.chartContainer}>
+              <Text style={styles.chartTitle}>Top 5 Predicted Diseases</Text>
+              <PieChart
+                data={diseaseChartData}
+                width={500}
+                height={220}
+                chartConfig={{
+                  backgroundColor: '#1cc910',
+                  backgroundGradientFrom: '#eff3ff',
+                  backgroundGradientTo: '#efefef',
+                  decimalPlaces: 2,
+                  color: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
+                  style: {
+                    borderRadius: 16,
+                  },
+                }}
+                accessor="population"
+                backgroundColor="transparent"
+                paddingLeft="15"
+                absolute
+              />
+            </View>
+          </View>
         </View>
       </ScrollView>
     </View>
@@ -186,20 +323,19 @@ const styles = StyleSheet.create({
     color: '#003C2C',
     marginBottom: 20,
   },
-  dashboardRow: {
-    flexDirection: 'row',
-  },
   dashboardCard: {
     backgroundColor: '#FFFFFF',
     borderRadius: 10,
     padding: 15,
-    marginRight: 10,
-    width: 150, // Adjust the width to make the cards smaller
+    margin: 10,
+    flex: 1,
+    maxWidth: '50%',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 6,
     elevation: 3,
+    alignItems: 'center',
   },
   dashboardCardTitle: {
     fontSize: 16,
@@ -210,6 +346,30 @@ const styles = StyleSheet.create({
   dashboardCardValue: {
     fontSize: 14,
     color: '#005C3C',
+  },
+  chartGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+  },
+  chartContainer: {
+    width: '48%',
+    alignItems: 'center',
+    marginTop: 20,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 10,
+    padding: 15,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 6,
+    elevation: 3,
+  },
+  chartTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 10,
+    color: '#003C2C',
   },
 });
 
