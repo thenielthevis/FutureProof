@@ -1,7 +1,8 @@
 import os
 import httpx
 import re
-from datetime import datetime, timedelta
+import pytz
+from datetime import datetime, timedelta, timezone
 from pymongo import MongoClient
 from ..models.daily_assessment_model import DailyAssessment
 from ..models.prediction_model import PredictionInDB
@@ -10,6 +11,7 @@ from ..models.nutritional_tracking_model import NutritionalTracking
 from app.config import get_database
 from dotenv import load_dotenv
 from bson import ObjectId
+from fastapi.encoders import jsonable_encoder
 
 # Load environment variables
 load_dotenv()
@@ -183,3 +185,37 @@ async def create_daily_assessment(user_id: str):
         "message": "Daily assessment generated successfully.",
         "data": assessment_data
     }
+
+async def log_all_daily_assessments():
+    daily_assessments = await db.daily_assessments.find().to_list(None)
+    for assessment in daily_assessments:
+        print(f"Daily Assessment: {assessment}")
+
+async def get_daily_assessment(user_id: str):
+    user_id = str(user_id)  # Ensure user_id is a string
+
+    # Get the current UTC date range
+    today_start = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
+    today_end = today_start + timedelta(days=1) - timedelta(microseconds=1)
+
+    print(f"🔍 Querying with: {today_start} to {today_end}")
+
+    # Query MongoDB
+    daily_assessment = await db.daily_assessments.find_one({
+        "user_id": user_id,
+        "date": {"$gte": today_start, "$lt": today_end}
+    })
+
+    # If no assessment found, return None
+    if not daily_assessment:
+        return None
+
+    # Convert ObjectId fields to strings
+    daily_assessment["_id"] = str(daily_assessment["_id"])
+
+    # Convert any other ObjectId fields (if they exist)
+    for key, value in daily_assessment.items():
+        if isinstance(value, ObjectId):
+            daily_assessment[key] = str(value)
+
+    return jsonable_encoder(daily_assessment)  # Ensure it's JSON serializable

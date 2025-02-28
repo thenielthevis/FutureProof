@@ -22,3 +22,18 @@ export const generateDailyAssessment = async () => {
     throw error.response ? error.response.data : { detail: 'An error occurred' };
   }
 };
+
+// Fetch the daily assessment data for the current day
+export const getDailyAssessment = async (token) => {
+  try {
+    const response = await axios.get(`${API_URL}/daily-assessment`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching daily assessment:', error.response ? error.response.data : error);
+    throw error.response ? error.response.data : { detail: 'An error occurred' };
+  }
+};

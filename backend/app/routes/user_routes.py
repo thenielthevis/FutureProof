@@ -1,11 +1,15 @@
 from fastapi import APIRouter, HTTPException, Depends
 from fastapi.security import OAuth2PasswordBearer
 from pydantic import BaseModel
-from app.services.user_service import register_user, login_user, get_user_by_token
+from app.services.user_service import (
+    register_user, login_user, get_user_by_token, toggle_sleep_status, increase_medication
+)
 from app.services.prediction_service import predict_disease
 from app.models.user_model import UserCreate, UserLogin, UserInDB
 from app.mailtrap_client import send_otp_email
 from typing import List
+from app.dependencies import get_current_user
+from app.services.user_service import UserService
 
 router = APIRouter()
 
@@ -19,6 +23,12 @@ class Token(BaseModel):
 class OTPRequest(BaseModel):
     email: str
     otp: str
+
+class BatteryUpdateRequest(BaseModel):
+    battery: int
+
+class HealthUpdateRequest(BaseModel):
+    health: int
 
 @router.post("/register")
 async def register(user: UserCreate):
@@ -52,3 +62,45 @@ async def send_otp(request: OTPRequest):
         return {"message": "OTP sent successfully!"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+@router.put("/user/sleep-toggle")
+async def toggle_sleep(token: str = Depends(oauth2_scheme)):
+    try:
+        user = await get_user_by_token(token)
+        if not user:
+            raise HTTPException(status_code=404, detail="User not found")
+        result = await toggle_sleep_status(str(user.id))
+        return result
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.put("/user/increase-medication")
+async def increase_med(token: str = Depends(oauth2_scheme)):
+    try:
+        user = await get_user_by_token(token)
+        if not user:
+            raise HTTPException(status_code=404, detail="User not found")
+        result = await increase_medication(str(user.id))
+        return result
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.put("/user/battery")
+async def update_user_battery(battery_update: BatteryUpdateRequest, current_user: UserInDB = Depends(get_current_user)):
+    try:
+        print(f"Received battery update request: {battery_update}")
+        updated_user = await UserService.update_user_battery(current_user.id, battery_update.battery)
+        return updated_user
+    except Exception as e:
+        print("Error updating user battery:", str(e))
+        raise HTTPException(status_code=400, detail="Failed to update user battery")
+    
+@router.put("/user/health")
+async def update_user_health(health_update: HealthUpdateRequest, current_user: UserInDB = Depends(get_current_user)):
+    try:
+        print(f"Received health update request: {health_update}")
+        updated_user = await UserService.update_user_health(current_user.id, health_update.health)
+        return updated_user
+    except Exception as e:
+        print("Error updating user health:", str(e))
+        raise HTTPException(status_code=400, detail="Failed to update user health")

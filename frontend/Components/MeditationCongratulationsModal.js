@@ -1,10 +1,11 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useContext } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Modal, Dimensions, FlatList } from 'react-native';
 import { FontAwesome5 } from '@expo/vector-icons';
 import ConfettiCannon from 'react-native-confetti-cannon';
 import { Audio } from 'expo-av';
 import { createTaskCompletion } from '../API/task_completion_api'; // Import the API
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { UserStatusContext } from '../Context/UserStatusContext'; // Import the context
 
 const { width, height } = Dimensions.get("window");
 
@@ -12,6 +13,7 @@ const MeditationCongratulationsModal = ({ visible, onClose, rewards, exercises, 
   const [showConfetti, setShowConfetti] = useState(false);
   const confettiRef = useRef(null);
   const [sound, setSound] = useState();
+  const { updateBattery } = useContext(UserStatusContext); // Use the context
 
   useEffect(() => {
     if (visible) {
@@ -36,6 +38,12 @@ const MeditationCongratulationsModal = ({ visible, onClose, rewards, exercises, 
       : undefined;
   }, [sound]);
 
+  const playMenuClose = async () => {
+    const { sound } = await Audio.Sound.createAsync(require('../assets/sound-effects/menu-close.mp3'));
+    setSound(sound);
+    await sound.playAsync();
+  };
+
   const handleContinue = async () => {
     const userId = await AsyncStorage.getItem('userId');
     const taskCompletionData = {
@@ -48,6 +56,8 @@ const MeditationCongratulationsModal = ({ visible, onClose, rewards, exercises, 
     };
     try {
       await createTaskCompletion(taskCompletionData);
+      await playMenuClose();
+      await updateBattery(10); // Add a specific amount to the battery
       onClose();
     } catch (error) {
       console.error('Error creating task completion:', error);

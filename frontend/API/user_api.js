@@ -105,3 +105,65 @@ export const getCurrentUserId = async () => {
     throw error.response ? error.response.data : { detail: 'An error occurred' };
   }
 };
+
+// Update user information
+export const updateUserSleep = async (token, userData) => {
+  try {
+    const response = await axios.put(`${API_URL}/user/sleep-toggle`, userData, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    return response.data;
+  } catch (error) {
+    console.error('Error updating user information:', error.response ? error.response.data : error);
+    throw error.response ? error.response.data : { detail: 'An error occurred' };
+  }
+};
+
+// Update user information
+export const updateUserMedication = async (token, userData) => {
+  try {
+    const response = await axios.put(`${API_URL}/user/increase-medication`, userData, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    return response.data;
+  } catch (error) {
+    console.error('Error updating user information:', error.response ? error.response.data : error);
+    throw error.response ? error.response.data : { detail: 'An error occurred' };
+  }
+};
+
+export const updateUserBattery = async (token, battery) => {
+  try {
+    const payload = { battery: Math.floor(battery) }; // Convert battery to integer
+    console.log('Updating user battery with payload:', payload);
+    const response = await axios.put(`${API_URL}/user/battery`, payload, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    return response.data;
+  } catch (error) {
+    console.error('Error updating user battery:', error.response ? error.response.data : error);
+    throw error;
+  }
+};
+
+export const updateUserHealth = async (token, health) => {
+  try {
+    const payload = { health: Math.floor(health) };
+    // console.log('Updating user health with payload:', payload);
+    const response = await axios.put(`${API_URL}/user/health`, payload, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    return response.data;
+  } catch (error) {
+    console.error('Error updating user health:', error.response ? error.response.data : error);
+    throw error;
+  }
+};

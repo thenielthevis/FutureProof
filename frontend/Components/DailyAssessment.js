@@ -1,12 +1,14 @@
-import React, { useState } from 'react';
+import React, { useState, useContext } from 'react';
 import { View, Text, TouchableOpacity, Modal, ActivityIndicator, StyleSheet, ScrollView } from 'react-native';
 import { generateDailyAssessment } from '../API/daily_assessment_api';
 import { FontAwesome } from '@expo/vector-icons';
 import { BarChart } from 'react-native-chart-kit';
+import { UserStatusContext } from '../Context/UserStatusContext';
 
 const DailyAssessment = ({ visible, onClose, onBack }) => {
   const [loading, setLoading] = useState(false);
   const [assessmentData, setAssessmentData] = useState(null);
+  const { updateHealth } = useContext(UserStatusContext);
 
   const handleAnalyze = async () => {
     setLoading(true);
@@ -14,11 +16,21 @@ const DailyAssessment = ({ visible, onClose, onBack }) => {
       const response = await generateDailyAssessment();
       setAssessmentData(response.assessment?.data);
       console.log('Daily assessment:', response.assessment?.data);
+      if (response.assessment?.data?.updated_predictions) {
+        console.log('Updating health with predictions:', response.assessment.data.updated_predictions);
+      }
     } catch (error) {
       console.error('Error fetching daily assessment:', error);
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleContinue = () => {
+    if (assessmentData?.updated_predictions) {
+      updateHealth(assessmentData.updated_predictions);
+    }
+    onClose();
   };
 
   const getColor = (change) => {
@@ -118,6 +130,9 @@ return (
                                 <Text key={index} style={styles.dataText}>• {rec}</Text>
                             ))}
                         </View>
+                        <TouchableOpacity style={styles.continueButton} onPress={handleContinue}>
+                            <Text style={styles.buttonText}>Continue</Text>
+                        </TouchableOpacity>
                     </ScrollView>
                 )}
             </View>
@@ -136,6 +151,7 @@ const styles = StyleSheet.create({
   listItem: { fontSize: 16, color: '#fff', marginLeft: 10, marginBottom: 5 },
   boldText: { fontWeight: 'bold' },
   analyzeButton: { backgroundColor: '#27ae60', padding: 10, borderRadius: 8, alignItems: 'center', marginTop: 20 },
+  continueButton: { backgroundColor: '#3498db', padding: 10, borderRadius: 8, alignItems: 'center', marginTop: 20 },
   buttonText: { color: 'white', fontWeight: 'bold' },
   title: { fontSize: 20, fontWeight: 'bold', marginBottom: 10, color: '#fff' },
   subtitle: { fontSize: 16, fontWeight: 'bold', marginTop: 10, color: '#fff' },

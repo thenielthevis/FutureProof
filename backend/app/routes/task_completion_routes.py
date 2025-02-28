@@ -6,9 +6,9 @@ from typing import List
 router = APIRouter()
 
 @router.post("/task-completion", response_model=TaskCompletion)
-def create_task_completion(task_completion: TaskCompletion):
+async def create_task_completion(task_completion: TaskCompletion):
     try:
-        created_task_completion = TaskCompletionService.create_task_completion(
+        created_task_completion = await TaskCompletionService.create_task_completion(
             user_id=task_completion.user_id,
             task_type=task_completion.task_type,
             time_spent=task_completion.time_spent,
@@ -22,17 +22,17 @@ def create_task_completion(task_completion: TaskCompletion):
         raise HTTPException(status_code=400, detail=str(e))
 
 @router.get("/task-completion/user/{user_id}", response_model=List[TaskCompletion])
-def get_task_completions_by_user(user_id: str):
+async def get_task_completions_by_user(user_id: str):
     try:
-        task_completions = TaskCompletionService.get_task_completions_by_user(user_id)
+        task_completions = await TaskCompletionService.get_task_completions_by_user(user_id)
         return task_completions
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
 @router.get("/task-completion", response_model=List[TaskCompletion])
-def get_all_task_completions():
+async def get_all_task_completions():
     try:
-        task_completions = TaskCompletionService.get_all_task_completions()
+        task_completions = await TaskCompletionService.get_all_task_completions()
         return task_completions
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))

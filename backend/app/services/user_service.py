@@ -11,6 +11,7 @@ from app.database import get_user_by_email
 from fastapi import HTTPException
 import random
 from app.mailtrap_client import send_otp_email  # Update the path to the correct module
+import asyncio
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
@@ -119,3 +120,99 @@ async def verify_user_otp(email: str, otp: str):
 
     await db.users.update_one({"email": email}, {"$set": {"verified": True, "otp": None}})
     return {"message": "User verified successfully"}
+
+async def toggle_sleep_status(user_id: str):
+    db = get_database()
+    user = await db["users"].find_one({"_id": ObjectId(user_id)})
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    new_is_asleep = not user.get("isasleep", False)
+
+    await db["users"].update_one(
+        {"_id": ObjectId(user_id)},
+        {"$set": {"isasleep": new_is_asleep}}
+    )
+
+    if new_is_asleep:
+        asyncio.create_task(increment_sleep(user_id))
+
+    return {"isasleep": new_is_asleep}
+
+# Function to increment sleep every minute if user is asleep
+async def increment_sleep(user_id: str):
+    db = get_database()
+    
+    while True:
+        user = await db["users"].find_one({"_id": ObjectId(user_id)})
+        if not user or not user.get("isasleep"):
+            break
+
+        current_sleep = user.get("sleep", 0)
+        if current_sleep < 100:
+            await db["users"].update_one(
+                {"_id": ObjectId(user_id)},
+                {"$inc": {"sleep": 1}}
+            )
+
+        await asyncio.sleep(60)  # Wait for 60 seconds before the next increment
+
+# Function to increase user's medication by 50
+async def increase_medication(user_id: str):
+    db = get_database()
+    user = await db["users"].find_one({"_id": ObjectId(user_id)})
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    current_medication = user.get("medication", 0)
+    if current_medication < 100:
+        new_medication = min(current_medication + 25, 100)
+        await db["users"].update_one(
+            {"_id": ObjectId(user_id)},
+            {"$set": {"medication": new_medication}}
+        )
+    else:
+        new_medication = current_medication
+
+    return {"medication": new_medication}
+
+class UserService:
+    @staticmethod
+    async def update_user_battery(user_id: str, battery: int) -> UserInDB:
+        try:
+            print(f"Updating battery for user_id: {user_id} with battery: {battery}")
+            user = await db.users.find_one({"_id": ObjectId(user_id)})
+            if not user:
+                raise Exception("User not found")
+            result = await db.users.update_one({"_id": ObjectId(user_id)}, {"$set": {"battery": battery}})
+            if result.modified_count == 1:
+                updated_user = await db.users.find_one({"_id": ObjectId(user_id)})
+                return UserInDB(**updated_user)
+            else:
+                raise Exception("No document was modified")
+        except Exception as e:
+            print("Error in update_user_battery:", str(e))
+            raise
+
+    @staticmethod
+    async def update_user_health(user_id: str, health: int) -> UserInDB:
+        try:
+            print(f"Updating health for user_id: {user_id} with health: {health}")
+
+            result = await db.users.update_one(
+                {"_id": ObjectId(user_id)},
+                {"$set": {"health": health}}  # Always set health, no conditions
+            )
+
+            # Debugging info
+            print(f"Modified Count: {result.modified_count}")
+
+            # Fetch and return the updated user
+            updated_user = await db.users.find_one({"_id": ObjectId(user_id)})
+            if updated_user:
+                return UserInDB(**updated_user)
+            else:
+                raise Exception("User not found after update")
+        except Exception as e:
+            print("Error in update_user_health:", str(e))
+            raise

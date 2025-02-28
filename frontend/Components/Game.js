@@ -1,7 +1,7 @@
-import React, { useState, useEffect, Suspense } from 'react';
+import React, { useState, useEffect, Suspense, useRef, useContext } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls, useGLTF } from '@react-three/drei/native';
-import { View, Text, TouchableOpacity, StyleSheet, Modal, TextInput, Image, ScrollView, Pressable, Animated } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Modal, TextInput, Image, ScrollView, Pressable, Animated, PanResponder } from 'react-native';
 import * as THREE from 'three';
 import { FontAwesome } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
@@ -10,11 +10,11 @@ import GameNavbar from '../Navbar/GameNavbar';
 import DailyRewards from './DailyRewards';
 import TaskModal from './TaskModal';
 import DailyAssessment from './DailyAssessment';
-// import Prediction from './Prediction';
-import { FaShoppingCart } from 'react-icons/fa';
 import { readPurchasedItems } from '../API/assets_api';
-import { getUser } from '../API/user_api';
+import { getUser, updateUserMedication, updateUserSleep } from '../API/user_api'; // Import updateUser function
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { UserStatusContext } from '../Context/UserStatusContext';
+import { Audio } from 'expo-av';
 
 // Reusable Model Component with Color
 function Model({ scale, uri, position, color }) {
@@ -48,6 +48,8 @@ function OptionButton({ label, onPress, isSelected, color, preview }) {
 
 export default function Game() {
   const navigation = useNavigation();
+  const pan = useRef(new Animated.ValueXY()).current; // Move initialization here
+  const { status, setStatus } = useContext(UserStatusContext);
   const [selectedHair, setSelectedHair] = useState(null);
   const [selectedHead, setSelectedHead] = useState(null);  // Define selectedHead state
   const [selectedTop, setSelectedTop] = useState(null);
@@ -60,13 +62,16 @@ export default function Game() {
   const [bmiCategory, setBmiCategory] = useState(null);
   const [currentIconIndex, setCurrentIconIndex] = useState(0);
   const [activeTab, setActiveTab] = useState('hair');
-  const [purchasedItems, setPurchasedItems] = useState([]); // Ensure it's initialized as an array
+  const [purchasedItems, setPurchasedItems] = useState([]);
   const [dailyRewardsVisible, setDailyRewardsVisible] = useState(false);
   const [dailyAssessmentVisible, setDailyAssessmentVisible] = useState(false);
   const [taskModalVisible, setTaskModalVisible] = useState(false);
   const [predictionVisible, setPredictionVisible] = useState(false);
   const [hoveredIndex, setHoveredIndex] = useState(null);
-  const [hasClaimableReward, setHasClaimableReward] = useState(false); // State to track if there's a claimable reward
+  const [hasClaimableReward, setHasClaimableReward] = useState(false);
+  const [isAsleep, setIsAsleep] = useState(false);
+  const [medicationField, setMedicationField] = useState(0);
+  const [sound, setSound] = useState();
   const icons = [
     require('../assets/icons/Navigation/dailyassessment.png'),
     require('../assets/icons/Navigation/dailyrewards.png'),
@@ -113,6 +118,9 @@ export default function Game() {
         } else {
           setHasClaimableReward(false);
         }
+        // Set initial sleep and medication field values
+        setIsAsleep(userData.isasleep);
+        setMedicationField(userData.medication);
       } catch (error) {
         console.error('Error fetching user data:', error);
       }
@@ -120,6 +128,16 @@ export default function Game() {
 
     fetchUserData();
   }, []);
+
+  useEffect(() => {
+    let sleepInterval;
+    if (isAsleep) {
+      sleepInterval = setInterval(() => {
+        setMedicationField(prev => prev + 1);
+      }, 60000); // Increment sleep field every 1 minute
+    }
+    return () => clearInterval(sleepInterval);
+  }, [isAsleep]);
 
   const calculateBmi = () => {
     const heightInMeters = height / 100;
@@ -135,6 +153,24 @@ export default function Game() {
     } else {
       setBmiCategory('Obese');
     }
+  };
+
+  const playDrinkingSound = async () => {
+    const { sound } = await Audio.Sound.createAsync(require('../assets/sound-effects/drinking.mp3'));
+    setSound(sound);
+    await sound.playAsync();
+  };
+
+  const playSwitchSound = async () => {
+    const { sound } = await Audio.Sound.createAsync(require('../assets/sound-effects/switch.mp3'));
+    setSound(sound);
+    await sound.playAsync();
+  };
+
+  const playMenuSelect = async () => {
+    const { sound } = await Audio.Sound.createAsync(require('../assets/sound-effects/menu-select.mp3'));
+    setSound(sound);
+    await sound.playAsync();
   };
 
   const getModelScale = () => {
@@ -154,18 +190,23 @@ export default function Game() {
   const handleIconPress = async (index) => {
     switch (index) {
       case 0:
+        await playMenuSelect();
         setDailyAssessmentVisible(true);
         break;
       case 1:
+        await playMenuSelect();
         setDailyRewardsVisible(true);
         break;
       case 2:
+        await playMenuSelect();
         navigation.navigate('Prediction');
         break;
       case 3:
+        await playMenuSelect();
         navigation.navigate('Shop');
         break;
       case 4:
+        await playMenuSelect();
         setTaskModalVisible(true);
         break;
       default:
@@ -225,23 +266,59 @@ export default function Game() {
     }
   };
 
+  const handleSleepToggle = async () => {
+    const newIsAsleep = !isAsleep;
+    setIsAsleep(newIsAsleep);
+    setStatus((prevStatus) => ({ ...prevStatus, sleep: newIsAsleep ? prevStatus.sleep + 1 : prevStatus.sleep }));
+    try {
+      const token = await AsyncStorage.getItem('token');
+      await playSwitchSound();
+      await updateUserSleep(token, { isasleep: newIsAsleep });
+    } catch (error) {
+      console.error('Error updating sleep status:', error);
+    }
+  };
+
+  const handleMedicationUpdate = async () => {
+    setMedicationField(prev => prev + 25);
+    setStatus((prevStatus) => ({ ...prevStatus, medication: prevStatus.medication + 25 }));
+    try {
+      const token = await AsyncStorage.getItem('token');
+      await playDrinkingSound();
+      await updateUserMedication(token, { medication: medicationField + 50 });
+    } catch (error) {
+      console.error('Error updating medication field:', error);
+    }
+  };
+  
+  const panResponder = PanResponder.create({
+    onStartShouldSetPanResponder: () => true,
+    onPanResponderMove: Animated.event([null, { dx: pan.x, dy: pan.y }], { useNativeDriver: false }),
+    onPanResponderRelease: async (e, gestureState) => {
+      if (gestureState.moveY < 400) { // Example drop area condition
+        await handleMedicationUpdate();
+      }
+      Animated.spring(pan, { toValue: { x: 0, y: 0 }, useNativeDriver: false }).start();
+    },
+  });
+
   return (
     <LinearGradient colors={['#14243b', '#77f3bb']} style={styles.container}>
       {/* Game Navbar */}
       <GameNavbar />
-
+  
       {/* 3D Scene */}
       <View style={styles.sceneContainer}>
         <Canvas camera={{ position: [0, 0, 10] }}>
-          <ambientLight intensity={0.5} /> {/* Imitated lighting */}
-          <directionalLight position={[5, 5, 5]} /> {/* Imitated lighting */}
+          <ambientLight intensity={0.5} />
+          <directionalLight position={[5, 5, 5]} />
           <Suspense fallback={null}>
             <Model scale={modelScale} uri='https://res.cloudinary.com/dv4vzq7pv/image/upload/v1739961165/NakedFullBody_jaufkc.glb' position={modelPosition} />
             <Model scale={modelScale} uri='https://res.cloudinary.com/dv4vzq7pv/image/upload/v1739961163/Head.001_p5sjoz.glb' position={modelPosition} />
-            <Model scale={modelScale} uri='https://res.cloudinary.com/dv4vzq7pv/image/upload/v1739961141/Eyes.001_uab6p6.glb' position={modelPosition} /> {/* Eyes */}
-            <Model scale={modelScale} uri='https://res.cloudinary.com/dv4vzq7pv/image/upload/v1739961165/Nose.001_s4fxsi.glb' position={modelPosition} /> {/* Nose */}
+            <Model scale={modelScale} uri='https://res.cloudinary.com/dv4vzq7pv/image/upload/v1739961141/Eyes.001_uab6p6.glb' position={modelPosition} />
+            <Model scale={modelScale} uri='https://res.cloudinary.com/dv4vzq7pv/image/upload/v1739961165/Nose.001_s4fxsi.glb' position={modelPosition} />
             {selectedHair && <Model scale={modelScale} uri={selectedHair} position={modelPosition} color={colors.hair} />}
-            {selectedHead && <Model scale={modelScale} uri={selectedHead} position={modelPosition} color={colors.head} />}  {/* Add selectedHead */}
+            {selectedHead && <Model scale={modelScale} uri={selectedHead} position={modelPosition} color={colors.head} />}
             {selectedTop && <Model scale={modelScale} uri={selectedTop} position={modelPosition} color={colors.top} />}
             {selectedBottom && <Model scale={modelScale} uri={selectedBottom} position={modelPosition} color={colors.bottom} />}
             {selectedShoes && <Model scale={modelScale} uri={selectedShoes} position={modelPosition} color={colors.shoes} />}
@@ -249,52 +326,36 @@ export default function Game() {
           <OrbitControls enableDamping maxPolarAngle={Math.PI} minDistance={10} maxDistance={15} />
         </Canvas>
       </View>
-
+  
       {/* Navigation Bar Below Character */}
-      <View style={styles.navContainer}>
-        {renderAdditionalIcons()}
-      </View>
-
-      {/* Right Panel
-      <View style={styles.rightPanel}>
-        <TouchableOpacity style={styles.customizeButton} onPress={() => setModalVisible(true)}>
-          <Text style={styles.buttonText}>Customize Character</Text>
+      <View style={styles.navContainer}>{renderAdditionalIcons()}</View>
+  
+      {/* Floating Icons */}
+      <View style={styles.floatingIconsContainer}>
+        <TouchableOpacity onPress={handleSleepToggle}>
+          <Image
+            source={isAsleep ? require('../assets/icons/Side/lights-off.png') : require('../assets/icons/Side/lights-on.png')}
+            style={styles.floatingIcon}
+          />
         </TouchableOpacity>
-        
-        <View style={styles.inputContainer}>
-          <TextInput
-            style={styles.input}
-            placeholder="Height (cm)"
-            keyboardType="numeric"
-            value={height}
-            onChangeText={setHeight}
-          />
-          <TextInput
-            style={styles.input}
-            placeholder="Weight (kg)"
-            keyboardType="numeric"
-            value={weight}
-            onChangeText={setWeight}
-          />
-          <TouchableOpacity style={styles.calculateButton} onPress={calculateBmi}>
-            <Text style={styles.buttonText}>Calculate BMI</Text>
-          </TouchableOpacity>
-          {bmi && <Text style={styles.bmiText}>BMI: {bmi} ({bmiCategory})</Text>}
-        </View>
-      </View> */}
-      
+        <Animated.View {...panResponder.panHandlers} style={pan.getLayout()}>
+          <Image source={require('../assets/icons/Side/pill.png')} style={styles.floatingIcon} />
+        </Animated.View>
+        <TouchableOpacity onPress={() => navigation.navigate('Closet')}>
+          <Image source={require('../assets/icons/Side/achievements.png')} style={styles.floatingIcon} />
+        </TouchableOpacity>
+      </View>
+  
       {/* Modal for Customization */}
       <Modal visible={modalVisible} animationType="slide" transparent>
         <View style={styles.modalContainer}>
           <View style={styles.modalContent}>
             <Text style={styles.modalTitle}>Customize Your Character</Text>
-            
-            {/* Tab Navigation */}
             <View style={styles.tabContainer}>
               <TouchableOpacity style={[styles.tabButton, activeTab === 'hair' && styles.activeTab]} onPress={() => setActiveTab('hair')}>
                 <Text style={styles.tabText}>Hair</Text>
               </TouchableOpacity>
-              <TouchableOpacity style={[styles.tabButton, activeTab === 'head' && styles.activeTab]} onPress={() => setActiveTab('head')}>  {/* Add tab for head */}
+              <TouchableOpacity style={[styles.tabButton, activeTab === 'head' && styles.activeTab]} onPress={() => setActiveTab('head')}>
                 <Text style={styles.tabText}>Head</Text>
               </TouchableOpacity>
               <TouchableOpacity style={[styles.tabButton, activeTab === 'top' && styles.activeTab]} onPress={() => setActiveTab('top')}>
@@ -307,31 +368,24 @@ export default function Game() {
                 <Text style={styles.tabText}>Shoes</Text>
               </TouchableOpacity>
             </View>
-
-            {/* Horizontal Scrollable Options */}
-            <ScrollView horizontal style={styles.optionsContainer}>
-              {renderOptions()}
-            </ScrollView>
-            
+            <ScrollView horizontal style={styles.optionsContainer}>{renderOptions()}</ScrollView>
             <TouchableOpacity style={styles.closeButton} onPress={() => setModalVisible(false)}>
               <Text style={styles.buttonText}>Close</Text>
             </TouchableOpacity>
           </View>
         </View>
       </Modal>
-
+  
       {/* Daily Assessment Modal */}
       <DailyAssessment visible={dailyAssessmentVisible} onClose={() => setDailyAssessmentVisible(false)} />
       {/* Daily Rewards Modal */}
       <DailyRewards visible={dailyRewardsVisible} onClose={() => setDailyRewardsVisible(false)} />
-
       {/* Task Modal */}
       <TaskModal visible={taskModalVisible} onClose={() => setTaskModalVisible(false)} />
-
-      {/* Prediction Modal */}
-      {/* <Prediction visible={predictionVisible} onClose={() => setPredictionVisible(false)} /> */}
+      {/* Sleep Overlay Condition */}
+      {isAsleep && <View style={styles.sleepOverlay} />}
     </LinearGradient>
-  );
+  );  
 }
 
 const styles = StyleSheet.create({
@@ -521,5 +575,28 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     padding: 20,
+  },
+  floatingIconsContainer: {
+    position: 'absolute',
+    left: 16,
+    top: 100,
+    zIndex: 10,
+    overflow: 'visible', // Ensure nothing is clipped
+  },
+  
+  floatingIcon: {
+    width: 60,
+    height: 60,
+    marginBottom: 10,
+    resizeMode: 'contain', // Ensures full icon visibility
+  },  
+  sleepOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+    zIndex: 5,
   },
 });

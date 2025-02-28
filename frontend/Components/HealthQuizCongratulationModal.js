@@ -1,10 +1,11 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useContext } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Modal, Dimensions } from 'react-native';
 import { FontAwesome5 } from '@expo/vector-icons';
 import ConfettiCannon from 'react-native-confetti-cannon';
 import { Audio } from 'expo-av';
-import { createTaskCompletion } from '../API/task_completion_api'; // Import the API
+import { createTaskCompletion } from '../API/task_completion_api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { UserStatusContext } from '../Context/UserStatusContext';
 
 const { width, height } = Dimensions.get("window");
 
@@ -12,6 +13,7 @@ const QuizCongratulationsModal = ({ visible, onClose, score, totalQuestions, coi
   const [showConfetti, setShowConfetti] = useState(false);
   const confettiRef = useRef(null);
   const [sound, setSound] = useState();
+  const { updateBattery } = useContext(UserStatusContext);
 
   useEffect(() => {
     if (score !== null) {
@@ -36,10 +38,16 @@ const QuizCongratulationsModal = ({ visible, onClose, score, totalQuestions, coi
       : undefined;
   }, [sound]);
 
+  const playMenuClose = async () => {
+    const { sound } = await Audio.Sound.createAsync(require('../assets/sound-effects/menu-close.mp3'));
+    setSound(sound);
+    await sound.playAsync();
+  };
+
   const handleContinue = async () => {
     const userId = await AsyncStorage.getItem('userId');
     const taskCompletionData = {
-      user_id: userId, // Store as string
+      user_id: userId,
       task_type: 'health_quiz',
       score: score,
       total_questions: totalQuestions,
@@ -49,6 +57,8 @@ const QuizCongratulationsModal = ({ visible, onClose, score, totalQuestions, coi
     };
     try {
       await createTaskCompletion(taskCompletionData);
+      await updateBattery(10); // Increment the battery value by 10
+      playMenuClose();
       onClose();
     } catch (error) {
       console.error('Error creating task completion:', error);

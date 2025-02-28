@@ -35,13 +35,6 @@ class UserCreate(BaseModel):
     sleep_hours: str
     activeness: str
     verified: bool = False
-    isasleep: bool = False
-    sleep: int = 0
-    battery: int = 0
-    health: int = 0
-    medication: int = 0
-    claimed_rewards: List[ObjectId] = []
-    next_claim_time: Optional[datetime] = None
 
     class Config:
         json_encoders = {
@@ -74,10 +67,10 @@ class UserInDB(ObjectIdModel):
     otp: Optional[str] = None  # Add OTP field
     verified: bool = False
     isasleep: bool = False
-    sleep: int = 0
-    battery: int = 0
-    health: int = 0
-    medication: int = 0
+    sleep: int = Field(0, le=100)
+    battery: int = Field(0, le=100)
+    health: int = Field(0, le=100)
+    medication: int = Field(0, le=100)
     claimed_rewards: List[ObjectId] = []
     next_claim_time: Optional[datetime] = None
 

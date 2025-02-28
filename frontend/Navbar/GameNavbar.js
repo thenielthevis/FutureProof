@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from 'react';
-import { View, TouchableOpacity, StyleSheet, Image, Text } from 'react-native';
+import React, { useContext, useEffect, useState } from 'react';
+import { View, TouchableOpacity, StyleSheet, Image, Text, Animated } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { FontAwesome, FontAwesome5 } from '@expo/vector-icons';
+import { UserStatusContext } from '../Context/UserStatusContext';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { getUser } from '../API/user_api';
+import { getUser, updateUserSleep, updateUserMedication, updateUserHealth } from '../API/user_api';
 import { getAvatar } from '../API/avatar_api';
 import Profile from '../Components/Profile';
 import DailyRewards from '../Components/DailyRewards'; // Import the DailyRewards component
@@ -11,77 +12,24 @@ import TaskModal from '../Components/TaskModal'; // Import the TaskModal compone
 
 const GameNavbar = () => {
   const navigation = useNavigation();
+  const { status, setStatus } = useContext(UserStatusContext);
   const [profileVisible, setProfileVisible] = useState(false);
   const [rewardsVisible, setRewardsVisible] = useState(false); // State for Daily Rewards modal
   const [taskModalVisible, setTaskModalVisible] = useState(false); // State for Task Modal
   const [avatarUrl, setAvatarUrl] = useState('');
   const [user, setUser] = useState({ coins: 0, level: 1, xp: 0 });
-  const [status, setStatus] = useState({
-    sleep: 50, // 50% sleep
-    battery: 25, // 25% battery
-    health: 80, // 80% health
-    medication: 20,
-  });
-  
+
+  const [sleepAnim] = useState(new Animated.Value(status.sleep));
+  const [batteryAnim] = useState(new Animated.Value(status.battery));
+  const [healthAnim] = useState(new Animated.Value(status.health));
+  const [medicationAnim] = useState(new Animated.Value(status.medication));
+
   // Define color & fill logic dynamically
   const getFillColor = (value) => {
     if (value <= 25) return "rgba(255, 0, 0, 0.7)"; // Red
     if (value <= 50) return "rgba(255, 165, 0, 0.7)"; // Orange
     return "rgba(0, 255, 0, 0.7)"; // Green
   };
-  
-  const statusData = [
-    {
-      name: "Sleep",
-      icon: "moon-o",
-      value: status.sleep,
-      bgColor: "rgba(255, 255, 255, 0.2)",
-      fillColor: getFillColor(status.sleep),
-    },
-    {
-      name: "Battery",
-      icon: "bolt",
-      value: status.battery,
-      bgColor: "rgba(255, 255, 255, 0.2)",
-      fillColor: getFillColor(status.battery),
-    },
-    {
-      name: "Health",
-      icon: "heartbeat",
-      value: status.health,
-      bgColor: "rgba(255, 255, 255, 0.2)",
-      fillColor: getFillColor(status.health),
-    },
-    {
-      name: "Medication",
-      icon: "medkit",
-      value: status.medication,
-      bgColor: "rgba(255, 255, 255, 0.2)",
-      fillColor: getFillColor(status.medication),
-    },
-  ];  
-
-  useEffect(() => {
-    const fetchUserData = async () => {
-      try {
-        const token = await AsyncStorage.getItem('token');
-        if (!token) {
-          console.error('No token found');
-          return;
-        }
-        const userData = await getUser(token);
-        setUser(userData);
-        if (userData.default_avatar) {
-          const avatarResponse = await getAvatar(userData.default_avatar);
-          setAvatarUrl(avatarResponse.url);
-        }
-      } catch (error) {
-        console.error('Error fetching user data:', error);
-      }
-    };
-
-    fetchUserData();
-  }, []);
 
   const handleNavigation = (route) => {
     if (route && typeof route === 'string' && route.trim()) {
@@ -98,6 +46,131 @@ const GameNavbar = () => {
   const handleCloseProfile = () => {
     setProfileVisible(false);
   };
+  
+// Create animated color transition
+const animatedFillColor = (animatedValue) => {
+  return animatedValue.interpolate({
+    inputRange: [0, 25, 50, 100],
+    outputRange: [
+      "rgba(255, 0, 0, 0.7)",   // Red (0-25)
+      "rgba(255, 165, 0, 0.7)", // Orange (26-50)
+      "rgba(0, 255, 0, 0.7)",   // Green (51-100)
+      "rgba(0, 255, 0, 0.7)",   // Green (100)
+    ],
+  });
+};
+
+// Status data with animated color
+const statusData = [
+  {
+    name: "Sleep",
+    icon: "moon-o",
+    value: sleepAnim,
+    bgColor: "rgba(255, 255, 255, 0.2)",
+    fillColor: animatedFillColor(sleepAnim), // Corrected
+  },
+  {
+    name: "Battery",
+    icon: "bolt",
+    value: batteryAnim,
+    bgColor: "rgba(255, 255, 255, 0.2)",
+    fillColor: animatedFillColor(batteryAnim), // Corrected
+  },
+  {
+    name: "Health",
+    icon: "heartbeat",
+    value: healthAnim,
+    bgColor: "rgba(255, 255, 255, 0.2)",
+    fillColor: animatedFillColor(healthAnim), // Corrected
+  },
+  {
+    name: "Medication",
+    icon: "medkit",
+    value: medicationAnim,
+    bgColor: "rgba(255, 255, 255, 0.2)",
+    fillColor: animatedFillColor(medicationAnim), // Corrected
+  },
+];
+
+// Fetch user data
+useEffect(() => {
+  const fetchUserData = async () => {
+    try {
+      const token = await AsyncStorage.getItem('token');
+      if (!token) {
+        console.error('No token found');
+        return;
+      }
+      const userData = await getUser(token);
+      setUser(userData);
+
+      if (userData.default_avatar) {
+        const avatarResponse = await getAvatar(userData.default_avatar);
+        setAvatarUrl(avatarResponse.url);
+      }
+
+      if (userData) {
+        setStatus({
+          sleep: userData.sleep || 0,
+          battery: userData.battery || 0,
+          health: userData.health || 0,
+          medication: userData.medication || 0,
+        });
+      }
+    } catch (error) {
+      console.error('Error fetching user data:', error);
+    }
+  };
+
+  fetchUserData();
+}, []);
+
+// Animate status changes
+useEffect(() => {
+  Animated.timing(sleepAnim, {
+    toValue: status.sleep,
+    duration: 500,
+    useNativeDriver: false,
+  }).start();
+
+  Animated.timing(batteryAnim, {
+    toValue: status.battery,
+    duration: 500,
+    useNativeDriver: false,
+  }).start();
+
+  Animated.timing(healthAnim, {
+    toValue: status.health,
+    duration: 500,
+    useNativeDriver: false,
+  }).start();
+
+  Animated.timing(medicationAnim, {
+    toValue: status.medication,
+    duration: 500,
+    useNativeDriver: false,
+  }).start();
+}, [status]);
+
+// Sleep increases every 60 seconds
+useEffect(() => {
+  let interval;
+  if (status.sleep < 100) {
+    interval = setInterval(() => {
+      setStatus((prevStatus) => {
+        const newSleep = Math.min(prevStatus.sleep + 1, 100);
+        Animated.timing(sleepAnim, {
+          toValue: newSleep,
+          duration: 500,
+          useNativeDriver: false,
+        }).start();
+        return { ...prevStatus, sleep: newSleep };
+      });
+    }, 60000); // Increment sleep every 60 seconds
+  }
+  return () => clearInterval(interval);
+}, [status.sleep]);
+
 
   return (
     <View style={styles.navbar}>
@@ -114,7 +187,10 @@ const GameNavbar = () => {
           {statusData.map((item, index) => (
             <View key={index} style={[styles.statusBox, { backgroundColor: item.bgColor }]}>
               {/* Filler Box (Dynamic Height) */}
-              <View style={[styles.fillBox, { height: `${item.value}%`, backgroundColor: item.fillColor }]} />
+              <Animated.View style={[styles.fillBox, { height: item.value.interpolate({
+                inputRange: [0, 100],
+                outputRange: ['0%', '100%']
+              }), backgroundColor: item.fillColor }]} />
               
               {/* Icon & Text */}
               <FontAwesome name={item.icon} size={20} color="#FFF" style={styles.statusIcon} />

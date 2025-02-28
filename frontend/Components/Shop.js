@@ -161,8 +161,8 @@ export default function Shop() {
                 eyesUri={defaultEyesUri}
                 noseUri={defaultNoseUri}
                 outfitUri={selectedOutfit}
-                scale={{ x: 2, y: 2, z: 2 }}
-                position={{ x: 0, y: -2.6, z: 0 }}
+                scale={{ x: 2.5, y: 2.5, z: 2.5 }}
+                position={{ x: 0, y: -3, z: 0 }}
               />
             </Suspense>
             <OrbitControls />

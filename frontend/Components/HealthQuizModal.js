@@ -81,6 +81,7 @@ const HealthQuizModal = ({ visible, onClose, onBack }) => {
   const handleNextQuestion = async (answer) => {
     const updatedQuestions = [...questions];
     updatedQuestions[currentQuestionIndex].selectedAnswer = answer;
+    await playMenuSelect();
     setQuestions(updatedQuestions);
 
     if (currentQuestionIndex < questions.length - 1) {
@@ -127,6 +128,12 @@ const HealthQuizModal = ({ visible, onClose, onBack }) => {
 
   const playWrongSound = async () => {
     const { sound } = await Audio.Sound.createAsync(require('../assets/sound-effects/wrong.mp3'));
+    setSound(sound);
+    await sound.playAsync();
+  };
+
+  const playMenuSelect = async () => {
+    const { sound } = await Audio.Sound.createAsync(require('../assets/sound-effects/menu-select.mp3'));
     setSound(sound);
     await sound.playAsync();
   };
