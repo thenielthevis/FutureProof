@@ -71,6 +71,7 @@ export default function App() {
                   <Stack.Screen name="quotes" component={quotes} />
                   <Stack.Screen name="physicalactivities" component={physicalactivities} />
                   <Stack.Screen name="meditation" component={meditation} />
+                  <Stack.Screen name="UserDashboard" component={UserDashboard} />
                 </Stack.Navigator>
               </NavigationContainer>
             </ScrollView>
