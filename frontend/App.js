@@ -27,6 +27,7 @@ import { UserStatusProvider } from './Context/UserStatusContext';
 import { UserLevelProvider } from './Context/UserLevelContext'; // Import the UserLevelProvider
 import physicalactivities from './Pages/physicalactivities';
 import meditation from './Pages/meditation';
+import UserDashboard from './Components/userDashboard';
 
 const Stack = createStackNavigator();
 const { width, height } = Dimensions.get('window');
@@ -70,6 +71,7 @@ export default function App() {
                   <Stack.Screen name="quotes" component={quotes} />
                   <Stack.Screen name="physicalactivities" component={physicalactivities} />
                   <Stack.Screen name="meditation" component={meditation} />
+                  <Stack.Screen name="UserDashboard" component={UserDashboard} />
                 </Stack.Navigator>
               </NavigationContainer>
             </ScrollView>

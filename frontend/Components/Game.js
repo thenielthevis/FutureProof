@@ -17,10 +17,18 @@ import { UserStatusContext } from '../Context/UserStatusContext';
 import { Audio } from 'expo-av';
 
 // Reusable Model Component with Color
-function Model({ scale, uri, position }) { // Removed color prop
+function Model({ scale, uri, position, color }) { // Added color prop
   const { scene } = useGLTF(uri);
   scene.scale.set(scale.x, scale.y, scale.z);
   scene.position.set(position.x, position.y, position.z);
+
+  if (color) {
+    scene.traverse((child) => {
+      if (child.isMesh) {
+        child.material.color.set(color);
+      }
+    });
+  }
 
   return <primitive object={scene} />;
 }
@@ -291,6 +299,59 @@ export default function Game() {
     }
   };
 
+  const SleepEyes = () => {
+    return 'https://res.cloudinary.com/dv4vzq7pv/image/upload/v1739961144/Eyes.007_kyevtv.glb';
+  };
+
+  const LowHealth = () => {
+    if (status.health < 50) {
+      return {
+        color: '#D6C3B7',
+        image: require('../assets/gamenavbaricons/lowhealth.gif')
+      };
+    }
+    return {
+      color: null,
+      image: null
+    };
+  };
+
+  const LowSleep = () => {
+    if (status.sleep < 50) {
+      return 'https://res.cloudinary.com/dv4vzq7pv/image/upload/v1739961145/Eyes.009_snhzzz.glb';
+    }
+    return 'https://res.cloudinary.com/dv4vzq7pv/image/upload/v1739961141/Eyes.001_uab6p6.glb';
+  };
+
+  const getEyesUri = () => {
+    if (isAsleep) {
+      return SleepEyes();
+    } else if (status.sleep < 50) {
+      return LowSleep();
+    }
+    return 'https://res.cloudinary.com/dv4vzq7pv/image/upload/v1739961141/Eyes.001_uab6p6.glb';
+  };
+
+  useEffect(() => {
+    const fetchUserData = async () => {
+      try {
+        const token = await AsyncStorage.getItem('token');
+        const userData = await getUser(token);
+        setIsAsleep(userData.isasleep);
+        setStatus((prevStatus) => ({
+          ...prevStatus,
+          sleep: userData.sleep,
+          health: userData.health,
+          medication: userData.medication
+        }));
+      } catch (error) {
+        console.error('Error fetching user data:', error);
+      }
+    };
+
+    fetchUserData();
+  }, []);
+
   const handleMedicationUpdate = async () => {
     setMedicationField(prev => prev + 25);
     setStatus((prevStatus) => ({ ...prevStatus, medication: prevStatus.medication + 25 }));
@@ -314,6 +375,18 @@ export default function Game() {
     },
   });
 
+  const LowMed = () => {
+    if (medicationField < 51) {
+      return (
+        <Image
+          source={require('../assets/gamenavbaricons/lowmed.gif')}
+          style={styles.thinkCloud}
+        />
+      );
+    }
+    return null;
+  };
+
   return (
     <LinearGradient colors={['#14243b', '#77f3bb']} style={styles.container}>
       {/* Game Navbar */}
@@ -326,9 +399,9 @@ export default function Game() {
           <directionalLight position={[5, 5, 5]} />
           <Suspense fallback={null}>
             <Model scale={modelScale} uri='https://res.cloudinary.com/dv4vzq7pv/image/upload/v1739961165/NakedFullBody_jaufkc.glb' position={modelPosition} />
-            <Model scale={modelScale} uri='https://res.cloudinary.com/dv4vzq7pv/image/upload/v1739961163/Head.001_p5sjoz.glb' position={modelPosition} />
-            <Model scale={modelScale} uri='https://res.cloudinary.com/dv4vzq7pv/image/upload/v1739961141/Eyes.001_uab6p6.glb' position={modelPosition} /> {/* Eyes */}
-            <Model scale={modelScale} uri='https://res.cloudinary.com/dv4vzq7pv/image/upload/v1739961165/Nose.001_s4fxsi.glb' position={modelPosition} /> {/* Nose */}
+            <Model scale={modelScale} uri='https://res.cloudinary.com/dv4vzq7pv/image/upload/v1739961163/Head.001_p5sjoz.glb' position={modelPosition} color={LowHealth().color} />
+            <Model scale={modelScale} uri={getEyesUri()} position={modelPosition} /> {/* Eyes */}
+            <Model scale={modelScale} uri='https://res.cloudinary.com/dv4vzq7pv/image/upload/v1739961165/Nose.001_s4fxsi.glb' position={modelPosition} color={LowHealth().color}/> {/* Nose */}
             {selectedHair && <Model scale={modelScale} uri={selectedHair} position={modelPosition} />}
             {selectedHead && <Model scale={modelScale} uri={selectedHead} position={modelPosition} />}  {/* Add selectedHead */}
             {selectedTop && <Model scale={modelScale} uri={selectedTop} position={modelPosition} />}
@@ -345,6 +418,19 @@ export default function Game() {
           </Suspense>
           <OrbitControls enableDamping maxPolarAngle={Math.PI} minDistance={10} maxDistance={15} />
         </Canvas>
+        {LowMed()}
+        {LowHealth().image && (
+          <Image
+            source={LowHealth().image}
+            style={styles.lowHealthImage}
+          />
+        )}
+        {isAsleep && (
+          <Image
+            source={{ uri: 'https://res.cloudinary.com/dv4vzq7pv/image/upload/v1740814904/blanket_if606d.gif' }}
+            style={styles.blanket}
+          />
+        )}
       </View>
   
       {/* Navigation Bar Below Character */}
@@ -619,4 +705,34 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0, 0, 0, 0.6)',
     zIndex: 5,
   },
+  thinkCloud: {
+    position: 'absolute',
+    right: 500, // Increased to move left
+    top: 20,
+    bottom: 20,
+    width: 150,
+    height: 150,
+    zIndex: 10,
+},
+blanket: {
+  position: 'absolute',
+  top: '50%',
+  left: '50%',
+  transform: [{ translateX: -180 }, { translateY: -75 }, { rotate: '90deg' }], // Move more to the left
+  width: 350, // Increased width
+  height: 200,
+  zIndex: 10,
+},
+lowHealthImage: {
+  position: 'absolute',
+  right: 850, // Increased to move left
+  top: 20,
+  bottom: 20,
+  width: 150,
+  height: 150,
+  zIndex: 10,
+},
+
+
+
 });

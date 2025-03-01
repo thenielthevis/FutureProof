@@ -254,7 +254,7 @@ const Admin = () => {
               <Text style={styles.chartTitle}>Top 5 Predicted Diseases</Text>
               <PieChart
                 data={diseaseChartData}
-                width={500}
+                width={600}
                 height={220}
                 chartConfig={{
                   backgroundColor: '#1cc910',

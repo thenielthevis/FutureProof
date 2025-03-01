@@ -87,6 +87,7 @@ const statusData = [
   {
     name: "Medication",
     icon: "medkit",
+    icon: "medkit",
     value: medicationAnim,
     bgColor: "rgba(255, 255, 255, 0.2)",
     fillColor: animatedFillColor(medicationAnim), // Corrected
@@ -117,6 +118,7 @@ useEffect(() => {
           health: userData.health || 0,
           medication: userData.medication || 0,
         });
+        setMedicationLevel(userData.medication || 0); // Set medication level
       }
     } catch (error) {
       console.error('Error fetching user data:', error);
@@ -125,8 +127,6 @@ useEffect(() => {
 
   fetchUserData();
 }, []);
-
-// Animate status changes
 useEffect(() => {
   Animated.timing(sleepAnim, {
     toValue: status.sleep,
