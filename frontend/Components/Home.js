@@ -18,6 +18,7 @@ import GameNavbar from '../Navbar/GameNavbar';
 import Features from './Features';
 import About from './About';
 import Contacts from './Contacts';
+import UserDashboard from './userDashboard';
 
 // Reusable Model Component with Color
 function Model({ scale, uri, position, color }) {
@@ -150,6 +151,11 @@ const Home = ({ navigation }) => {
       }
     };
 
+    const handleProfileNavigation = (destination) => {
+      navigation.navigate(destination);
+      setProfileModalVisible(false);
+    };
+
     if (currentRoute === 'Game') {
       return <GameNavbar />;
     }
@@ -241,28 +247,21 @@ const Home = ({ navigation }) => {
                 {userRole === 'admin' && (
                   <TouchableOpacity
                     style={styles.dropdownItem}
-                    onPress={() => {
-                      navigation.navigate('AvatarCRUD');
-                      setProfileModalVisible(false);
-                    }}
+                    onPress={() => handleProfileNavigation('Admin')}
                   >
                     <Icon name="cogs" size={20} color="#f0fdf7" />
                     <Text style={styles.dropdownText}>Admin</Text>
                   </TouchableOpacity>
                 )}
-                
-                <TouchableOpacity
-                  style={styles.dropdownItem}
-                  onPress={() => {
-                    // Navigate to the user dashboard
-                    navigation.navigate('asset');
-                    setProfileModalVisible(false);
-                  }}
-                >
-                  <Icon name="dashboard" size={20} color="#f0fdf7" />
-                  <Text style={styles.dropdownText}>Dashboard</Text>
-                </TouchableOpacity>
-
+                {userRole === 'user' && (
+                  <TouchableOpacity
+                    style={styles.dropdownItem}
+                    onPress={() => handleProfileNavigation('UserDashboard')}
+                  >
+                    <Icon name="dashboard" size={20} color="#f0fdf7" />
+                    <Text style={styles.dropdownText}>Dashboard</Text>
+                  </TouchableOpacity>
+                )}
                 <TouchableOpacity
                   style={styles.dropdownItem}
                   onPress={() => {
@@ -343,8 +342,8 @@ const Home = ({ navigation }) => {
             <Text style={styles.subtitle}>
               FutureProof uses AI to provide predictive health insights and preventive wellness solutions, helping you stay ahead of potential health risks and optimize your well-being.
             </Text>
-            <TouchableOpacity style={styles.joinButton} onPress={() => navigation.navigate('Register')}>
-              <Text style={styles.joinButtonText}>Join Now!</Text>
+            <TouchableOpacity style={styles.joinButton} onPress={() => navigation.navigate('UserDashboard')}>
+              <Text style={styles.joinButtonText}>Go to Dashboard</Text>
             </TouchableOpacity>
           </View>
 

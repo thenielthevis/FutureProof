@@ -440,7 +440,7 @@ export default function Game() {
       <View style={styles.floatingIconsContainer}>
         <TouchableOpacity onPress={handleSleepToggle}>
           <Image
-            source={isAsleep ? require('../assets/icons/Side/lights-off.png') : require('../assets/icons/Side/lights-on.png')}
+            source={isAsleep ? require('../assets/icons/Side/lights-on.png') : require('../assets/icons/Side/lights-off.png')}
             style={styles.floatingIcon}
           />
         </TouchableOpacity>

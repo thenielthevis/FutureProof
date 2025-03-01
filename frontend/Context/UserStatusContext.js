@@ -1,12 +1,14 @@
-import React, { createContext, useState, useEffect } from 'react';
-import { getUser, updateUserBattery, updateUserHealth } from '../API/user_api';
+import React, { createContext, useState, useEffect, useContext } from 'react';
+import { getUser, updateUserBattery, updateUserHealth, updateUserLevelAndXP } from '../API/user_api';
 import { getDailyAssessment } from '../API/daily_assessment_api'; // Import the new API function
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { UserLevelContext } from './UserLevelContext'; // Import the new context
 
 export const UserStatusContext = createContext();
 
 export const UserStatusProvider = ({ children }) => {
   const [status, setStatus] = useState({ sleep: 0, battery: 0, health: 0, medication: 0 });
+  const { levelData, addXP } = useContext(UserLevelContext); // Use the new context
 
   const updateBattery = async (increment) => {
     try {
@@ -70,6 +72,7 @@ export const UserStatusProvider = ({ children }) => {
             medication: userData.medication || 0,
             battery: userData.battery || 0,
           }));
+          await updateUserLevelAndXP(token); // Update the user's level and XP
         }
       } catch (error) {
         console.error('Error fetching user data:', error.response ? error.response.data : error);
@@ -102,7 +105,7 @@ export const UserStatusProvider = ({ children }) => {
   }, []);
 
   return (
-    <UserStatusContext.Provider value={{ status, setStatus, updateBattery, updateHealth }}>
+    <UserStatusContext.Provider value={{ status, setStatus, updateBattery, updateHealth, levelData, addXP }}>
       {children}
     </UserStatusContext.Provider>
   );

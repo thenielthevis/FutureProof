@@ -101,7 +101,7 @@ export default function Shop() {
 
         // Fetch equipped assets
         const equippedAssets = await getEquippedAssets();
-        setEquippedAssets(equippedAssets); // Assuming setEquippedAssets is a state setter for equipped assets
+        setEquippedAssets(equippedAssets || {}); // Ensure equippedAssets is an object
       } catch (error) {
         console.error('Error fetching user data:', error);
       }

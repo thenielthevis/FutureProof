@@ -79,6 +79,18 @@ async def read_nutritional_tracking(user_id: str) -> List[NutritionalTracking]:
         print(f"Error reading nutritional tracking: {str(e)}")
         raise HTTPException(status_code=400, detail=str(e))
 
+async def get_past_nutritional_tracking_responses(user_id: str) -> List[QuestionAnswer]:
+    try:
+        latest_tracking = await db.nutritional_tracking.find_one(
+            {"user_id": user_id}, sort=[("date_tracked", -1)]
+        )
+        if not latest_tracking:
+            return []
+        return [QuestionAnswer(**qa) for qa in latest_tracking["questions_answers"]]
+    except Exception as e:
+        print(f"Error fetching past nutritional tracking responses: {str(e)}")
+        raise HTTPException(status_code=400, detail=str(e))
+
 async def update_nutritional_tracking(tracking_id: str, question_index: int, answer: str) -> NutritionalTracking:
     try:
         # Fetch the existing tracking from the database
@@ -86,8 +98,9 @@ async def update_nutritional_tracking(tracking_id: str, question_index: int, ans
         if not tracking:
             raise HTTPException(status_code=404, detail="Tracking not found")
 
-        # Update the specific answer
+        # Update the specific answer and date_tracked
         tracking["questions_answers"][question_index]["answer"] = answer
+        tracking["date_tracked"] = datetime.utcnow()
 
         # Update the tracking in the database
         await db.nutritional_tracking.update_one({"_id": ObjectId(tracking_id)}, {"$set": tracking})

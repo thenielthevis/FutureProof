@@ -28,3 +28,39 @@ export const getPrediction = async (token) => {
     throw error.response ? error.response.data : { detail: 'An error occurred' };
   }
 };
+
+// Get the most commonly predicted disease
+export const getMostPredictedDisease = async (token) => {
+  try {
+    const response = await axios.get(
+      `${API_URL}/most_predicted_disease`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+    return response.data;
+  } catch (error) {
+    console.error('Error getting most predicted disease:', error.response ? error.response.data : error);
+    throw error.response ? error.response.data : { detail: 'An error occurred' };
+  }
+};
+
+// Get the top 5 most commonly predicted diseases
+export const getTopPredictedDiseases = async (token) => {
+  try {
+    const response = await axios.get(
+      `${API_URL}/top_predicted_diseases`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+    return response.data;
+  } catch (error) {
+    console.error('Error getting top predicted diseases:', error.response ? error.response.data : error);
+    throw error.response ? error.response.data : { detail: 'An error occurred' };
+  }
+};

@@ -362,13 +362,13 @@ const AssetCRUD = () => {
         </View>
         {!sidebarCollapsed && (
           <View style={styles.sidebarContent}>
-            <TouchableOpacity style={styles.sidebarItem} onPress={() => navigation.navigate('AvatarCRUD')}>
-              <FontAwesome name="dashboard" size={24} color="white" />
-              <Text style={styles.sidebarText}>DASHBOARD</Text>
-            </TouchableOpacity>
             <TouchableOpacity style={styles.sidebarItem} onPress={() => navigation.navigate('Home')}>
               <FontAwesome name="home" size={24} color="white" />
               <Text style={styles.sidebarText}>Home</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.sidebarItem} onPress={() => navigation.navigate('Admin')}>
+              <FontAwesome name="dashboard" size={24} color="white" />
+              <Text style={styles.sidebarText}>Dashboard</Text>
             </TouchableOpacity>
             <TouchableOpacity style={styles.sidebarItem} onPress={() => navigation.navigate('AvatarCRUD')}>
               <FontAwesome name="user" size={24} color="white" />
@@ -506,34 +506,34 @@ const AssetCRUD = () => {
                   style={styles.picker}
                 >
                   <Picker.Item label="Top" value="top" />
-              <Picker.Item label="Head" value="head" />
-              <Picker.Item label="Bottom" value="bottom" />
-            </Picker>
+                  <Picker.Item label="Head" value="head" />
+                  <Picker.Item label="Bottom" value="bottom" />
+                </Picker>
               </View>
 
               <View style={styles.inputGroup}>
-  <Text style={styles.label}>Asset Image</Text>
-  <TouchableOpacity style={styles.button} onPress={handlePickImage}>
-    <Text style={styles.buttonText}>Pick Image</Text>
-  </TouchableOpacity>
-  {file ? (
-    <Image source={{ uri: file.uri }} style={styles.imagePreview} />
-  ) : (
-    <Text style={styles.noImageText}>No image selected</Text>
-  )}
-</View>
+                <Text style={styles.label}>Asset Image</Text>
+                <TouchableOpacity style={styles.button} onPress={handlePickImage}>
+                  <Text style={styles.buttonText}>Pick Image</Text>
+                </TouchableOpacity>
+                {file ? (
+                  <Image source={{ uri: file.uri }} style={styles.imagePreview} />
+                ) : (
+                  <Text style={styles.noImageText}>No image selected</Text>
+                )}
+              </View>
 
-<View style={styles.inputGroup}>
-  <Text style={styles.label}>GLB File</Text>
-  <TouchableOpacity style={styles.button} onPress={handlePickGlbFile}>
-    <Text style={styles.buttonText}>Pick GLB File</Text>
-  </TouchableOpacity>
-  {glbFile ? (
-    <Text style={styles.fileName}>{glbFile.name}</Text>
-  ) : (
-    <Text style={styles.noFileText}>No GLB file selected</Text>
-  )}
-</View>
+              <View style={styles.inputGroup}>
+                <Text style={styles.label}>GLB File</Text>
+                <TouchableOpacity style={styles.button} onPress={handlePickGlbFile}>
+                  <Text style={styles.buttonText}>Pick GLB File</Text>
+                </TouchableOpacity>
+                {glbFile ? (
+                  <Text style={styles.fileName}>{glbFile.name}</Text>
+                ) : (
+                  <Text style={styles.noFileText}>No GLB file selected</Text>
+                )}
+              </View>
 
               <TouchableOpacity
                 style={styles.submitButton}
@@ -555,41 +555,118 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     flexDirection: 'row',
+    backgroundColor: '#F5F5F5',
   },
   sidebar: {
-    width: 250,
-    backgroundColor: '#003C2C',
-    paddingVertical: 20,
+    width: '20%',
+    backgroundColor: '#1A3B32',
+    padding: 20,
   },
   sidebarCollapsed: {
-    width: 80,
-  },
-  sidebarTop: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingHorizontal: 20,
+    width: '5%',
   },
   sidebarItem: {
+    marginBottom: 20,
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 10,
-    paddingHorizontal: 20,
   },
   sidebarText: {
-    color: 'white',
+    color: '#F5F5F5',
+    fontSize: 18,
     marginLeft: 10,
-  },
-  sidebarContent: {
-    marginTop: 20,
   },
   content: {
     flex: 1,
     padding: 20,
   },
   header: {
-    fontSize: 24,
+    fontSize: 20,
     fontWeight: 'bold',
     marginBottom: 20,
+  },
+  input: {
+    borderWidth: 1,
+    borderColor: '#ccc',
+    borderRadius: 5,
+    padding: 10,
+    marginBottom: 10,
+    backgroundColor: '#fff',
+    width: '100%',
+  },
+  button: {
+    backgroundColor: '#2E7D32',
+    padding: 10,
+    borderRadius: 5,
+    alignItems: 'center',
+    marginBottom: 10,
+    width: '100%',
+  },
+  buttonPrimary: {
+    backgroundColor: '#3b88c3',
+    padding: 10,
+    borderRadius: 5,
+    alignItems: 'center',
+    marginBottom: 10,
+    width: '100%',
+  },
+  buttonText: {
+    color: '#fff',
+    fontWeight: 'bold',
+  },
+  quoteGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+  },
+  tableContainer: {
+    width: '100%',
+    backgroundColor: '#fff',
+    borderRadius: 10,
+    overflow: 'hidden',
+    marginBottom: 20,
+  },
+  tableHeader: {
+    flexDirection: 'row',
+    backgroundColor: '#2E7D32',
+    padding: 15,
+  },
+  tableHeaderText: {
+    flex: 1,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    color: '#fff',
+  },
+  tableRow: {
+    flexDirection: 'row',
+    padding: 15,
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee',
+    backgroundColor: '#fff',
+    marginLeft: 10,
+  },
+  tableCell: {
+    flex: 1,
+    textAlign: 'center',
+    justifyContent: 'center',
+    marginLeft: 50,
+    alignItems: 'center',
+  },
+  buttonEdit: {
+    backgroundColor: '#3498db',
+    padding: 8,
+    borderRadius: 5,
+    marginRight: 5,
+    marginBottom: 5,
+    width: '60%',
+    alignItems: 'center',
+  },
+  buttonDelete: {
+    backgroundColor: '#e74c3c',
+    padding: 8,
+    borderRadius: 5,
+    marginBottom: 5,
+    width: '60%',
+    alignItems: 'center',
   },
   searchCreateContainer: {
     flexDirection: 'row',
@@ -598,95 +675,51 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   openModalButton: {
-    backgroundColor: '#005C3C',
-    paddingVertical: 10,
-    paddingHorizontal: 20,
+    backgroundColor: '#3498db',
+    padding: 15,
     borderRadius: 5,
+    alignItems: 'center',
+    width: 120,
   },
   openModalButtonText: {
-    color: 'white',
+    color: '#fff',
     fontWeight: 'bold',
   },
   exportButton: {
-    backgroundColor: '#005C3C',
-    paddingVertical: 10,
-    paddingHorizontal: 20,
+    backgroundColor: '#3498db',
+    padding: 15,
     borderRadius: 5,
+    alignItems: 'center',
   },
   exportButtonText: {
-    color: 'white',
+    color: '#fff',
     fontWeight: 'bold',
+    fontSize: 16,
   },
   searchContainer: {
     flexDirection: 'row',
     alignItems: 'center',
+    width: '50%',
   },
   searchInput: {
+    flex: 1,
     borderWidth: 1,
     borderColor: '#ccc',
     borderRadius: 5,
-    paddingVertical: 5,
-    paddingHorizontal: 10,
+    padding: 15,
     marginRight: 10,
+    backgroundColor: '#fff',
   },
   searchButton: {
-    backgroundColor: '#005C3C',
-    paddingVertical: 10,
-    paddingHorizontal: 20,
+    backgroundColor: '#3498db',
+    padding: 15,
     borderRadius: 5,
+    alignItems: 'center',
   },
   searchButtonText: {
-    color: 'white',
+    color: '#fff',
     fontWeight: 'bold',
-  },
-  assetGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-  },
-  tableContainer: {
-    width: '100%',
-  },
-  tableHeader: {
-    flexDirection: 'row',
-    backgroundColor: '#f8f9fa',
-    paddingVertical: 10,
-    paddingHorizontal: 5,
-  },
-  tableHeaderText: {
-    flex: 1,
-    fontWeight: 'bold',
-  },
-  tableRow: {
-    flexDirection: 'row',
-    paddingVertical: 10,
-    paddingHorizontal: 5,
-    borderBottomWidth: 1,
-    borderBottomColor: '#ddd',
-  },
-  tableCell: {
-    flex: 1,
-  },
-  assetImage: {
-    width: 80,
-    height: 60,
-    resizeMode: 'cover',
-  },
-  buttonEdit: {
-    backgroundColor: '#005C3C',
-    paddingVertical: 5,
-    paddingHorizontal: 10,
-    borderRadius: 5,
-    marginRight: 5,
-  },
-  buttonDelete: {
-    backgroundColor: '#d9534f',
-    paddingVertical: 5,
-    paddingHorizontal: 10,
-    borderRadius: 5,
-  },
-  buttonText: {
-    color: 'white',
-    fontWeight: 'bold',
+    fontSize: 16,
   },
   modalOverlay: {
     flex: 1,
@@ -696,55 +729,46 @@ const styles = StyleSheet.create({
   },
   modalContent: {
     width: '80%',
-    backgroundColor: 'white',
+    backgroundColor: '#fff',
+    padding: 20,
     borderRadius: 10,
-    overflow: 'hidden',
+    alignItems: 'center',
   },
   modalHeader: {
-    padding: 15,
+    width: '100%',
+    backgroundColor: '#2E7D32',
+    padding: 10,
+    borderTopLeftRadius: 10,
+    borderTopRightRadius: 10,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
-    justifyContent: 'center',
   },
   modalHeaderText: {
-    color: 'white',
-    fontSize: 18,
+    color: '#fff',
     fontWeight: 'bold',
+    fontSize: 18,
   },
   closeButton: {
-    position: 'absolute',
-    top: 10,
-    right: 10,
+    padding: 5,
   },
   closeButtonText: {
-    color: 'white',
+    color: '#fff',
+    fontWeight: 'bold',
     fontSize: 18,
   },
   inputGroup: {
-    padding: 15,
+    width: '100%',
+    marginBottom: 15,
   },
   label: {
-    fontSize: 16,
     fontWeight: 'bold',
     marginBottom: 5,
   },
-  input: {
-    borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 5,
-    paddingVertical: 5,
-    paddingHorizontal: 10,
-    marginBottom: 10,
-  },
-  button: {
-    backgroundColor: '#005C3C',
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    borderRadius: 5,
-    alignItems: 'center',
-  },
-  buttonText: {
-    color: 'white',
-    fontWeight: 'bold',
+  assetImage: {
+    width: 80,
+    height: 60,
+    resizeMode: 'cover',
   },
   submitButton: {
     backgroundColor: '#005C3C',

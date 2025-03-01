@@ -6,6 +6,7 @@ import { Audio } from 'expo-av';
 import { createTaskCompletion } from '../API/task_completion_api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { UserStatusContext } from '../Context/UserStatusContext';
+import { UserLevelContext } from '../Context/UserLevelContext';
 
 const { width, height } = Dimensions.get("window");
 
@@ -14,6 +15,8 @@ const QuizCongratulationsModal = ({ visible, onClose, score, totalQuestions, coi
   const confettiRef = useRef(null);
   const [sound, setSound] = useState();
   const { updateBattery } = useContext(UserStatusContext);
+  const { addXP } = useContext(UserLevelContext);
+
 
   useEffect(() => {
     if (score !== null) {
@@ -58,6 +61,7 @@ const QuizCongratulationsModal = ({ visible, onClose, score, totalQuestions, coi
     try {
       await createTaskCompletion(taskCompletionData);
       await updateBattery(10); // Increment the battery value by 10
+      await addXP(rewards.xp); // Update the user's XP
       playMenuClose();
       onClose();
     } catch (error) {

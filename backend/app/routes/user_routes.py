@@ -1,13 +1,11 @@
 from fastapi import APIRouter, HTTPException, Depends
 from fastapi.security import OAuth2PasswordBearer
 from pydantic import BaseModel
-from app.services.user_service import (register_user, login_user, get_user_by_token, toggle_sleep_status, increase_medication, count_total_users)
-from app.services.prediction_service import predict_disease
+from app.services.user_service import (register_user, login_user, get_user_by_token, toggle_sleep_status, increase_medication, count_total_users, get_user_registrations, get_user_registrations_by_date, UserService, get_user_by_token_health_xp)
 from app.models.user_model import UserCreate, UserLogin, UserInDB
 from app.mailtrap_client import send_otp_email
 from typing import List
 from app.dependencies import get_current_user
-from app.services.user_service import UserService
 
 router = APIRouter()
 
@@ -27,6 +25,9 @@ class BatteryUpdateRequest(BaseModel):
 
 class HealthUpdateRequest(BaseModel):
     health: int
+
+class XPUpdateRequest(BaseModel):
+    xp: int
 
 @router.post("/register")
 async def register(user: UserCreate):
@@ -107,3 +108,51 @@ async def update_user_health(health_update: HealthUpdateRequest, current_user: U
     except Exception as e:
         print("Error updating user health:", str(e))
         raise HTTPException(status_code=400, detail="Failed to update user health")
+
+@router.put("/user/xp")
+async def update_user_xp(xp_update: XPUpdateRequest, current_user: UserInDB = Depends(get_current_user)):
+    try:
+        print(f"Received XP update request: {xp_update}")
+        updated_user = await UserService.update_user_coins_and_xp(current_user.id, xp=xp_update.xp)
+        print(f"Updated user data: {updated_user}")
+        return updated_user
+    except Exception as e:
+        print("Error updating user XP:", str(e))
+        raise HTTPException(status_code=400, detail="Failed to update user XP")
+
+@router.get("/user/level-xp")
+async def get_user_level_and_xp(current_user: UserInDB = Depends(get_current_user)):
+    try:
+        user_id = str(current_user.id)  # Convert ObjectId to string
+        user = await get_user_by_token_health_xp(user_id)  # Fetch user correctly
+        if not user:
+            raise HTTPException(status_code=404, detail="User not found")
+        return {"level": user["level"], "xp": user["xp"], "coins": user["coins"]}
+    except Exception as e:
+        print("Error fetching user level and XP:", str(e))
+        raise HTTPException(status_code=400, detail="Failed to fetch user level and XP")
+
+@router.put("/user/update-level-xp")
+async def update_user_level_and_xp_route(current_user: UserInDB = Depends(get_current_user)):
+    try:
+        updated_user = await UserService.update_user_level_and_xp(str(current_user.id))
+        return updated_user
+    except Exception as e:
+        print("Error updating user level and XP:", str(e))
+        raise HTTPException(status_code=400, detail="Failed to update user level and XP")
+
+@router.get("/user-registrations")
+async def user_registrations():
+    try:
+        registrations = await get_user_registrations()
+        return registrations
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.get("/user-registrations-by-date")
+async def user_registrations_by_date():
+    try:
+        registrations = await get_user_registrations_by_date()
+        return registrations
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
