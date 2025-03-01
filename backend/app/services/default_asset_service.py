@@ -23,7 +23,10 @@ async def get_equipped_assets(user_id: ObjectId) -> DefaultAsset:
     try:
         default_asset = await db.default_assets.find_one({"user_id": user_id})
         if not default_asset:
-            raise HTTPException(status_code=404, detail="No equipped assets found for this user")
+            # Create a new entry if no equipped assets are found
+            new_default_asset = DefaultAsset(user_id=user_id, equipped_assets={})
+            await db.default_assets.insert_one(new_default_asset.dict())
+            return new_default_asset
         
         # Fetch asset details for equipped assets
         equipped_assets = {}

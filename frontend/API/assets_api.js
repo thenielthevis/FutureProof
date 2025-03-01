@@ -218,7 +218,7 @@ export const getEquippedAssets = async () => {
       },
     });
     console.log('Response from getEquippedAssets:', response.data); // Log response
-    return response.data.equipped_assets;
+    return response.data.equipped_assets || {}; // Return an empty object if no equipped assets are found
   } catch (error) {
     console.error('Error getting equipped assets:', error.response ? error.response.data : error);
     throw error.response ? error.response.data : { detail: 'An error occurred' };

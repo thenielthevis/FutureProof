@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, ActivityIndicator, Modal, TextInput, Button } from 'react-native';
-import { createNutritionalTracking, getNutritionalTrackingQuestions, submitNutritionalTrackingResponses } from '../API/nutritional_tracking_api';
+import { createNutritionalTracking, getNutritionalTrackingQuestions, submitNutritionalTrackingResponses, getPastNutritionalTrackingResponses } from '../API/nutritional_tracking_api';
 import { FontAwesome } from '@expo/vector-icons';
 import NutritionalTrackingCongratulationsModal from './NutritionalTrackingCongratulationsModal';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -26,7 +26,12 @@ const NutritionalTrackingModal = ({ visible, onClose, onBack }) => {
     setLoading(true);
     try {
       const questionData = await getNutritionalTrackingQuestions();
-      setQuestionsAnswers(questionData.questions_answers);
+      const pastResponses = await getPastNutritionalTrackingResponses();
+      const questionsWithAnswers = questionData.questions_answers.map((qa, index) => ({
+        ...qa,
+        answer: pastResponses[index]?.answer || ''
+      }));
+      setQuestionsAnswers(questionsWithAnswers);
       setStarted(true);
     } catch (err) {
       setError(err.response?.data?.detail || 'Failed to load questions.');
@@ -37,13 +42,13 @@ const NutritionalTrackingModal = ({ visible, onClose, onBack }) => {
 
   const handleNextQuestion = async () => {
     const updatedQuestionsAnswers = [...questionsAnswers];
-    updatedQuestionsAnswers[currentQuestionIndex].answer = currentResponse;
+    updatedQuestionsAnswers[currentQuestionIndex].answer = currentResponse || updatedQuestionsAnswers[currentQuestionIndex].answer;
     setQuestionsAnswers(updatedQuestionsAnswers);
 
     try {
       await submitNutritionalTrackingResponses({
         question_index: currentQuestionIndex,
-        answer: currentResponse
+        answer: currentResponse || updatedQuestionsAnswers[currentQuestionIndex].answer
       });
       setCurrentResponse('');
       setCurrentQuestionIndex((prevIndex) => prevIndex + 1);
@@ -62,13 +67,13 @@ const NutritionalTrackingModal = ({ visible, onClose, onBack }) => {
 
   const handleFinish = async () => {
     const updatedQuestionsAnswers = [...questionsAnswers];
-    updatedQuestionsAnswers[currentQuestionIndex].answer = currentResponse;
+    updatedQuestionsAnswers[currentQuestionIndex].answer = currentResponse || updatedQuestionsAnswers[currentQuestionIndex].answer;
     setQuestionsAnswers(updatedQuestionsAnswers);
 
     try {
       await submitNutritionalTrackingResponses({
         question_index: currentQuestionIndex,
-        answer: currentResponse
+        answer: currentResponse || updatedQuestionsAnswers[currentQuestionIndex].answer
       });
     } catch (err) {
       setError(err.response?.data?.detail || 'Failed to submit response.');
@@ -143,7 +148,7 @@ const NutritionalTrackingModal = ({ visible, onClose, onBack }) => {
                   style={styles.input}
                   value={currentResponse}
                   onChangeText={setCurrentResponse}
-                  placeholder="Type your response here"
+                  placeholder={questionsAnswers[currentQuestionIndex].answer || "Type your response here"}
                   multiline
                 />
                 <View style={styles.navigationButtons}>

@@ -3,9 +3,10 @@ import { View, Text, TouchableOpacity, StyleSheet, Modal, Dimensions, FlatList }
 import { FontAwesome5 } from '@expo/vector-icons';
 import ConfettiCannon from 'react-native-confetti-cannon';
 import { Audio } from 'expo-av';
-import { createTaskCompletion } from '../API/task_completion_api'; // Import the API
+import { createTaskCompletion } from '../API/task_completion_api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { UserStatusContext } from '../Context/UserStatusContext'; // Import the context
+import { UserStatusContext } from '../Context/UserStatusContext';
+import { UserLevelContext } from '../Context/UserLevelContext';
 
 const { width, height } = Dimensions.get("window");
 
@@ -13,7 +14,8 @@ const MeditationCongratulationsModal = ({ visible, onClose, rewards, exercises, 
   const [showConfetti, setShowConfetti] = useState(false);
   const confettiRef = useRef(null);
   const [sound, setSound] = useState();
-  const { updateBattery } = useContext(UserStatusContext); // Use the context
+  const { updateBattery } = useContext(UserStatusContext);
+  const { addXP } = useContext(UserLevelContext);
 
   useEffect(() => {
     if (visible) {
@@ -57,7 +59,8 @@ const MeditationCongratulationsModal = ({ visible, onClose, rewards, exercises, 
     try {
       await createTaskCompletion(taskCompletionData);
       await playMenuClose();
-      await updateBattery(10); // Add a specific amount to the battery
+      await updateBattery(10);
+      await addXP(rewards.xp);
       onClose();
     } catch (error) {
       console.error('Error creating task completion:', error);

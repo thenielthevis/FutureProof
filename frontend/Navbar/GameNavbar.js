@@ -3,6 +3,7 @@ import { View, TouchableOpacity, StyleSheet, Image, Text, Animated } from 'react
 import { useNavigation } from '@react-navigation/native';
 import { FontAwesome, FontAwesome5 } from '@expo/vector-icons';
 import { UserStatusContext } from '../Context/UserStatusContext';
+import { UserLevelContext } from '../Context/UserLevelContext'; // Import the new context
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getUser, updateUserSleep, updateUserMedication, updateUserHealth } from '../API/user_api';
 import { getAvatar } from '../API/avatar_api';
@@ -13,6 +14,7 @@ import TaskModal from '../Components/TaskModal'; // Import the TaskModal compone
 const GameNavbar = () => {
   const navigation = useNavigation();
   const { status, setStatus } = useContext(UserStatusContext);
+  const { levelData } = useContext(UserLevelContext); // Use the new context
   const [profileVisible, setProfileVisible] = useState(false);
   const [rewardsVisible, setRewardsVisible] = useState(false); // State for Daily Rewards modal
   const [taskModalVisible, setTaskModalVisible] = useState(false); // State for Task Modal
@@ -202,15 +204,15 @@ useEffect(() => {
         <View style={styles.rightIcons}>
           <View style={styles.iconWithText}>
             <FontAwesome5 name="coins" size={20} color="gold" />
-            <Text style={styles.userInfoText}>{user.coins}</Text>
+            <Text style={styles.userInfoText}>{levelData.coins}</Text> {/* Use levelData */}
           </View>
           <View style={styles.iconWithText}>
             <FontAwesome5 name="star" size={20} color="#f1c40f" />
-            <Text style={styles.userInfoText}>{user.xp}</Text>
+            <Text style={styles.userInfoText}>{levelData.xp}</Text> {/* Use levelData */}
           </View>
           <View style={styles.iconWithText}>
             <FontAwesome5 name="level-up-alt" size={20} color="#3498db" />
-            <Text style={styles.userInfoText}>{user.level}</Text>
+            <Text style={styles.userInfoText}>{levelData.level}</Text> {/* Use levelData */}
           </View>
           <TouchableOpacity style={styles.iconButton} onPress={handleProfilePress}>
             {avatarUrl ? (

@@ -99,19 +99,43 @@ async def get_user_by_token(token: str) -> UserInDB:
         return user
     except JWTError:
         return None
+    
+async def get_user_by_token_health_xp(user_id: str):
+    from bson import ObjectId  # Ensure you have imported ObjectId
+    
+    try:
+        # Convert to ObjectId before querying MongoDB
+        user = await db["users"].find_one({"_id": ObjectId(user_id)})
+        return user
+    except Exception as e:
+        print("Error fetching user by token:", str(e))
+        return None
 
 # Function to update user's coins and XP
 async def update_user_coins_and_xp(user_id: str, coins: int = 0, xp: int = 0):
-    db = get_database()
     user = await db["users"].find_one({"_id": ObjectId(user_id)})
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
 
     new_coins = user.get("coins", 0) + coins
     new_xp = user.get("xp", 0) + xp
+    new_level = user.get("level", 1)
 
-    await db["users"].update_one({"_id": ObjectId(user_id)}, {"$set": {"coins": new_coins, "xp": new_xp}})
-    return {"coins": new_coins, "xp": new_xp}
+    print(f"Initial XP: {user.get('xp', 0)}, New XP: {new_xp}, Initial Level: {new_level}")
+
+    # Level-up logic
+    xp_threshold = 100 * new_level
+    while new_xp >= xp_threshold:
+        new_xp -= xp_threshold
+        new_level += 1
+        xp_threshold = 100 * new_level
+        print(f"Level up! New Level: {new_level}, Remaining XP: {new_xp}, Next XP Threshold: {xp_threshold}")
+
+    await db["users"].update_one(
+        {"_id": ObjectId(user_id)},
+        {"$set": {"coins": new_coins, "xp": new_xp, "level": new_level}}
+    )
+    return {"coins": new_coins, "xp": new_xp, "level": new_level}
 
 async def verify_user_otp(email: str, otp: str):
     user = await db.users.find_one({"email": email})
@@ -237,6 +261,30 @@ async def get_user_registrations_by_date():
         "monthly_registrations": monthly_registrations,
     }
 
+async def update_user_level_and_xp(user_id: str):
+    user = await db["users"].find_one({"_id": ObjectId(user_id)})
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    new_xp = user.get("xp", 0)
+    new_level = user.get("level", 1)
+
+    print(f"Initial XP: {user.get('xp', 0)}, New XP: {new_xp}, Initial Level: {new_level}")
+
+    # Level-up logic
+    xp_threshold = 100 * new_level
+    while new_xp >= xp_threshold:
+        new_xp -= xp_threshold
+        new_level += 1
+        xp_threshold = 100 * new_level
+        print(f"Level up! New Level: {new_level}, Remaining XP: {new_xp}, Next XP Threshold: {xp_threshold}")
+
+    await db["users"].update_one(
+        {"_id": ObjectId(user_id)},
+        {"$set": {"xp": new_xp, "level": new_level}}
+    )
+    return {"xp": new_xp, "level": new_level}
+
 class UserService:
     @staticmethod
     async def update_user_battery(user_id: str, battery: int) -> UserInDB:
@@ -277,3 +325,54 @@ class UserService:
         except Exception as e:
             print("Error in update_user_health:", str(e))
             raise
+
+    @staticmethod
+    async def update_user_level_and_xp(user_id: str):
+        user = await db["users"].find_one({"_id": ObjectId(user_id)})
+        if not user:
+            raise HTTPException(status_code=404, detail="User not found")
+
+        new_xp = user.get("xp", 0)
+        new_level = user.get("level", 1)
+
+        print(f"Initial XP: {user.get('xp', 0)}, New XP: {new_xp}, Initial Level: {new_level}")
+
+        # Level-up logic
+        xp_threshold = 100 * new_level
+        while new_xp >= xp_threshold:
+            new_xp -= xp_threshold
+            new_level += 1
+            xp_threshold = 100 * new_level
+            print(f"Level up! New Level: {new_level}, Remaining XP: {new_xp}, Next XP Threshold: {xp_threshold}")
+
+        await db["users"].update_one(
+            {"_id": ObjectId(user_id)},
+            {"$set": {"xp": new_xp, "level": new_level}}
+        )
+        return {"xp": new_xp, "level": new_level}
+
+    @staticmethod
+    async def update_user_coins_and_xp(user_id: str, coins: int = 0, xp: int = 0):
+        user = await db["users"].find_one({"_id": ObjectId(user_id)})
+        if not user:
+            raise HTTPException(status_code=404, detail="User not found")
+
+        new_coins = user.get("coins", 0) + coins
+        new_xp = user.get("xp", 0) + xp
+        new_level = user.get("level", 1)
+
+        print(f"Initial XP: {user.get('xp', 0)}, New XP: {new_xp}, Initial Level: {new_level}")
+
+        # Level-up logic
+        xp_threshold = 100 * new_level
+        while new_xp >= xp_threshold:
+            new_xp -= xp_threshold
+            new_level += 1
+            xp_threshold = 100 * new_level
+            print(f"Level up! New Level: {new_level}, Remaining XP: {new_xp}, Next XP Threshold: {xp_threshold}")
+
+        await db["users"].update_one(
+            {"_id": ObjectId(user_id)},
+            {"$set": {"coins": new_coins, "xp": new_xp, "level": new_level}}
+        )
+        return {"coins": new_coins, "xp": new_xp, "level": new_level}
