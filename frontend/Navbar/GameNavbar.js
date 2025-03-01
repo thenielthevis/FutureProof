@@ -13,12 +13,11 @@ import TaskModal from '../Components/TaskModal'; // Import the TaskModal compone
 
 const GameNavbar = () => {
   const navigation = useNavigation();
-  const { status, setStatus } = useContext(UserStatusContext);
+  const { status, setStatus, avatarUrl, setAvatarUrl } = useContext(UserStatusContext); // Use the context
   const { levelData } = useContext(UserLevelContext); // Use the new context
   const [profileVisible, setProfileVisible] = useState(false);
   const [rewardsVisible, setRewardsVisible] = useState(false); // State for Daily Rewards modal
   const [taskModalVisible, setTaskModalVisible] = useState(false); // State for Task Modal
-  const [avatarUrl, setAvatarUrl] = useState('');
   const [user, setUser] = useState({ coins: 0, level: 1, xp: 0 });
 
   const [sleepAnim] = useState(new Animated.Value(status.sleep));

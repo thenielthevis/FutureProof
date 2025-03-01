@@ -2,7 +2,7 @@ from passlib.context import CryptContext
 from datetime import datetime, timedelta
 import jwt
 import os
-from typing import Optional
+from typing import Optional, List
 from bson import ObjectId
 from app.config import get_database
 from app.models.user_model import UserCreate, UserInDB, UserLogin
@@ -284,6 +284,23 @@ async def update_user_level_and_xp(user_id: str):
         {"$set": {"xp": new_xp, "level": new_level}}
     )
     return {"xp": new_xp, "level": new_level}
+
+async def get_avatar_details(avatar_ids: List[str]):
+    try:
+        # Ensure avatar_ids are valid ObjectIds
+        object_ids = [ObjectId(aid) for aid in avatar_ids if ObjectId.is_valid(aid)]
+        
+        # Fetch avatars from the database
+        avatars = await db.avatars.find({"_id": {"$in": object_ids}}).to_list(length=None)
+
+        # Convert ObjectId to string for JSON serialization
+        for avatar in avatars:
+            avatar["_id"] = str(avatar["_id"])
+        
+        return avatars
+    except Exception as e:
+        print("Error fetching avatars:", str(e))
+        return []
 
 class UserService:
     @staticmethod

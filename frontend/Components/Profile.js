@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import {
   View,
   Text,
@@ -11,17 +11,20 @@ import {
   Dimensions,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { getUser } from '../API/user_api';
+import { getUser, updateUser, getUserAvatars } from '../API/user_api';
 import { getAvatar } from '../API/avatar_api';
 import Toast from 'react-native-toast-message';
 import { MaterialIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import { UserStatusContext } from '../Context/UserStatusContext'; // Import the context
 
 const Profile = ({ visible, onClose }) => {
+  const { avatarUrl, setAvatarUrl } = useContext(UserStatusContext); // Use the context
   const [user, setUser] = useState({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [avatarUrl, setAvatarUrl] = useState('');
+  const [showAvatars, setShowAvatars] = useState(false); // State to control avatar dropdown
+  const [avatars, setAvatars] = useState([]); // State to store avatars
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -38,6 +41,9 @@ const Profile = ({ visible, onClose }) => {
           const avatarResponse = await getAvatar(response.default_avatar);
           setAvatarUrl(avatarResponse.url);
         }
+        // Fetch avatars
+        const avatarsResponse = await getUserAvatars(token);
+        setAvatars(avatarsResponse);
       } catch (err) {
         setError(err.detail || 'An error occurred');
       } finally {
@@ -66,6 +72,36 @@ const Profile = ({ visible, onClose }) => {
   const bmi = calculateBMI(parseFloat(user.height), parseFloat(user.weight));
   const bmiStatus = getBMIStatus(bmi);
 
+  const handleAvatarClick = () => {
+    setShowAvatars(!showAvatars);
+  };
+
+  const handleEquipAvatar = async (avatarId) => {
+    try {
+      const token = await AsyncStorage.getItem('token');
+      if (!token) {
+        setError('No token found');
+        return;
+      }
+      await updateUser(token, { default_avatar: avatarId });
+      const avatarResponse = await getAvatar(avatarId);
+      setAvatarUrl(avatarResponse.url); // Update the avatar URL in the context
+      setShowAvatars(false);
+      Toast.show({
+        type: 'success',
+        text1: 'Avatar updated successfully',
+      });
+    } catch (err) {
+      setError(err.detail || 'An error occurred');
+    }
+  };
+
+  const handleClose = () => {
+    onClose();
+    // Ensure the avatar URL is updated in the context
+    setAvatarUrl(avatarUrl);
+  };
+
   if (loading) {
     return (
       <Modal visible={visible} transparent={true} animationType="slide">
@@ -84,7 +120,7 @@ const Profile = ({ visible, onClose }) => {
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <Text style={styles.error}>{error}</Text>
-            <TouchableOpacity onPress={onClose} style={styles.closeButton}>
+            <TouchableOpacity onPress={handleClose} style={styles.closeButton}>
               <Text style={styles.buttonText}>Close</Text>
             </TouchableOpacity>
           </View>
@@ -106,10 +142,37 @@ const Profile = ({ visible, onClose }) => {
           >
             {/* Profile Header */}
             <View style={styles.profileHeader}>
-              {avatarUrl && <Image source={{ uri: avatarUrl }} style={styles.avatar} />}
+              <TouchableOpacity onPress={handleAvatarClick}>
+              <Image
+                source={
+                  avatarUrl
+                    ? { uri: avatarUrl }
+                    : require('../assets/default/default-avatar.png') // No need for `{ uri: ... }`
+                }
+                style={styles.avatar}
+              />
+              </TouchableOpacity>
               <Text style={styles.userName}>{user.username}</Text>
               <Text style={styles.userDetails}>{user.age} • {user.gender} • {user.email}</Text>
             </View>
+
+            {/* Debugging: Log avatars to console */}
+            {user.avatars && console.log("Fetched avatars:", user.avatars)}
+
+            {/* Avatar Dropdown */}
+            {showAvatars && avatars.length > 0 ? (
+              <View style={styles.avatarDropdown}>
+                {avatars.map((avatar) => (
+                  <TouchableOpacity key={avatar._id} onPress={() => handleEquipAvatar(avatar._id)}>
+                    <Image source={{ uri: avatar.url }} style={styles.avatarOption} />
+                    {/* <Text style={styles.avatarName}>{avatar.name}</Text>
+                    <Text style={styles.avatarDescription}>{avatar.description}</Text> */}
+                  </TouchableOpacity>
+                ))}
+              </View>
+            ) : (
+              <Text style={styles.noAvatarsText}>No avatars owned yet</Text>
+            )}
 
             {/* Daily Habits and Food Intake */}
             <View style={styles.row}>
@@ -171,7 +234,7 @@ const Profile = ({ visible, onClose }) => {
             </View>
 
             {/* Close Button */}
-            <TouchableOpacity onPress={onClose} style={styles.closeButton}>
+            <TouchableOpacity onPress={handleClose} style={styles.closeButton}>
               <Text style={styles.buttonText}>Close</Text>
             </TouchableOpacity>
           </ScrollView>
@@ -205,8 +268,8 @@ const styles = StyleSheet.create({
     width: 100,
     height: 100,
     borderRadius: 50,
-    borderWidth: 2,
-    borderColor: '#4CAF50',
+    borderWidth: 4,
+    borderColor: 'white',
     marginBottom: 10,
   },
   userName: {
@@ -287,6 +350,39 @@ const styles = StyleSheet.create({
     fontSize: 16,
     textAlign: 'center',
     marginBottom: 20,
+  },
+  avatarDropdown: {
+    background: 'transparent',
+    padding: 20,
+    borderRadius: 15,
+    marginTop: 10,
+    marginBottom: 20,
+    flexDirection: 'row', // Make avatars align side by side
+    flexWrap: 'wrap', // Allow wrapping if necessary
+    justifyContent: 'left', // Center avatars horizontally
+  },
+  avatarOption: {
+    width: 50,
+    height: 50,
+    borderRadius: 40,
+    margin: 10, // Ensures spacing between avatars
+    borderWidth: 3,
+    borderColor: 'white',
+  },  
+  avatarName: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#333',
+  },
+  avatarDescription: {
+    fontSize: 14,
+    color: '#666',
+  },
+  noAvatarsText: {
+    fontSize: 16,
+    color: '#666',
+    textAlign: 'center',
+    marginTop: 10,
   },
 });
 

@@ -252,3 +252,18 @@ export const updateUserLevelAndXP = async (token) => {
     throw error.response ? error.response.data : { detail: 'An error occurred' };
   }
 };
+
+// Fetch user avatars
+export const getUserAvatars = async (token) => {
+  try {
+    const response = await axios.get(`${API_URL}/user/avatars`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    return response.data;
+  } catch (error) {
+    console.error('Error getting user avatars:', error.response ? error.response.data : error);
+    throw error.response ? error.response.data : { detail: 'An error occurred' };
+  }
+};

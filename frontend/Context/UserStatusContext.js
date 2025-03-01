@@ -8,6 +8,7 @@ export const UserStatusContext = createContext();
 
 export const UserStatusProvider = ({ children }) => {
   const [status, setStatus] = useState({ sleep: 0, battery: 0, health: 0, medication: 0 });
+  const [avatarUrl, setAvatarUrl] = useState(''); // Add avatarUrl to the state
   const { levelData, addXP } = useContext(UserLevelContext); // Use the new context
 
   const updateBattery = async (increment) => {
@@ -72,6 +73,7 @@ export const UserStatusProvider = ({ children }) => {
             medication: userData.medication || 0,
             battery: userData.battery || 0,
           }));
+          setAvatarUrl(userData.default_avatar_url || ''); // Set the avatar URL
           await updateUserLevelAndXP(token); // Update the user's level and XP
         }
       } catch (error) {
@@ -105,7 +107,7 @@ export const UserStatusProvider = ({ children }) => {
   }, []);
 
   return (
-    <UserStatusContext.Provider value={{ status, setStatus, updateBattery, updateHealth, levelData, addXP }}>
+    <UserStatusContext.Provider value={{ status, setStatus, updateBattery, updateHealth, avatarUrl, setAvatarUrl, levelData, addXP }}>
       {children}
     </UserStatusContext.Provider>
   );

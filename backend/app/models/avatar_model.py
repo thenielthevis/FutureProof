@@ -12,6 +12,9 @@ class ObjectIdModel(BaseModel):
 
     class Config:
         arbitrary_types_allowed = True
+        json_encoders = {
+            ObjectId: str_objectid
+        }
 
 # Avatar model
 class Avatar(ObjectIdModel):
