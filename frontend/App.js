@@ -24,6 +24,7 @@ import TaskModal from './Components/TaskModal';
 import asset from './Pages/asset';
 import quotes from './Pages/quotes';
 import { UserStatusProvider } from './Context/UserStatusContext';
+import { UserLevelProvider } from './Context/UserLevelContext'; // Import the UserLevelProvider
 import physicalactivities from './Pages/physicalactivities';
 import meditation from './Pages/meditation';
 
@@ -32,48 +33,50 @@ const { width, height } = Dimensions.get('window');
 
 export default function App() {
   return (
-    <UserStatusProvider>
-      <SafeAreaProvider>
-        <SafeAreaView style={{ flex: 1 }} edges={['top']}>
-          <ScrollView 
-            style={{ backgroundColor: 'white', width: width, height: Platform.OS === 'web' ? '100vh' : height }}
-            contentContainerStyle={{ flexGrow: 1, paddingBottom: 20 }}
-            keyboardShouldPersistTaps="handled"
-            showsVerticalScrollIndicator={Platform.OS === 'web' ? false : true}
-          >
-            <NavigationContainer>
-              <Stack.Navigator
-                initialRouteName="Home"
-                screenOptions={{
-                  headerShown: false, // Disable the header to use the Navbar from Home.js
-                }}
-              >
-                <Stack.Screen name="Home" component={Home} />
-                <Stack.Screen name="About" component={About} />
-                <Stack.Screen name="Contacts" component={Contacts} />
-                <Stack.Screen name="Features" component={Features} />
-                <Stack.Screen name="Prediction" component={Prediction} />
-                <Stack.Screen name="Profile" component={Profile} />
-                <Stack.Screen name="Game" component={Game} />
-                <Stack.Screen name="Login" component={Login} />
-                <Stack.Screen name="Logout" component={Logout} />
-                <Stack.Screen name="Register" component={Register} />
-                <Stack.Screen name="Admin" component={Admin} />
-                <Stack.Screen name="AvatarCRUD" component={AvatarCRUD} />
-                <Stack.Screen name="DailyRewardsCRUD" component={DailyRewardsCRUD} />
-                <Stack.Screen name="Shop" component={Shop} />
-                <Stack.Screen name="DailyRewards" component={DailyRewards} />
-                <Stack.Screen name="TaskModal" component={TaskModal} />
-                <Stack.Screen name="asset" component={asset} />
-                <Stack.Screen name="quotes" component={quotes} />
-                <Stack.Screen name="physicalactivities" component={physicalactivities} />
-                <Stack.Screen name="meditation" component={meditation} />
-            </Stack.Navigator>
-            </NavigationContainer>
-          </ScrollView>
-          <Toast />
-        </SafeAreaView>
-      </SafeAreaProvider>
-    </UserStatusProvider>
+    <UserLevelProvider>
+      <UserStatusProvider>
+        <SafeAreaProvider>
+          <SafeAreaView style={{ flex: 1 }} edges={['top']}>
+            <ScrollView 
+              style={{ backgroundColor: 'white', width: width, height: Platform.OS === 'web' ? '100vh' : height }}
+              contentContainerStyle={{ flexGrow: 1, paddingBottom: 20 }}
+              keyboardShouldPersistTaps="handled"
+              showsVerticalScrollIndicator={Platform.OS === 'web' ? false : true}
+            >
+              <NavigationContainer>
+                <Stack.Navigator
+                  initialRouteName="Home"
+                  screenOptions={{
+                    headerShown: false, // Disable the header to use the Navbar from Home.js
+                  }}
+                >
+                  <Stack.Screen name="Home" component={Home} />
+                  <Stack.Screen name="About" component={About} />
+                  <Stack.Screen name="Contacts" component={Contacts} />
+                  <Stack.Screen name="Features" component={Features} />
+                  <Stack.Screen name="Prediction" component={Prediction} />
+                  <Stack.Screen name="Profile" component={Profile} />
+                  <Stack.Screen name="Game" component={Game} />
+                  <Stack.Screen name="Login" component={Login} />
+                  <Stack.Screen name="Logout" component={Logout} />
+                  <Stack.Screen name="Register" component={Register} />
+                  <Stack.Screen name="Admin" component={Admin} />
+                  <Stack.Screen name="AvatarCRUD" component={AvatarCRUD} />
+                  <Stack.Screen name="DailyRewardsCRUD" component={DailyRewardsCRUD} />
+                  <Stack.Screen name="Shop" component={Shop} />
+                  <Stack.Screen name="DailyRewards" component={DailyRewards} />
+                  <Stack.Screen name="TaskModal" component={TaskModal} />
+                  <Stack.Screen name="asset" component={asset} />
+                  <Stack.Screen name="quotes" component={quotes} />
+                  <Stack.Screen name="physicalactivities" component={physicalactivities} />
+                  <Stack.Screen name="meditation" component={meditation} />
+                </Stack.Navigator>
+              </NavigationContainer>
+            </ScrollView>
+            <Toast />
+          </SafeAreaView>
+        </SafeAreaProvider>
+      </UserStatusProvider>
+    </UserLevelProvider>
   );
 }

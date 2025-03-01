@@ -57,3 +57,19 @@ export const createNutritionalTracking = async () => {
     throw error;
   }
 };
+
+export const getPastNutritionalTrackingResponses = async () => {
+  try {
+    const token = await AsyncStorage.getItem('token');
+    const response = await axios.get(`${API_URL}/nutritional_tracking/past_responses`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    return response.data; // Correctly return the response data
+  } catch (error) {
+    console.error("Error fetching past nutritional tracking responses:", error);
+    throw error;
+  }
+};
