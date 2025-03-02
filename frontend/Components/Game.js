@@ -323,6 +323,13 @@ export default function Game() {
     return 'https://res.cloudinary.com/dv4vzq7pv/image/upload/v1739961141/Eyes.001_uab6p6.glb';
   };
 
+  const LowBattery = () => {
+    if (status.battery < 50) {
+      return require('../assets/gamenavbaricons/lowbattery.gif');
+    }
+    return null;
+  };
+
   const getEyesUri = () => {
     if (isAsleep) {
       return SleepEyes();
@@ -340,7 +347,8 @@ export default function Game() {
           ...prevStatus,
           sleep: userData.sleep,
           health: userData.health,
-          medication: userData.medication
+          medication: userData.medication,
+          battery: userData.battery
         }));
       } catch (error) {
         console.error('Error fetching user data:', error);
@@ -421,6 +429,12 @@ export default function Game() {
           <Image
             source={LowHealth().image}
             style={styles.lowHealthImage}
+          />
+        )}
+        {LowBattery() && (
+          <Image
+            source={LowBattery()}
+            style={styles.lowBatteryImage}
           />
         )}
         {isAsleep && (
@@ -711,13 +725,13 @@ const styles = StyleSheet.create({
   },
   thinkCloud: {
     position: 'absolute',
-    right: 500, // Increased to move left
-    top: 20,
-    bottom: 20,
+    right: '40%', // Keep it on the right side
+    top: '-20%', // Same top positioning as lowBatteryImage
+    transform: [{ translateX: 75 }], // Center horizontally
     width: 150,
     height: 150,
     zIndex: 10,
-},
+  },
 blanket: {
   position: 'absolute',
   top: '50%',
@@ -741,6 +755,15 @@ zzzImage: {
   right: 500, // Same positioning as thinkCloud
   top: 20,
   bottom: 20,
+  width: 150,
+  height: 150,
+  zIndex: 10,
+},
+lowBatteryImage: {
+  position: 'absolute',
+  left: '40%',
+  top: '-20%', // Positioned above the head model
+  transform: [{ translateX: -75 }], // Center horizontally
   width: 150,
   height: 150,
   zIndex: 10,
