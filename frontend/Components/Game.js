@@ -326,10 +326,8 @@ export default function Game() {
   const getEyesUri = () => {
     if (isAsleep) {
       return SleepEyes();
-    } else if (status.sleep < 50) {
-      return LowSleep();
     }
-    return 'https://res.cloudinary.com/dv4vzq7pv/image/upload/v1739961141/Eyes.001_uab6p6.glb';
+    return LowSleep();
   };
 
   useEffect(() => {
@@ -426,10 +424,16 @@ export default function Game() {
           />
         )}
         {isAsleep && (
-          <Image
-            source={{ uri: 'https://res.cloudinary.com/dv4vzq7pv/image/upload/v1740814904/blanket_if606d.gif' }}
-            style={styles.blanket}
-          />
+          <>
+            <Image
+              source={{ uri: 'https://res.cloudinary.com/dv4vzq7pv/image/upload/v1740814904/blanket_if606d.gif' }}
+              style={styles.blanket}
+            />
+            <Image
+              source={require('../assets/gamenavbaricons/zzz.gif')}
+              style={styles.zzzImage}
+            />
+          </>
         )}
       </View>
   
@@ -726,6 +730,15 @@ blanket: {
 lowHealthImage: {
   position: 'absolute',
   right: 850, // Increased to move left
+  top: 20,
+  bottom: 20,
+  width: 150,
+  height: 150,
+  zIndex: 10,
+},
+zzzImage: {
+  position: 'absolute',
+  right: 500, // Same positioning as thinkCloud
   top: 20,
   bottom: 20,
   width: 150,
