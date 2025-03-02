@@ -30,8 +30,9 @@ export default function Game() {
   const [eating, setEating] = useState(false); // State to track if the user is eating
   const [selectedFood, setSelectedFood] = useState(null); // State to track selected food item
   const [gameCompleted, setGameCompleted] = useState(false); // State to track if the game is completed
+  const [modelScale, setModelScale] = useState({ x: 3, y: 5, z: 4 }); // Initial scale for Underweight
 
-  const modelScale = { x: 5, y: 5, z: 5 }; // 2x larger
+  const modelScaleDefault = { x: 5, y: 5, z: 5 }; // 2x larger
   const modelPosition = { x: 0, y: -5, z: 0 }; // Adjusted position to move the model downwards
 
   const panBreakfast = useRef(new Animated.ValueXY()).current;
@@ -55,7 +56,7 @@ export default function Game() {
   const getModelScale = () => {
     switch (bmiCategory) {
       case 'Underweight':
-        return { x: 4, y: 5, z: 4 };
+        return modelScale;
       case 'Overweight':
         return { x: 6, y: 5, z: 6 };
       case 'Obese':
@@ -74,6 +75,13 @@ export default function Game() {
       if (day < 7) {
         setDay(day + 1);
         setFoodDragged(false);
+        if (bmiCategory === 'Underweight') {
+          setModelScale(prevScale => ({
+            x: Math.min(prevScale.x + 0.5, 5), // Increase width gradually until normal size
+            y: prevScale.y,
+            z: prevScale.z
+          }));
+        }
       } else {
         alert('Congratulations! You have completed the week.');
         setBmiCategory('Normal'); // Set BMI category to Normal after completing day 7
@@ -84,8 +92,6 @@ export default function Game() {
       alert('Please drag the food items before proceeding to the next day.');
     }
   };
-
-
 
   const handleOkClick = () => {
     setGameCompleted(false);
