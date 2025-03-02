@@ -306,7 +306,6 @@ export default function Game() {
   const LowHealth = () => {
     if (status.health < 50) {
       return {
-        color: '#D6C3B7',
         image: require('../assets/gamenavbaricons/lowhealth.gif')
       };
     }
@@ -508,6 +507,12 @@ export default function Game() {
       <TaskModal visible={taskModalVisible} onClose={() => setTaskModalVisible(false)} />
       {/* Sleep Overlay Condition */}
       {isAsleep && <View style={styles.sleepOverlay} />}
+      <TouchableOpacity
+        style={styles.bmiGameButton}
+        onPress={() => navigation.navigate('BMIGame')}
+      >
+        <Text style={styles.bmiGameButtonText}>Play BMI Game!</Text>
+      </TouchableOpacity>
     </LinearGradient>
   );  
 }
@@ -767,6 +772,18 @@ lowBatteryImage: {
   width: 150,
   height: 150,
   zIndex: 10,
+},
+bmiGameButton: {
+  backgroundColor: '#4CAF50',
+  padding: 10,
+  borderRadius: 5,
+  alignItems: 'center',
+  marginTop: 20,
+},
+bmiGameButtonText: {
+  color: 'white',
+  fontSize: 16,
+  fontWeight: 'bold',
 },
 
 
