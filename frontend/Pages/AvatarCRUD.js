@@ -332,6 +332,10 @@ const AvatarCRUD = () => {
                          <FontAwesome5 name="gift" size={24} color="white" />
                          <Text style={styles.sidebarText}>Daily Rewards</Text>
                        </TouchableOpacity>
+                       <TouchableOpacity style={styles.sidebarItem} onPress={() => navigation.navigate('AchievementsCRUD')}>
+                         <FontAwesome5 name="trophy" size={24} color="white" />
+                         <Text style={styles.sidebarText}>Achievements</Text>
+                       </TouchableOpacity>
                        <TouchableOpacity style={styles.sidebarItem} onPress={() => navigation.navigate('quotes')}>
                          <FontAwesome name="quote-left" size={24} color="white" />
                          <Text style={styles.sidebarText}>Quotes</Text>

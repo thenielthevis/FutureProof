@@ -1,7 +1,7 @@
 import React, { useState, useEffect, Suspense, useRef, useContext } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls, useGLTF } from '@react-three/drei/native';
-import { View, Text, TouchableOpacity, StyleSheet, Modal, TextInput, Image, ScrollView, Pressable, Animated, PanResponder } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Modal, TextInput, Image, ScrollView, Pressable, Animated, PanResponder, ActivityIndicator } from 'react-native';
 import * as THREE from 'three';
 import { FontAwesome } from '@expo/vector-icons';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
@@ -49,7 +49,7 @@ function OptionButton({ label, onPress, isSelected, preview }) {
 export default function Game() {
   const navigation = useNavigation();
   const pan = useRef(new Animated.ValueXY()).current; // Move initialization here
-  const { status, setStatus } = useContext(UserStatusContext);
+  const { status, setStatus, updateSleepStatus } = useContext(UserStatusContext);
   const [selectedHair, setSelectedHair] = useState(null);
   const [selectedHead, setSelectedHead] = useState(null);  // Define selectedHead state
   const [selectedTop, setSelectedTop] = useState(null);
@@ -73,6 +73,7 @@ export default function Game() {
   const [medicationField, setMedicationField] = useState(0);
   const [sound, setSound] = useState();
   const [equippedAssets, setEquippedAssets] = useState({}); // State to track equipped assets
+  const [loading, setLoading] = useState(true); // Add loading state
   const icons = [
     require('../assets/icons/Navigation/dailyassessment.png'),
     require('../assets/icons/Navigation/dailyrewards.png'),
@@ -86,34 +87,14 @@ export default function Game() {
   };
 
   useEffect(() => {
-    // Fetch purchased items from the backend
-    const fetchPurchasedItems = async () => {
+    const fetchData = async () => {
       try {
         const items = await readPurchasedItems();
         setPurchasedItems(items);
-      } catch (error) {
-        console.error('Error fetching purchased items:', error);
-      }
-    };
 
-    // Fetch equipped assets
-    const fetchEquippedAssets = async () => {
-      try {
         const equippedAssets = await getEquippedAssets();
-        setEquippedAssets(equippedAssets); // Assuming setEquippedAssets is a state setter for equipped assets
-      } catch (error) {
-        console.error('Error fetching equipped assets:', error);
-      }
-    };
+        setEquippedAssets(equippedAssets);
 
-    fetchPurchasedItems();
-    fetchEquippedAssets();
-  }, []);
-
-  useEffect(() => {
-    // Fetch user data to check for claimable rewards
-    const fetchUserData = async () => {
-      try {
         const token = await AsyncStorage.getItem('token');
         const userData = await getUser(token);
         const now = new Date();
@@ -123,15 +104,23 @@ export default function Game() {
         } else {
           setHasClaimableReward(false);
         }
-        // Set initial sleep and medication field values
         setIsAsleep(userData.isasleep);
         setMedicationField(userData.medication);
+        setStatus((prevStatus) => ({
+          ...prevStatus,
+          sleep: userData.sleep,
+          health: userData.health,
+          medication: userData.medication,
+          isAsleep: userData.isasleep,
+        }));
       } catch (error) {
-        console.error('Error fetching user data:', error);
+        console.error('Error fetching data:', error);
+      } finally {
+        setLoading(false); // Set loading to false after data is fetched
       }
     };
 
-    fetchUserData();
+    fetchData();
   }, []);
 
   useFocusEffect(
@@ -153,7 +142,7 @@ export default function Game() {
     let sleepInterval;
     if (isAsleep) {
       sleepInterval = setInterval(() => {
-        setMedicationField(prev => prev + 1);
+        setStatus((prevStatus) => ({ ...prevStatus, sleep: prevStatus.sleep + 1 }));
       }, 60000); // Increment sleep field every 1 minute
     }
     return () => clearInterval(sleepInterval);
@@ -386,6 +375,14 @@ export default function Game() {
     }
     return null;
   };
+
+  if (loading) {
+    return (
+      <View style={styles.loaderContainer}>
+        <ActivityIndicator size="large" color="#00ff00" />
+      </View>
+    );
+  }
 
   return (
     <LinearGradient colors={['#14243b', '#77f3bb']} style={styles.container}>
@@ -731,8 +728,12 @@ lowHealthImage: {
   width: 150,
   height: 150,
   zIndex: 10,
+  resizeMode: 'contain',
 },
-
-
+loaderContainer: {
+  flex: 1,
+  justifyContent: 'center',
+  alignItems: 'center',
+},
 
 });

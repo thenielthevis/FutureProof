@@ -18,6 +18,7 @@ import Profile from './Components/Profile';
 import Admin from './Pages/Admin';
 import AvatarCRUD from './Pages/AvatarCRUD';
 import DailyRewardsCRUD from './Pages/DailyRewardsCRUD';
+import AchievementsCRUD from './Pages/AchievementsCRUD';
 import Shop from './Components/Shop';
 import DailyRewards from './Components/DailyRewards';
 import TaskModal from './Components/TaskModal';
@@ -64,6 +65,7 @@ export default function App() {
                   <Stack.Screen name="Admin" component={Admin} />
                   <Stack.Screen name="AvatarCRUD" component={AvatarCRUD} />
                   <Stack.Screen name="DailyRewardsCRUD" component={DailyRewardsCRUD} />
+                  <Stack.Screen name="AchievementsCRUD" component={AchievementsCRUD} />
                   <Stack.Screen name="Shop" component={Shop} />
                   <Stack.Screen name="DailyRewards" component={DailyRewards} />
                   <Stack.Screen name="TaskModal" component={TaskModal} />

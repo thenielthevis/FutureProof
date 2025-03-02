@@ -253,7 +253,6 @@ const Home = ({ navigation }) => {
                     <Text style={styles.dropdownText}>Admin</Text>
                   </TouchableOpacity>
                 )}
-                {userRole === 'user' && (
                   <TouchableOpacity
                     style={styles.dropdownItem}
                     onPress={() => handleProfileNavigation('UserDashboard')}
@@ -261,7 +260,6 @@ const Home = ({ navigation }) => {
                     <Icon name="dashboard" size={20} color="#f0fdf7" />
                     <Text style={styles.dropdownText}>Dashboard</Text>
                   </TouchableOpacity>
-                )}
                 <TouchableOpacity
                   style={styles.dropdownItem}
                   onPress={() => {

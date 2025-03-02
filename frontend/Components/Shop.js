@@ -194,7 +194,7 @@ export default function Shop() {
       <GameNavbar /> {/* Navbar added here */}
 
       {/* Back Button */}
-      <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
+      <TouchableOpacity style={styles.backButton} onPress={() => navigation.navigate('Game')}>
         <Ionicons name="arrow-back" size={24} color="white" />
       </TouchableOpacity>
 

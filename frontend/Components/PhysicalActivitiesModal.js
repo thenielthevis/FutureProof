@@ -2,13 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, ActivityIndicator, Modal, Dimensions, FlatList, Image } from 'react-native';
 import { getPhysicalActivities } from '../API/physical_activities_api';
 import { claimRewards } from '../API/health_quiz_api';
-import { FontAwesome } from '@expo/vector-icons';
 import Video from 'react-native-video';
 import * as Speech from 'expo-speech';
 import { Audio } from 'expo-av';
 import PhysicalActivitiesCongratulationsModal from './PhysicalActivitiesCongratulationsModal';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import TrackPlayer, { usePlaybackState } from 'react-native-track-player';
+import { FontAwesome, FontAwesome5 } from '@expo/vector-icons';
 
 const { width } = Dimensions.get('window');
 
@@ -322,6 +322,16 @@ const PhysicalActivitiesModal = ({ visible, onClose, onBack }) => {
                         onPress={() => handleNavigation('prev')}>
                         <FontAwesome name="arrow-left" size={30} color="#fff" />
                       </TouchableOpacity>
+                      <View style={styles.footerContainer}>
+                        <View style={styles.footerCoin}>
+                          <FontAwesome5 name="coins" size={20} color="gold" />
+                          <Text style={styles.footerText}>50</Text>
+                        </View>
+                        <View style={styles.footerStar}>
+                          <FontAwesome5 name="star" size={20} color="gold" />
+                          <Text style={styles.footerText}>25</Text>
+                        </View>
+                      </View>
                       {currentIndex === filteredActivities.length - 1 ? (
                         <TouchableOpacity 
                           style={styles.finishButton} 
@@ -368,7 +378,7 @@ const styles = StyleSheet.create({
   videoPreview: { width: 130, height: 130, marginTop: 50 },
   startButton: { backgroundColor: '#27ae60', padding: 10, borderRadius: 8, alignItems: 'center', marginTop: 10 },
   video: { width: '100%', height: '100%', objectFit: 'fill' },
-  exerciseItem: { backgroundColor: '#fff', padding: 10, borderRadius: 8, marginBottom: 10, alignItems: 'center', width: '100%', height: 400 },
+  exerciseItem: { backgroundColor: '#fff', padding: 10, borderRadius: 8, marginBottom: 10, alignItems: 'center', width: '100%', height: 300 },
   exerciseText: { color: '#fff', fontSize: 20, fontWeight: 'bold', },
   exerciseTextPreview: { color: 'black', fontSize: 16, fontWeight: 'bold', },
   exerciseRepsPreview: { color: 'dimgray', fontSize: 14, },
@@ -389,6 +399,10 @@ const styles = StyleSheet.create({
   exerciseRepsPreviewScreen: { color: '#fff', fontSize: 16, },
   timerGif: { width: '100%', height: undefined, aspectRatio: 1, marginBottom: 20, resizeMode: 'contain', },
   finishButton: { backgroundColor: '#27ae60', padding: 10, borderRadius: 8, margin: 10, justifyContent: 'center', alignItems: 'center', width: '50px' },
+  footerContainer: { flexDirection: 'row', justifyContent: 'center', marginTop: 5, marginLeft: 20, marginRight: 20 },  
+  footerCoin: { flex: 1, alignItems: 'center', margin: 10 },  
+  footerStar: { flex: 1, alignItems: 'center', margin: 10 },  
+  footerText: { color: '#fff', fontSize: 16, fontWeight: 'bold' },    
 });
 
 export default PhysicalActivitiesModal;

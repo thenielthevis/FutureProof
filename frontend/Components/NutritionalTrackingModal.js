@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, ActivityIndicator, Modal, TextInput, Button } from 'react-native';
 import { createNutritionalTracking, getNutritionalTrackingQuestions, submitNutritionalTrackingResponses, getPastNutritionalTrackingResponses } from '../API/nutritional_tracking_api';
-import { FontAwesome } from '@expo/vector-icons';
+import { FontAwesome, FontAwesome5 } from '@expo/vector-icons';
 import NutritionalTrackingCongratulationsModal from './NutritionalTrackingCongratulationsModal';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { claimRewards } from '../API/health_quiz_api';
@@ -157,6 +157,16 @@ const NutritionalTrackingModal = ({ visible, onClose, onBack }) => {
                       <FontAwesome name="arrow-left" size={30} color="#fff" />
                     </TouchableOpacity>
                   )}
+                      <View style={styles.footerContainer}>
+                        <View style={styles.footerCoin}>
+                          <FontAwesome5 name="coins" size={20} color="gold" />
+                          <Text style={styles.footerText}>50</Text>
+                        </View>
+                        <View style={styles.footerStar}>
+                          <FontAwesome5 name="star" size={20} color="gold" />
+                          <Text style={styles.footerText}>25</Text>
+                        </View>
+                      </View>
                   {currentQuestionIndex < questionsAnswers.length - 1 ? (
                     <TouchableOpacity style={styles.navButton} onPress={handleNextQuestion}>
                       <FontAwesome name="arrow-right" size={30} color="#fff" />
@@ -193,11 +203,15 @@ const styles = StyleSheet.create({
   questionText: { fontSize: 18, color: '#fff', marginBottom: 10 },
   input: { backgroundColor: '#fff', padding: 10, borderRadius: 8, height: 100, textAlignVertical: 'top' },
   navigationButtons: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 20 },
-  navButton: { backgroundColor: '#27ae60', padding: 10, borderRadius: 8 },
+  navButton: { backgroundColor: '#27ae60', padding: 10, borderRadius: 8, alignSelf: 'center' },
   startButton: { backgroundColor: '#27ae60', padding: 10, borderRadius: 8, alignItems: 'center', marginTop: 20 },
   submitButton: { backgroundColor: '#27ae60', padding: 10, borderRadius: 8 },
   buttonText: { color: 'white', fontWeight: 'bold' },
   error: { color: 'red', marginBottom: 10 },
+  footerContainer: { flexDirection: 'row', justifyContent: 'center', marginTop: 5, marginLeft: 20, marginRight: 20 },  
+  footerCoin: { flex: 1, alignItems: 'center', margin: 10 },  
+  footerStar: { flex: 1, alignItems: 'center', margin: 10 },  
+  footerText: { color: '#fff', fontSize: 16, fontWeight: 'bold' },    
 });
 
 export default NutritionalTrackingModal;

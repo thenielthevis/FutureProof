@@ -1,5 +1,5 @@
 import React, { createContext, useState, useEffect, useContext } from 'react';
-import { getUser, updateUserBattery, updateUserHealth, updateUserLevelAndXP } from '../API/user_api';
+import { getUser, updateUserBattery, updateUserHealth, updateUserLevelAndXP, updateUserSleep } from '../API/user_api';
 import { getDailyAssessment } from '../API/daily_assessment_api'; // Import the new API function
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { UserLevelContext } from './UserLevelContext'; // Import the new context
@@ -7,7 +7,7 @@ import { UserLevelContext } from './UserLevelContext'; // Import the new context
 export const UserStatusContext = createContext();
 
 export const UserStatusProvider = ({ children }) => {
-  const [status, setStatus] = useState({ sleep: 0, battery: 0, health: 0, medication: 0 });
+  const [status, setStatus] = useState({ sleep: 0, battery: 0, health: 0, medication: 0, isAsleep: false });
   const [avatarUrl, setAvatarUrl] = useState(''); // Add avatarUrl to the state
   const { levelData, addXP } = useContext(UserLevelContext); // Use the new context
 
@@ -54,6 +54,19 @@ export const UserStatusProvider = ({ children }) => {
     }
   };
 
+  const updateSleepStatus = async (isAsleep) => {
+    try {
+      const token = await AsyncStorage.getItem('token');
+      await updateUserSleep(token, { isasleep: isAsleep });
+      setStatus((prevStatus) => ({
+        ...prevStatus,
+        isAsleep,
+      }));
+    } catch (error) {
+      console.error('Error updating sleep status:', error.response ? error.response.data : error);
+    }
+  };
+
   useEffect(() => {
     const fetchUserData = async () => {
       try {
@@ -72,6 +85,7 @@ export const UserStatusProvider = ({ children }) => {
             health: userData.health || 0,
             medication: userData.medication || 0,
             battery: userData.battery || 0,
+            isAsleep: userData.isasleep || false,
           }));
           setAvatarUrl(userData.default_avatar_url || ''); // Set the avatar URL
           await updateUserLevelAndXP(token); // Update the user's level and XP
@@ -107,7 +121,7 @@ export const UserStatusProvider = ({ children }) => {
   }, []);
 
   return (
-    <UserStatusContext.Provider value={{ status, setStatus, updateBattery, updateHealth, avatarUrl, setAvatarUrl, levelData, addXP }}>
+    <UserStatusContext.Provider value={{ status, setStatus, updateBattery, updateHealth, updateSleepStatus, avatarUrl, setAvatarUrl, levelData, addXP }}>
       {children}
     </UserStatusContext.Provider>
   );
