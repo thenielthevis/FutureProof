@@ -295,7 +295,6 @@ export default function Game() {
   const LowHealth = () => {
     if (status.health < 50) {
       return {
-        color: '#D6C3B7',
         image: require('../assets/gamenavbaricons/lowhealth.gif')
       };
     }
@@ -312,13 +311,18 @@ export default function Game() {
     return 'https://res.cloudinary.com/dv4vzq7pv/image/upload/v1739961141/Eyes.001_uab6p6.glb';
   };
 
+  const LowBattery = () => {
+    if (status.battery < 50) {
+      return require('../assets/gamenavbaricons/lowbattery.gif');
+    }
+    return null;
+  };
+
   const getEyesUri = () => {
     if (isAsleep) {
       return SleepEyes();
-    } else if (status.sleep < 50) {
-      return LowSleep();
     }
-    return 'https://res.cloudinary.com/dv4vzq7pv/image/upload/v1739961141/Eyes.001_uab6p6.glb';
+    return LowSleep();
   };
 
   useEffect(() => {
@@ -331,7 +335,8 @@ export default function Game() {
           ...prevStatus,
           sleep: userData.sleep,
           health: userData.health,
-          medication: userData.medication
+          medication: userData.medication,
+          battery: userData.battery
         }));
       } catch (error) {
         console.error('Error fetching user data:', error);
@@ -422,11 +427,23 @@ export default function Game() {
             style={styles.lowHealthImage}
           />
         )}
-        {isAsleep && (
+        {LowBattery() && (
           <Image
-            source={{ uri: 'https://res.cloudinary.com/dv4vzq7pv/image/upload/v1740814904/blanket_if606d.gif' }}
-            style={styles.blanket}
+            source={LowBattery()}
+            style={styles.lowBatteryImage}
           />
+        )}
+        {isAsleep && (
+          <>
+            <Image
+              source={{ uri: 'https://res.cloudinary.com/dv4vzq7pv/image/upload/v1740814904/blanket_if606d.gif' }}
+              style={styles.blanket}
+            />
+            <Image
+              source={require('../assets/gamenavbaricons/zzz.gif')}
+              style={styles.zzzImage}
+            />
+          </>
         )}
       </View>
   
@@ -487,6 +504,12 @@ export default function Game() {
       <TaskModal visible={taskModalVisible} onClose={() => setTaskModalVisible(false)} />
       {/* Sleep Overlay Condition */}
       {isAsleep && <View style={styles.sleepOverlay} />}
+      <TouchableOpacity
+        style={styles.bmiGameButton}
+        onPress={() => navigation.navigate('BMIGame')}
+      >
+        <Text style={styles.bmiGameButtonText}>Play BMI Game!</Text>
+      </TouchableOpacity>
     </LinearGradient>
   );  
 }
@@ -704,13 +727,13 @@ const styles = StyleSheet.create({
   },
   thinkCloud: {
     position: 'absolute',
-    right: 500, // Increased to move left
-    top: 20,
-    bottom: 20,
+    right: '40%', // Keep it on the right side
+    top: '-20%', // Same top positioning as lowBatteryImage
+    transform: [{ translateX: 75 }], // Center horizontally
     width: 150,
     height: 150,
     zIndex: 10,
-},
+  },
 blanket: {
   position: 'absolute',
   top: '50%',
@@ -734,6 +757,36 @@ loaderContainer: {
   flex: 1,
   justifyContent: 'center',
   alignItems: 'center',
+},
+zzzImage: {
+  position: 'absolute',
+  right: 500, // Same positioning as thinkCloud
+  top: 20,
+  bottom: 20,
+  width: 150,
+  height: 150,
+  zIndex: 10,
+},
+lowBatteryImage: {
+  position: 'absolute',
+  left: '40%',
+  top: '-20%', // Positioned above the head model
+  transform: [{ translateX: -75 }], // Center horizontally
+  width: 150,
+  height: 150,
+  zIndex: 10,
+},
+bmiGameButton: {
+  backgroundColor: '#4CAF50',
+  padding: 10,
+  borderRadius: 5,
+  alignItems: 'center',
+  marginTop: 20,
+},
+bmiGameButtonText: {
+  color: 'white',
+  fontSize: 16,
+  fontWeight: 'bold',
 },
 
 });
