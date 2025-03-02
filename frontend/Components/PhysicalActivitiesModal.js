@@ -302,6 +302,7 @@ const PhysicalActivitiesModal = ({ visible, onClose, onBack }) => {
                     <View style={styles.exerciseItem}>
                       <Video
                         source={{ uri: filteredActivities[currentIndex].url }}
+                        resizeMode="cover"
                         style={styles.video}
                         repeat={true}
                         paused={false}
@@ -377,7 +378,7 @@ const styles = StyleSheet.create({
   exerciseListItem: { backgroundColor: '#fff', padding: 10, borderRadius: 8, marginBottom: 10, alignItems: 'center', maxHeight: 100, height: 100 },
   videoPreview: { width: 130, height: 130, marginTop: 50 },
   startButton: { backgroundColor: '#27ae60', padding: 10, borderRadius: 8, alignItems: 'center', marginTop: 10 },
-  video: { width: '100%', height: '100%', objectFit: 'fill' },
+  video: { width: '100%', height: '100%', resizeMode: 'cover' },
   exerciseItem: { backgroundColor: '#fff', padding: 10, borderRadius: 8, marginBottom: 10, alignItems: 'center', width: '100%', height: 300 },
   exerciseText: { color: '#fff', fontSize: 20, fontWeight: 'bold', },
   exerciseTextPreview: { color: 'black', fontSize: 16, fontWeight: 'bold', },

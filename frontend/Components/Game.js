@@ -461,8 +461,11 @@ export default function Game() {
         <Animated.View {...panResponder.panHandlers} style={pan.getLayout()}>
           <Image source={require('../assets/icons/Side/pill.png')} style={styles.floatingIcon} />
         </Animated.View>
-        <TouchableOpacity onPress={() => navigation.navigate('Closet')}>
+        <TouchableOpacity onPress={() => navigation.navigate('Achievements')}>
           <Image source={require('../assets/icons/Side/achievements.png')} style={styles.floatingIcon} />
+        </TouchableOpacity>
+        <TouchableOpacity onPress={() => navigation.navigate('BMIGame')}>
+          <Image source={require('../assets/icons/Side/mini-game.png')} style={styles.floatingIcon} />
         </TouchableOpacity>
       </View>
   
@@ -504,12 +507,6 @@ export default function Game() {
       <TaskModal visible={taskModalVisible} onClose={() => setTaskModalVisible(false)} />
       {/* Sleep Overlay Condition */}
       {isAsleep && <View style={styles.sleepOverlay} />}
-      <TouchableOpacity
-        style={styles.bmiGameButton}
-        onPress={() => navigation.navigate('BMIGame')}
-      >
-        <Text style={styles.bmiGameButtonText}>Play BMI Game!</Text>
-      </TouchableOpacity>
     </LinearGradient>
   );  
 }
@@ -557,8 +554,8 @@ const styles = StyleSheet.create({
     marginTop: 10,
   },
   additionalIconStyle: {
-    width: 200,
-    height: 125,
+    width: 175,
+    height: 110,
     marginLeft: 30,
     transform: [{ scale: 1 }],
     shadowColor: '#000',
@@ -711,8 +708,8 @@ const styles = StyleSheet.create({
   },
   
   floatingIcon: {
-    width: 60,
-    height: 60,
+    width: 40,
+    height: 40,
     marginBottom: 10,
     resizeMode: 'contain', // Ensures full icon visibility
   },  
