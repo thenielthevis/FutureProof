@@ -286,20 +286,7 @@ const MeditationCRUD = () => {
 
   return (
     <View style={styles.container}>
-      {/* Sidebar */}
-      <LinearGradient colors={['#003C2C', '#005C3C']} style={[styles.sidebar, sidebarCollapsed && styles.sidebarCollapsed]}>
-        <View style={styles.sidebarTop}>
-          <TouchableOpacity style={styles.sidebarItem} onPress={toggleSidebar}>
-            <FontAwesome name="bars" size={24} color="white" />
-          </TouchableOpacity>
-        </View>
-        {!sidebarCollapsed && (
-          <View style={styles.sidebarContent}>
-            <Sidebar />
-          </View>
-        )}
-      </LinearGradient>
-
+      <Sidebar />
       <View style={styles.content}>
         <Text style={styles.header}>Meditation Management</Text>
         <View style={styles.searchCreateContainer}>

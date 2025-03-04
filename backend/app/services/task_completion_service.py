@@ -3,6 +3,7 @@ from datetime import datetime
 from app.config import get_database
 from typing import Optional, List
 import logging
+from fastapi import HTTPException
 
 db = get_database()
 logger = logging.getLogger(__name__)
@@ -38,10 +39,17 @@ class TaskCompletionService:
     @staticmethod
     async def get_total_time_spent_by_user(user_id: str) -> int:
         try:
+            logger.info(f"Calculating total time spent for user: {user_id}")
             task_completions = await db.task_completions.find({"user_id": user_id}).to_list(length=None)
-            total_time_spent = sum(task_completion["time_spent"] for task_completion in task_completions if task_completion["time_spent"])
+            
+            logger.info(f"Found {len(task_completions)} task completions")
+            
+            # Sum the time_spent for all tasks
+            total_time_spent = sum(task["time_spent"] for task in task_completions if task.get("time_spent") is not None)
+            
+            logger.info(f"Total time spent calculated: {total_time_spent}")
             return total_time_spent
         except Exception as e:
-            print(f"Error calculating total time spent by user: {str(e)}")
+            logger.error(f"Error calculating total time spent by user: {str(e)}")
             raise HTTPException(status_code=400, detail=str(e))
 

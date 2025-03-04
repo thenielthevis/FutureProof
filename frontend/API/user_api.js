@@ -299,3 +299,104 @@ export const getTotalCoins = async () => {
     throw error.response ? error.response.data : { detail: 'An error occurred' };
   }
 };
+
+export const getAllUsers = async (token) => {
+  try {
+    const response = await axios.get(`${API_URL}/all-users`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    return response.data;
+  } catch (error) {
+    console.error('Error getting users:', error.response ? error.response.data : error);
+    throw error.response ? error.response.data : { detail: 'An error occurred' };
+  }
+};
+
+export const disableUser = async (token, userId) => {
+  try {
+    const response = await axios.put(`${API_URL}/users/${userId}/disable`, {}, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    return response.data;
+  } catch (error) {
+    console.error('Error disabling user:', error.response ? error.response.data : error);
+    throw error.response ? error.response.data : { detail: 'An error occurred' };
+  }
+};
+
+export const enableUser = async (token, userId) => {
+  try {
+    const response = await axios.put(`${API_URL}/users/${userId}/enable`, {}, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    return response.data;
+  } catch (error) {
+    console.error('Error enabling user:', error.response ? error.response.data : error);
+    throw error.response ? error.response.data : { detail: 'An error occurred' };
+  }
+};
+
+export const disableInactiveUsers = async (token) => {
+  try {
+    const response = await axios.post(`${API_URL}/users/disable-inactive`, {}, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    return response.data;
+  } catch (error) {
+    console.error('Error disabling inactive users:', error.response ? error.response.data : error);
+    throw error.response ? error.response.data : { detail: 'An error occurred' };
+  }
+};
+
+export const deleteDisabledUsers = async (token) => {
+  try {
+    const response = await axios.post(`${API_URL}/users/delete-disabled`, {}, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    return response.data;
+  } catch (error) {
+    console.error('Error deleting disabled users:', error.response ? error.response.data : error);
+    throw error.response ? error.response.data : { detail: 'An error occurred' };
+  }
+};
+
+export const verifyReactivationOTP = async (otpData) => {
+  try {
+    const response = await axios.post(`${API_URL}/verify-reactivation-otp`, otpData);
+    return response.data;
+  } catch (error) {
+    console.error('Error verifying reactivation OTP:', error.response ? error.response.data : error);
+    throw error.response ? error.response.data : { detail: 'An error occurred' };
+  }
+};
+
+export const checkAccountStatus = async (email) => {
+  try {
+    const response = await axios.post(`${API_URL}/check-account-status`, { email });
+    return response.data.disabled;
+  } catch (error) {
+    console.error('Error checking account status:', error.response ? error.response.data : error);
+    throw error.response ? error.response.data : { detail: 'An error occurred' };
+  }
+};
+
+// Send OTP for reactivation
+export const sendReactivationOTP = async (email) => {
+  try {
+    const response = await axios.post(`${API_URL}/send-reactivation-otp`, { email });
+    return response.data;
+  } catch (error) {
+    console.error('Error sending reactivation OTP:', error.response ? error.response.data : error);
+    throw error.response ? error.response.data : { detail: 'An error occurred' };
+  }
+};

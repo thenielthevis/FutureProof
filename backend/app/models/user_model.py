@@ -76,6 +76,8 @@ class UserInDB(ObjectIdModel):
     claimed_rewards: List[ObjectId] = []
     next_claim_time: Optional[datetime] = None
     registerDate: datetime = Field(default_factory=datetime.utcnow)  # Add registerDate field
+    lastLogin: Optional[datetime] = None  # Add lastLogin field
+    disabled: bool = False  # Add disabled field
 
     class Config:
         json_encoders = {

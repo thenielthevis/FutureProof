@@ -100,21 +100,27 @@ export const getTotalTaskCompletionsByUser = async () => {
   }
 };
 
-export const getTotalTimeSpentByUser = async () => {
+export const getTotalTimeSpentByUser = async (token) => {
   try {
-    const token = await AsyncStorage.getItem('token');
     const userId = await AsyncStorage.getItem('userId');
+    
     if (!userId) {
-      throw new Error('No user ID found');
+      console.error('No user ID found');
+      return 0; // Return 0 instead of throwing an error
     }
+    
+    console.log('Fetching total time spent for user ID:', userId);
     const response = await axios.get(`${API_URL}/task-completion/user/${userId}/total-time`, {
       headers: {
         Authorization: `Bearer ${token}`,
       },
     });
-    return response.data;
+    
+    console.log('Total time spent response:', response.data);
+    return response.data || 0; // Ensure we return 0 if the data is null/undefined
   } catch (error) {
-    console.error('Error fetching total time spent by user:', error.response ? error.response.data : error);
-    throw error;
+    console.error('Error fetching total time spent:', error);
+    // Return 0 instead of throwing to avoid breaking the UI
+    return 0;
   }
 };

@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, FlatList, ScrollView, Animated } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import { FontAwesome, FontAwesome5, Ionicons, MaterialIcons } from '@expo/vector-icons';
+import { FontAwesome, FontAwesome5, MaterialIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getTotalUsers, getUserRegistrationsByDate } from '../API/user_api';
@@ -31,12 +31,7 @@ const Admin = () => {
     monthlyRegistrations: Array(12).fill(0),  // Initialize with 12 months
     topPredictedDiseases: [],
   });
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [headerAnimation] = useState(new Animated.Value(0));
-
-  const toggleSidebar = () => {
-    setSidebarCollapsed(!sidebarCollapsed);
-  };
 
   useEffect(() => {
     const fetchData = async () => {

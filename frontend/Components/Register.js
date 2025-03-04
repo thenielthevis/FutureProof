@@ -293,6 +293,9 @@ const Register = ({ navigation }) => {
         <Text style={[styles.logoText, isMobile && styles.mobileLogoText]}>
           FutureProof
         </Text>
+        <Text style={[styles.tagline, isMobile && styles.mobileTagline]}>
+          Embrace the Bear Within—Strong, Resilient, Future-Ready
+        </Text>
       </View>
 
       <LinearGradient
@@ -630,6 +633,11 @@ const Register = ({ navigation }) => {
           )}
 
           {error ? <Text style={styles.error}>{error}</Text> : null}
+          <TouchableOpacity onPress={() => navigation.navigate('Home')}>
+            <Text style={[styles.backToHome, isMobile && styles.mobileBackToHome]}>
+              Back to Home
+            </Text>
+          </TouchableOpacity>
         </ScrollView>
       </LinearGradient>
       <Toast />
@@ -672,6 +680,15 @@ const styles = StyleSheet.create({
   },
   mobileLogoText: {
     fontSize: 24,
+  },
+  tagline: {
+    fontSize: 18,
+    color: '#004d00',
+    textAlign: 'center',
+    marginTop: 10,
+  },
+  mobileTagline: {
+    fontSize: 14,
   },
   rightSection: {
     flex: 1,
@@ -756,16 +773,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 10,
   },
-  subHeader: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#ffffff',
-    marginBottom: 10,
-  },
-  error: {
-    color: 'red',
-    marginBottom: 10,
+  backToHome: {
+    color: '#004d00',
+    fontSize: 18,
     textAlign: 'center',
+    marginTop: 10,
+  },
+  mobileBackToHome: {
+    fontSize: 14,
   },
 });
 
