@@ -16,6 +16,14 @@ const About = () => {
           contentContainerStyle={[styles.scrollViewContent, { minHeight: height }]}
           showsVerticalScrollIndicator={false}
         >
+          {/* Introduction Section */}
+          <View style={[styles.sectionContainer, styles.introductionSection]}>
+            <Text style={styles.sectionTitle}>Introduction</Text>
+            <Text style={styles.sectionText}>
+              The name "FutureProof" is a nod to a proactive and forward-thinking approach to health. Just as one might reinforce a home or technology to withstand future challenges, our platform equips you with the tools and insights to protect your long-term well-being. Our logo with the minimalist bear silhouette enclosed in a circle symbolizes resilience, protection, and unity. The bear embodies strength and adaptability, qualities that reflect the platform’s goal of fortifying individuals against future challenges. The circle suggests wholeness and integration, reflecting how FutureProof merges genetic, lifestyle, and environmental data for comprehensive health insights.
+            </Text>
+          </View>
+
           <View style={styles.mainLayout}>
             {/* Left Section - Vision */}
             <View style={[styles.sectionContainer, styles.leftSection]}>
@@ -74,6 +82,14 @@ const About = () => {
         <ScrollView contentContainerStyle={styles.mobileContainer}>
           {/* Mobile Layout */}
           <View style={styles.mobileMainLayout}>
+            {/* Introduction Section */}
+            <View style={[styles.mobileSection, styles.sectionContainer]}>
+              <Text style={styles.sectionTitle}>Introduction</Text>
+              <Text style={styles.sectionText}>
+                The name "FutureProof" is a nod to a proactive and forward-thinking approach to health. Just as one might reinforce a home or technology to withstand future challenges, our platform equips you with the tools and insights to protect your long-term well-being. Our logo with the minimalist bear silhouette enclosed in a circle symbolizes resilience, protection, and unity. The bear embodies strength and adaptability, qualities that reflect the platform’s goal of fortifying individuals against future challenges. The circle suggests wholeness and integration, reflecting how FutureProof merges genetic, lifestyle, and environmental data for comprehensive health insights.
+              </Text>
+            </View>
+
             {/* About Us Section */}
             <View style={styles.mobileSection}>
               <Text style={styles.title}>About Us</Text>
@@ -93,7 +109,7 @@ const About = () => {
             </View>
 
             {/* Success Stories & Mission Section */}
-            <View style={styles.mobileSection}>
+            <View style={[styles.mobileSection, styles.sectionContainer]}>
               <Text style={styles.sectionTitle}>Our Success Stories & Mission</Text>
               <Text style={styles.sectionText}>
                 We have impacted thousands of lives by providing cutting-edge AI-driven health insights.
@@ -155,6 +171,11 @@ const styles = StyleSheet.create({
   mobileContainer: {
     flexGrow: 1,
     padding: 16,
+  },
+  introductionSection: {
+    width: width > 768 ? '60%' : '100%',
+    alignSelf: 'center',
+    marginBottom: 40,
   },
   mainLayout: {
     flexDirection: 'row',

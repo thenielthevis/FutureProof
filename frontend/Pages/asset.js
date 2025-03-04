@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import {
-  View, Text, TouchableOpacity, StyleSheet, TextInput, Image, ScrollView, Modal, Alert, Platform, Picker
+  View, Text, TouchableOpacity, StyleSheet, TextInput, Image, ScrollView, Modal, Alert, Platform, Picker, Animated
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { createAsset, readAssets, updateAsset, deleteAsset } from '../API/assets_api';
@@ -8,7 +8,7 @@ import * as ImagePicker from 'expo-image-picker';
 import * as DocumentPicker from 'expo-document-picker';
 import * as FileSystem from 'expo-file-system';
 import { LinearGradient } from 'expo-linear-gradient';
-import { FontAwesome, FontAwesome5 } from '@expo/vector-icons';
+import { FontAwesome, FontAwesome5, Ionicons, MaterialIcons } from '@expo/vector-icons';
 import * as Print from 'expo-print';
 import { shareAsync } from 'expo-sharing';
 import jsPDF from 'jspdf';
@@ -29,6 +29,7 @@ const AssetCRUD = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [filteredAssets, setFilteredAssets] = useState([]);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [headerAnimation] = useState(new Animated.Value(0));
 
   useEffect(() => {
     const fetchAssets = async () => {
@@ -41,6 +42,13 @@ const AssetCRUD = () => {
       }
     };
     fetchAssets();
+    
+    // Animate header on mount
+    Animated.timing(headerAnimation, {
+      toValue: 1,
+      duration: 800,
+      useNativeDriver: true,
+    }).start();
   }, []);
 
   const convertImageToBase64 = async (uri) => {
@@ -353,196 +361,342 @@ const AssetCRUD = () => {
 
   return (
     <View style={styles.container}>
-      {/* Sidebar */}
-      <LinearGradient colors={['#003C2C', '#005C3C']} style={[styles.sidebar, sidebarCollapsed && styles.sidebarCollapsed]}>
+      {/* Modern Sidebar with Gradient */}
+      <LinearGradient 
+        colors={['#0F766E', '#065F46']} 
+        start={{x: 0, y: 0}} 
+        end={{x: 0, y: 1}} 
+        style={[styles.sidebar, sidebarCollapsed && styles.sidebarCollapsed]}
+      >
         <View style={styles.sidebarTop}>
-          <TouchableOpacity style={styles.sidebarItem} onPress={toggleSidebar}>
-            <FontAwesome name="bars" size={24} color="white" />
-          </TouchableOpacity>
+          {sidebarCollapsed ? (
+            <TouchableOpacity style={styles.sidebarLogoCollapsed} onPress={toggleSidebar}>
+              <Ionicons name="menu" size={24} color="white" />
+            </TouchableOpacity>
+          ) : (
+            <View style={styles.sidebarHeader}>
+              <Text style={styles.sidebarBrand}>FutureProof</Text>
+              <TouchableOpacity style={styles.collapseButton} onPress={toggleSidebar}>
+                <Ionicons name="chevron-back" size={20} color="white" />
+              </TouchableOpacity>
+            </View>
+          )}
         </View>
-        {!sidebarCollapsed && (
+        
+        {sidebarCollapsed ? (
+          <View style={styles.collapsedMenuItems}>
+            <TouchableOpacity style={styles.sidebarIconOnly} onPress={() => navigation.navigate('Home')}>
+              <FontAwesome name="home" size={18} color="white" />
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.sidebarIconOnly} onPress={() => navigation.navigate('Admin')}>
+              <FontAwesome5 name="tachometer-alt" size={18} color="white" />
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.sidebarIconOnly} onPress={() => navigation.navigate('AvatarCRUD')}>
+              <FontAwesome name="user" size={18} color="white" />
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.sidebarIconOnly} onPress={() => navigation.navigate('DailyRewardsCRUD')}>
+              <FontAwesome5 name="gift" size={18} color="white" />
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.sidebarIconOnly} onPress={() => navigation.navigate('AchievementsCRUD')}>
+              <FontAwesome5 name="trophy" size={18} color="white" />
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.sidebarIconOnly} onPress={() => navigation.navigate('quotes')}>
+              <FontAwesome name="quote-left" size={18} color="white" />
+            </TouchableOpacity>
+            <TouchableOpacity style={[styles.sidebarIconOnly, styles.activeMenuItem]} onPress={() => navigation.navigate('asset')}>
+              <FontAwesome name="archive" size={18} color="white" />
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.sidebarIconOnly} onPress={() => navigation.navigate('physicalactivities')}>
+              <FontAwesome5 name="running" size={18} color="white" />
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.sidebarIconOnly} onPress={() => navigation.navigate('meditation')}>
+              <FontAwesome5 name="spa" size={18} color="white" />
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.sidebarIconOnly} onPress={() => navigation.navigate('users')}>
+              <FontAwesome name="users" size={18} color="white" />
+            </TouchableOpacity>
+          </View>
+        ) : (
           <View style={styles.sidebarContent}>
-            <TouchableOpacity style={styles.sidebarItem} onPress={() => navigation.navigate('Home')}>
-              <FontAwesome name="home" size={24} color="white" />
-              <Text style={styles.sidebarText}>Home</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.sidebarItem} onPress={() => navigation.navigate('Admin')}>
-              <FontAwesome name="dashboard" size={24} color="white" />
-              <Text style={styles.sidebarText}>Dashboard</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.sidebarItem} onPress={() => navigation.navigate('AvatarCRUD')}>
-              <FontAwesome name="user" size={24} color="white" />
-              <Text style={styles.sidebarText}>Avatars</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.sidebarItem} onPress={() => navigation.navigate('DailyRewardsCRUD')}>
-              <FontAwesome5 name="gift" size={24} color="white" />
-              <Text style={styles.sidebarText}>Daily Rewards</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.sidebarItem} onPress={() => navigation.navigate('quotes')}>
-              <FontAwesome name="quote-left" size={24} color="white" />
-              <Text style={styles.sidebarText}>Quotes</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.sidebarItem} onPress={() => navigation.navigate('asset')}>
-              <FontAwesome name="archive" size={24} color="white" />
-              <Text style={styles.sidebarText}>Assets</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.sidebarItem} onPress={() => navigation.navigate('physicalactivities')}>
-              <FontAwesome5 name="running" size={24} color="white" />
-              <Text style={styles.sidebarText}>Physical Activities</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.sidebarItem} onPress={() => navigation.navigate('meditation')}>
-              <FontAwesome5 name="spa" size={24} color="white" />
-              <Text style={styles.sidebarText}>Meditation Breathing</Text>
-            </TouchableOpacity>
+            <View style={styles.menuGroup}>
+              <Text style={styles.menuLabel}>MAIN</Text>
+              <TouchableOpacity style={styles.sidebarItem} onPress={() => navigation.navigate('Home')}>
+                <FontAwesome5 name="home" size={16} color="white" />
+                <Text style={styles.sidebarText}>Home</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.sidebarItem} onPress={() => navigation.navigate('Admin')}>
+                <FontAwesome5 name="tachometer-alt" size={16} color="white" />
+                <Text style={styles.sidebarText}>Dashboard</Text>
+              </TouchableOpacity>
+            </View>
+            
+            <View style={styles.menuGroup}>
+              <Text style={styles.menuLabel}>CONTENT</Text>
+              <TouchableOpacity style={styles.sidebarItem} onPress={() => navigation.navigate('AvatarCRUD')}>
+                <FontAwesome name="user" size={16} color="white" />
+                <Text style={styles.sidebarText}>Avatars</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.sidebarItem} onPress={() => navigation.navigate('DailyRewardsCRUD')}>
+                <FontAwesome5 name="gift" size={16} color="white" />
+                <Text style={styles.sidebarText}>Daily Rewards</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.sidebarItem} onPress={() => navigation.navigate('AchievementsCRUD')}>
+                <FontAwesome5 name="trophy" size={16} color="white" />
+                <Text style={styles.sidebarText}>Achievements</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.sidebarItem} onPress={() => navigation.navigate('quotes')}>
+                <FontAwesome name="quote-left" size={16} color="white" />
+                <Text style={styles.sidebarText}>Quotes</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={[styles.sidebarItem, styles.activeMenuItem]} onPress={() => navigation.navigate('asset')}>
+                <FontAwesome name="archive" size={16} color="white" />
+                <Text style={styles.sidebarText}>Assets</Text>
+              </TouchableOpacity>
+            </View>
+            
+            <View style={styles.menuGroup}>
+              <Text style={styles.menuLabel}>ACTIVITIES</Text>
+              <TouchableOpacity style={styles.sidebarItem} onPress={() => navigation.navigate('physicalactivities')}>
+                <FontAwesome5 name="running" size={16} color="white" />
+                <Text style={styles.sidebarText}>Physical Activities</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.sidebarItem} onPress={() => navigation.navigate('meditation')}>
+                <FontAwesome5 name="spa" size={16} color="white" />
+                <Text style={styles.sidebarText}>Meditation</Text>
+              </TouchableOpacity>
+            </View>
+
+            <View style={styles.menuGroup}>
+              <Text style={styles.menuLabel}>USERS</Text>
+              <TouchableOpacity style={styles.sidebarItem} onPress={() => navigation.navigate('users')}>
+                <FontAwesome name="users" size={16} color="white" />
+                <Text style={styles.sidebarText}>Manage Users</Text>
+              </TouchableOpacity>
+            </View>
           </View>
         )}
       </LinearGradient>
 
-      <View style={styles.content}>
-        <Text style={styles.header}>Assets Management</Text>
-        <View style={styles.searchCreateContainer}>
-          <TouchableOpacity style={styles.openModalButton} onPress={handleOpenModal}>
-            <Text style={styles.openModalButtonText}>Create Asset</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.exportButton} onPress={handleExportPDF}>
-            <Text style={styles.exportButtonText}>Export PDF</Text>
-          </TouchableOpacity>
-          <View style={styles.searchContainer}>
-            <TextInput
-              style={styles.searchInput}
-              placeholder="Search Assets"
-              value={searchQuery}
-              onChangeText={setSearchQuery}
-            />
-            <TouchableOpacity style={styles.searchButton} onPress={handleSearch}>
-              <Text style={styles.searchButtonText}>Search</Text>
+      <View style={styles.mainContent}>
+        <Animated.View 
+          style={[
+            styles.pageHeader,
+            {
+              opacity: headerAnimation,
+              transform: [{ translateY: headerAnimation.interpolate({
+                inputRange: [0, 1],
+                outputRange: [-50, 0]
+              })}]
+            }
+          ]}
+        >
+          <Text style={styles.pageTitle}>Assets Management</Text>
+          <View style={styles.headerActions}>
+            <TouchableOpacity style={styles.actionButton} onPress={handleOpenModal}>
+              <FontAwesome5 name="plus" size={14} color="white" />
+              <Text style={styles.actionButtonText}>Create Asset</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.actionButton} onPress={handleExportPDF}>
+              <FontAwesome5 name="file-pdf" size={14} color="white" />
+              <Text style={styles.actionButtonText}>Export PDF</Text>
             </TouchableOpacity>
           </View>
+        </Animated.View>
+
+        <View style={styles.searchBar}>
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Search assets by name or description..."
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+          />
+          <TouchableOpacity style={styles.searchButton} onPress={handleSearch}>
+            <FontAwesome name="search" size={16} color="white" />
+          </TouchableOpacity>
         </View>
 
-        <ScrollView contentContainerStyle={styles.assetGrid}>
+        <ScrollView style={styles.tableWrapper}>
           <View style={styles.tableContainer}>
             <View style={styles.tableHeader}>
-              <Text style={styles.tableHeaderText}>Image</Text>
-              <Text style={styles.tableHeaderText}>Name</Text>
-              <Text style={styles.tableHeaderText}>Description</Text>
-              <Text style={styles.tableHeaderText}>Price</Text>
-              <Text style={styles.tableHeaderText}>Type</Text>
-              <Text style={styles.tableHeaderText}>Actions</Text>
+              <Text style={[styles.tableHeaderText, {flex: 0.7}]}>Image</Text>
+              <Text style={[styles.tableHeaderText, {flex: 1}]}>Name</Text>
+              <Text style={[styles.tableHeaderText, {flex: 2}]}>Description</Text>
+              <Text style={[styles.tableHeaderText, {flex: 0.7}]}>Price</Text>
+              <Text style={[styles.tableHeaderText, {flex: 0.7}]}>Type</Text>
+              <Text style={[styles.tableHeaderText, {flex: 1}]}>Actions</Text>
             </View>
+            
             {filteredAssets.map((item) => (
               <View style={styles.tableRow} key={item._id}>
-                <Image source={{ uri: item.url }} style={styles.assetImage} />
-                <Text style={styles.tableCell}>{item.name}</Text>
-                <Text style={styles.tableCell}>{item.description}</Text>
-                <Text style={styles.tableCell}>{item.price}</Text>
-                <Text style={styles.tableCell}>{item.asset_type}</Text>
-                <View style={styles.tableCell}>
-                  <TouchableOpacity style={styles.buttonEdit} onPress={() => handleEditAsset(item)}>
-                    <Text style={styles.buttonText}>Edit</Text>
+                <View style={[styles.tableCell, {flex: 0.7}]}>
+                  <Image source={{ uri: item.url }} style={styles.assetImage} />
+                </View>
+                <Text style={[styles.tableCell, {flex: 1}]}>{item.name}</Text>
+                <Text style={[styles.tableCell, {flex: 2}, styles.descriptionCell]} numberOfLines={2}>
+                  {item.description}
+                </Text>
+                <Text style={[styles.tableCell, {flex: 0.7}]}>{item.price}</Text>
+                <Text style={[styles.tableCell, {flex: 0.7}]}>
+                  <View style={[styles.badgeContainer, 
+                    item.asset_type === 'head' ? styles.badgeHead : 
+                    item.asset_type === 'top' ? styles.badgeTop : styles.badgeBottom]}>
+                    <Text style={styles.badgeText}>{item.asset_type}</Text>
+                  </View>
+                </Text>
+                <View style={[styles.tableCell, styles.actionCell, {flex: 1}]}>
+                  <TouchableOpacity 
+                    style={[styles.actionBtn, styles.editBtn]} 
+                    onPress={() => handleEditAsset(item)}
+                  >
+                    <FontAwesome name="pencil" size={14} color="white" />
                   </TouchableOpacity>
-                  <TouchableOpacity style={styles.buttonDelete} onPress={() => handleDeleteAsset(item._id)}>
-                    <Text style={styles.buttonText}>Delete</Text>
+                  <TouchableOpacity 
+                    style={[styles.actionBtn, styles.deleteBtn]} 
+                    onPress={() => 
+                      Alert.alert(
+                        "Confirm Delete",
+                        "Are you sure you want to delete this asset?",
+                        [
+                          { text: "Cancel", style: "cancel" },
+                          { text: "Delete", onPress: () => handleDeleteAsset(item._id), style: "destructive" }
+                        ]
+                      )
+                    }
+                  >
+                    <FontAwesome name="trash" size={14} color="white" />
                   </TouchableOpacity>
                 </View>
               </View>
             ))}
+            
+            {filteredAssets.length === 0 && (
+              <View style={styles.emptyState}>
+                <FontAwesome5 name="box-open" size={48} color="#ccc" />
+                <Text style={styles.emptyStateText}>No assets found</Text>
+                <Text style={styles.emptyStateSubText}>Try a different search or create a new asset</Text>
+              </View>
+            )}
           </View>
         </ScrollView>
 
         <Modal
-          animationType="slide"
+          animationType="fade"
           transparent={true}
           visible={modalVisible}
           onRequestClose={() => setModalVisible(false)}
         >
           <View style={styles.modalOverlay}>
             <View style={styles.modalContent}>
-              <LinearGradient colors={['#1A3B32', '#1A3B32']} style={styles.modalHeader}>
+              <View style={styles.modalHeader}>
                 <Text style={styles.modalHeaderText}>
-                  {editingAsset ? 'Update Asset' : 'Create Asset'}
+                  {editingAsset ? 'Update Asset' : 'Create New Asset'}
                 </Text>
                 <TouchableOpacity style={styles.closeButton} onPress={() => setModalVisible(false)}>
-                  <Text style={styles.closeButtonText}>X</Text>
+                  <FontAwesome name="times" size={20} color="#666" />
                 </TouchableOpacity>
-              </LinearGradient>
-
-              <View style={styles.inputGroup}>
-                <Text style={styles.label}>Name</Text>
-                <TextInput
-                  style={styles.input}
-                  placeholder="Enter asset name"
-                  value={name}
-                  onChangeText={setName}
-                />
               </View>
 
-              <View style={styles.inputGroup}>
-                <Text style={styles.label}>Description</Text>
-                <TextInput
-                  style={styles.input}
-                  placeholder="Enter asset description"
-                  value={description}
-                  onChangeText={setDescription}
-                />
-              </View>
+              <ScrollView style={styles.modalBody}>
+                <View style={styles.inputGroup}>
+                  <Text style={styles.inputLabel}>Name</Text>
+                  <TextInput
+                    style={styles.input}
+                    placeholder="Enter asset name"
+                    value={name}
+                    onChangeText={setName}
+                  />
+                </View>
 
-              <View style={styles.inputGroup}>
-                <Text style={styles.label}>Price</Text>
-                <TextInput
-                  style={styles.input}
-                  placeholder="Enter asset price"
-                  value={price}
-                  onChangeText={setPrice}
-                  keyboardType="numeric"
-                />
-              </View>
+                <View style={styles.inputGroup}>
+                  <Text style={styles.inputLabel}>Description</Text>
+                  <TextInput
+                    style={[styles.input, styles.textArea]}
+                    placeholder="Enter asset description"
+                    value={description}
+                    onChangeText={setDescription}
+                    multiline={true}
+                    numberOfLines={4}
+                  />
+                </View>
 
-              <View style={styles.inputGroup}>
-                <Text style={styles.label}>Type</Text>
-                <Picker
-                  selectedValue={assetType}
-                  onValueChange={(itemValue) => setAssetType(itemValue)}
-                  style={styles.picker}
+                <View style={styles.inputGroup}>
+                  <Text style={styles.inputLabel}>Price</Text>
+                  <TextInput
+                    style={styles.input}
+                    placeholder="Enter asset price"
+                    value={price}
+                    onChangeText={setPrice}
+                    keyboardType="numeric"
+                  />
+                </View>
+
+                <View style={styles.inputGroup}>
+                  <Text style={styles.inputLabel}>Type</Text>
+                  <View style={styles.pickerContainer}>
+                    <Picker
+                      selectedValue={assetType}
+                      onValueChange={(itemValue) => setAssetType(itemValue)}
+                      style={styles.picker}
+                    >
+                      <Picker.Item label="Top" value="top" />
+                      <Picker.Item label="Head" value="head" />
+                      <Picker.Item label="Bottom" value="bottom" />
+                    </Picker>
+                  </View>
+                </View>
+
+                <View style={styles.fileInputsRow}>
+                  <View style={[styles.inputGroup, {flex: 1, marginRight: 10}]}>
+                    <Text style={styles.inputLabel}>Asset Image</Text>
+                    <TouchableOpacity style={styles.fileButton} onPress={handlePickImage}>
+                      <FontAwesome5 name="image" size={16} color="white" />
+                      <Text style={styles.fileButtonText}>Select Image</Text>
+                    </TouchableOpacity>
+                    {file && (
+                      <View style={styles.previewContainer}>
+                        <Image source={{ uri: file.uri }} style={styles.imagePreviewModal} />
+                        <TouchableOpacity style={styles.removePreviewBtn} onPress={() => setFile(null)}>
+                          <FontAwesome name="times-circle" size={20} color="#ff4d4d" />
+                        </TouchableOpacity>
+                      </View>
+                    )}
+                  </View>
+
+                  <View style={[styles.inputGroup, {flex: 1, marginLeft: 10}]}>
+                    <Text style={styles.inputLabel}>GLB File</Text>
+                    <TouchableOpacity style={styles.fileButton} onPress={handlePickGlbFile}>
+                      <FontAwesome5 name="cube" size={16} color="white" />
+                      <Text style={styles.fileButtonText}>Select GLB File</Text>
+                    </TouchableOpacity>
+                    {glbFile && (
+                      <View style={styles.filePreview}>
+                        <FontAwesome5 name="file-alt" size={24} color="#10B981" />
+                        <Text style={styles.fileName} numberOfLines={1}>{glbFile.name}</Text>
+                        <TouchableOpacity onPress={() => setGlbFile(null)}>
+                          <FontAwesome name="times-circle" size={20} color="#ff4d4d" />
+                        </TouchableOpacity>
+                      </View>
+                    )}
+                  </View>
+                </View>
+              </ScrollView>
+
+              <View style={styles.modalFooter}>
+                <TouchableOpacity 
+                  style={styles.cancelButton} 
+                  onPress={() => setModalVisible(false)}
                 >
-                  <Picker.Item label="Top" value="top" />
-                  <Picker.Item label="Head" value="head" />
-                  <Picker.Item label="Bottom" value="bottom" />
-                </Picker>
-              </View>
-
-              <View style={styles.inputGroup}>
-                <Text style={styles.label}>Asset Image</Text>
-                <TouchableOpacity style={styles.button} onPress={handlePickImage}>
-                  <Text style={styles.buttonText}>Pick Image</Text>
+                  <Text style={styles.cancelButtonText}>Cancel</Text>
                 </TouchableOpacity>
-                {file ? (
-                  <Image source={{ uri: file.uri }} style={styles.imagePreview} />
-                ) : (
-                  <Text style={styles.noImageText}>No image selected</Text>
-                )}
-              </View>
-
-              <View style={styles.inputGroup}>
-                <Text style={styles.label}>GLB File</Text>
-                <TouchableOpacity style={styles.button} onPress={handlePickGlbFile}>
-                  <Text style={styles.buttonText}>Pick GLB File</Text>
+                <TouchableOpacity
+                  style={styles.submitButton}
+                  onPress={editingAsset ? handleUpdateAsset : handleCreateAsset}
+                >
+                  <Text style={styles.submitButtonText}>
+                    {editingAsset ? 'Update Asset' : 'Create Asset'}
+                  </Text>
                 </TouchableOpacity>
-                {glbFile ? (
-                  <Text style={styles.fileName}>{glbFile.name}</Text>
-                ) : (
-                  <Text style={styles.noFileText}>No GLB file selected</Text>
-                )}
               </View>
-
-              <TouchableOpacity
-                style={styles.submitButton}
-                onPress={editingAsset ? handleUpdateAsset : handleCreateAsset}
-              >
-                <Text style={styles.submitButtonText}>
-                  {editingAsset ? 'Update Asset' : 'Create Asset'}
-                </Text>
-              </TouchableOpacity>
             </View>
           </View>
         </Modal>
@@ -555,236 +709,399 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     flexDirection: 'row',
-    backgroundColor: '#F5F5F5',
+    backgroundColor: '#f8f9fc',
   },
+  // Modern Sidebar styles
   sidebar: {
-    width: '20%',
-    backgroundColor: '#1A3B32',
-    padding: 20,
+    width: 240,
+    height: '100%',
+    paddingVertical: 20,
+    paddingHorizontal: 0,
   },
   sidebarCollapsed: {
-    width: '5%',
+    width: 60,
+  },
+  sidebarTop: {
+    alignItems: 'center',
+    marginBottom: 25,
+  },
+  sidebarHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    position: 'relative',
+    width: '100%',
+  },
+  sidebarBrand: {
+    color: 'white',
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  collapseButton: {
+    position: 'absolute',
+    right: 5,
+  },
+  sidebarLogoCollapsed: {
+    marginTop: 10,
+    marginBottom: 20,
+  },
+  sidebarContent: {
+    flex: 1,
+  },
+  menuGroup: {
+    marginBottom: 22,
+  },
+  menuLabel: {
+    color: 'rgba(255, 255, 255, 0.6)',
+    fontSize: 11,
+    paddingHorizontal: 20,
+    marginBottom: 8,
+    fontWeight: '600',
+    letterSpacing: 0.5,
   },
   sidebarItem: {
-    marginBottom: 20,
     flexDirection: 'row',
     alignItems: 'center',
+    paddingVertical: 9,
+    paddingHorizontal: 20,
+    marginBottom: 1,
+  },
+  sidebarIconOnly: {
+    alignItems: 'center',
+    paddingVertical: 12,
+    width: 60,
+    marginBottom: 1,
+  },
+  activeMenuItem: {
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    borderLeftWidth: 3,
+    borderLeftColor: '#10B981',
   },
   sidebarText: {
-    color: '#F5F5F5',
-    fontSize: 18,
+    color: 'white',
+    fontSize: 13,
     marginLeft: 10,
   },
-  content: {
-    flex: 1,
-    padding: 20,
+  collapsedMenuItems: {
+    alignItems: 'center',
   },
-  header: {
-    fontSize: 20,
-    fontWeight: 'bold',
+  
+  // Main content styles
+  mainContent: {
+    flex: 1,
+    backgroundColor: '#f8f9fc',
+    paddingHorizontal: 25,
+    paddingTop: 20,
+    paddingBottom: 10,
+  },
+  pageHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     marginBottom: 20,
   },
-  input: {
-    borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 5,
-    padding: 10,
-    marginBottom: 10,
-    backgroundColor: '#fff',
-    width: '100%',
-  },
-  button: {
-    backgroundColor: '#2E7D32',
-    padding: 10,
-    borderRadius: 5,
-    alignItems: 'center',
-    marginBottom: 10,
-    width: '100%',
-  },
-  buttonPrimary: {
-    backgroundColor: '#3b88c3',
-    padding: 10,
-    borderRadius: 5,
-    alignItems: 'center',
-    marginBottom: 10,
-    width: '100%',
-  },
-  buttonText: {
-    color: '#fff',
+  pageTitle: {
+    fontSize: 24,
     fontWeight: 'bold',
+    color: '#111827',
   },
-  quoteGrid: {
+  headerActions: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
+  },
+  actionButton: {
+    backgroundColor: '#10B981',
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 6,
+    marginLeft: 10,
+    shadowColor: '#10B981',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 3,
+    elevation: 2,
+  },
+  actionButtonText: {
+    color: 'white',
+    fontWeight: '600',
+    marginLeft: 8,
+  },
+  searchBar: {
+    flexDirection: 'row',
+    marginBottom: 20,
+  },
+  searchInput: {
+    flex: 1,
+    backgroundColor: 'white',
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    borderRadius: 6,
+    padding: 12,
+    paddingLeft: 16,
+    fontSize: 14,
+  },
+  searchButton: {
+    backgroundColor: '#10B981',
+    width: 48,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 6,
+    marginLeft: 8,
+  },
+  
+  // Table styles
+  tableWrapper: {
+    flex: 1,
   },
   tableContainer: {
-    width: '100%',
-    backgroundColor: '#fff',
+    backgroundColor: 'white',
     borderRadius: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 4,
     overflow: 'hidden',
     marginBottom: 20,
   },
   tableHeader: {
     flexDirection: 'row',
-    backgroundColor: '#2E7D32',
-    padding: 15,
+    backgroundColor: '#F3F4F6',
+    paddingVertical: 15,
+    paddingHorizontal: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E5E7EB',
   },
   tableHeaderText: {
-    flex: 1,
-    fontWeight: 'bold',
-    textAlign: 'center',
-    color: '#fff',
+    fontWeight: '600',
+    color: '#4B5563',
+    fontSize: 14,
   },
   tableRow: {
     flexDirection: 'row',
-    padding: 15,
     borderBottomWidth: 1,
-    borderBottomColor: '#eee',
-    backgroundColor: '#fff',
-    marginLeft: 10,
+    borderBottomColor: '#E5E7EB',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    alignItems: 'center',
   },
   tableCell: {
-    flex: 1,
-    textAlign: 'center',
-    justifyContent: 'center',
-    marginLeft: 50,
-    alignItems: 'center',
+    fontSize: 14,
+    color: '#374151',
   },
-  buttonEdit: {
-    backgroundColor: '#3498db',
-    padding: 8,
-    borderRadius: 5,
-    marginRight: 5,
-    marginBottom: 5,
-    width: '60%',
-    alignItems: 'center',
+  descriptionCell: {
+    fontSize: 14,
+    color: '#6B7280',
   },
-  buttonDelete: {
-    backgroundColor: '#e74c3c',
-    padding: 8,
-    borderRadius: 5,
-    marginBottom: 5,
-    width: '60%',
-    alignItems: 'center',
-  },
-  searchCreateContainer: {
+  actionCell: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 20,
+    justifyContent: 'flex-start',
   },
-  openModalButton: {
-    backgroundColor: '#3498db',
-    padding: 15,
-    borderRadius: 5,
-    alignItems: 'center',
-    width: 120,
-  },
-  openModalButtonText: {
-    color: '#fff',
-    fontWeight: 'bold',
-  },
-  exportButton: {
-    backgroundColor: '#3498db',
-    padding: 15,
-    borderRadius: 5,
-    alignItems: 'center',
-  },
-  exportButtonText: {
-    color: '#fff',
-    fontWeight: 'bold',
-    fontSize: 16,
-  },
-  searchContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    width: '50%',
-  },
-  searchInput: {
-    flex: 1,
+  assetImage: {
+    width: 50,
+    height: 50,
+    borderRadius: 4,
+    resizeMode: 'cover',
     borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 5,
-    padding: 15,
-    marginRight: 10,
-    backgroundColor: '#fff',
+    borderColor: '#E5E7EB',
   },
-  searchButton: {
-    backgroundColor: '#3498db',
-    padding: 15,
-    borderRadius: 5,
+  actionBtn: {
+    width: 34,
+    height: 34,
+    borderRadius: 6,
     alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 8,
   },
-  searchButtonText: {
-    color: '#fff',
-    fontWeight: 'bold',
-    fontSize: 16,
+  editBtn: {
+    backgroundColor: '#3B82F6',
   },
+  deleteBtn: {
+    backgroundColor: '#EF4444',
+  },
+  badgeContainer: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
+    alignSelf: 'flex-start',
+  },
+  badgeHead: {
+    backgroundColor: 'rgba(219, 39, 119, 0.1)',
+  },
+  badgeTop: {
+    backgroundColor: 'rgba(16, 185, 129, 0.1)',
+  },
+  badgeBottom: {
+    backgroundColor: 'rgba(59, 130, 246, 0.1)',
+  },
+  badgeText: {
+    fontSize: 12,
+    fontWeight: '600',
+    textTransform: 'capitalize',
+  },
+  
+  // Empty state
+  emptyState: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 40,
+  },
+  emptyStateText: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#4B5563',
+    marginTop: 16,
+  },
+  emptyStateSubText: {
+    fontSize: 14,
+    color: '#6B7280',
+    marginTop: 8,
+  },
+  
+  // Modal styles
   modalOverlay: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    padding: 20,
   },
   modalContent: {
-    width: '80%',
-    backgroundColor: '#fff',
-    padding: 20,
+    width: '100%',
+    maxWidth: 800,
+    backgroundColor: 'white',
     borderRadius: 10,
-    alignItems: 'center',
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 16,
+    elevation: 10,
   },
   modalHeader: {
-    width: '100%',
-    backgroundColor: '#2E7D32',
-    padding: 10,
-    borderTopLeftRadius: 10,
-    borderTopRightRadius: 10,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    padding: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E5E7EB',
   },
   modalHeaderText: {
-    color: '#fff',
-    fontWeight: 'bold',
     fontSize: 18,
+    fontWeight: '600',
+    color: '#111827',
   },
   closeButton: {
     padding: 5,
   },
-  closeButtonText: {
-    color: '#fff',
-    fontWeight: 'bold',
-    fontSize: 18,
+  modalBody: {
+    padding: 20,
+    maxHeight: 500,
+  },
+  modalFooter: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    padding: 20,
+    borderTopWidth: 1,
+    borderTopColor: '#E5E7EB',
   },
   inputGroup: {
-    width: '100%',
-    marginBottom: 15,
+    marginBottom: 20,
   },
-  label: {
-    fontWeight: 'bold',
-    marginBottom: 5,
+  inputLabel: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#374151',
+    marginBottom: 8,
   },
-  assetImage: {
-    width: 80,
-    height: 60,
-    resizeMode: 'cover',
+  input: {
+    borderWidth: 1,
+    borderColor: '#D1D5DB',
+    borderRadius: 6,
+    padding: 12,
+    fontSize: 14,
+    backgroundColor: '#F9FAFB',
+    color: '#111827',
   },
-  submitButton: {
-    backgroundColor: '#005C3C',
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    borderRadius: 5,
-    alignItems: 'center',
-    margin: 15,
+  textArea: {
+    height: 100,
+    textAlignVertical: 'top',
   },
-  submitButtonText: {
-    color: 'white',
-    fontWeight: 'bold',
+  pickerContainer: {
+    borderWidth: 1,
+    borderColor: '#D1D5DB',
+    borderRadius: 6,
   },
   picker: {
     height: 50,
     width: '100%',
+  },
+  fileInputsRow: {
+    flexDirection: 'row',
+  },
+  fileButton: {
+    backgroundColor: '#10B981',
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 6,
+    marginTop: 8,
+  },
+  fileButtonText: {
+    color: 'white',
+    fontWeight: '600',
+    marginLeft: 8,
+  },
+  previewContainer: {
+    position: 'relative',
+    marginTop: 10,
+  },
+  imagePreviewModal: {
+    width: '100%',
+    height: 150,
+    borderRadius: 6,
+  },
+  removePreviewBtn: {
+    position: 'absolute',
+    top: 5,
+    right: 5,
+    backgroundColor: 'white',
+    borderRadius: 50,
+    padding: 2,
+  },
+  filePreview: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 10,
+  },
+  fileName: {
+    flex: 1,
+    marginLeft: 10,
+    fontSize: 14,
+    color: '#374151',
+  },
+  cancelButton: {
+    backgroundColor: '#E5E7EB',
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 6,
+    marginRight: 10,
+  },
+  cancelButtonText: {
+    color: '#374151',
+    fontWeight: '600',
+  },
+  submitButton: {
+    backgroundColor: '#10B981',
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 6,
+  },
+  submitButtonText: {
+    color: 'white',
+    fontWeight: '600',
   },
 });
 

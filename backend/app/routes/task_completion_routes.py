@@ -35,9 +35,12 @@ async def get_task_completions_by_user(user_id: str):
 @router.get("/task-completion/user/{user_id}/total-time", response_model=int)
 async def get_total_time_spent_by_user(user_id: str):
     try:
+        logger.info(f"Getting total time spent for user: {user_id}")
         total_time_spent = await TaskCompletionService.get_total_time_spent_by_user(user_id)
+        logger.info(f"Total time spent: {total_time_spent}")
         return total_time_spent
     except Exception as e:
+        logger.error(f"Error getting total time spent: {str(e)}")
         raise HTTPException(status_code=400, detail=str(e))
 
 @router.get("/task-completion", response_model=List[TaskCompletion])

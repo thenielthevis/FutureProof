@@ -10,7 +10,7 @@ from jose import JWTError, jwt
 from app.database import get_user_by_email
 from fastapi import HTTPException
 import random
-from app.mailtrap_client import send_otp_email  # Update the path to the correct module
+from app.mailtrap_client import send_otp_email, send_reactivation_otp_email  # Import the correct function
 import asyncio
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
@@ -40,7 +40,7 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
 
 async def register_user(user: UserCreate):
     existing_user = await db.users.find_one({"username": user.username})
-    if existing_user:
+    if (existing_user):
         return None
     
     hashed_password = get_password_hash(user.password)
@@ -82,11 +82,28 @@ async def login_user(user: UserLogin):
     user_in_db = UserInDB(**user_in_db)
     if not verify_password(user.password, user_in_db.hashed_password):
         return None
+    if user_in_db.disabled:
+        otp = str(random.randint(100000, 999999))  # Generate a 6-digit OTP
+        await db.users.update_one({"_id": user_in_db.id}, {"$set": {"otp": otp}})
+        send_reactivation_otp_email(user_in_db.email, otp)
+        raise HTTPException(status_code=403, detail="Account is disabled. OTP sent to email for reactivation.")
     access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     access_token = create_access_token(
         data={"sub": user.email, "user_id": str(user_in_db.id)}, expires_delta=access_token_expires
     )
+    # Update lastLogin field
+    await db.users.update_one(
+        {"_id": user_in_db.id},
+        {"$set": {"lastLogin": datetime.utcnow()}}
+    )
     return {"access_token": access_token, "role": user_in_db.role}
+
+async def verify_reactivation_otp(email: str, otp: str):
+    user = await db.users.find_one({"email": email})
+    if not user or user.get("otp") != otp:
+        raise HTTPException(status_code=400, detail="Invalid OTP")
+    await db.users.update_one({"email": email}, {"$set": {"disabled": False, "otp": None}})
+    return {"message": "Account reactivated successfully"}
 
 # Function to get user by token
 async def get_user_by_token(token: str) -> UserInDB:
@@ -301,6 +318,62 @@ async def get_avatar_details(avatar_ids: List[str]):
     except Exception as e:
         print("Error fetching avatars:", str(e))
         return []
+
+
+async def delete_disabled_users():
+    one_day_ago = datetime.utcnow() - timedelta(days=1)
+    users_to_delete = await db.users.find({"disabled": True, "lastLogin": {"$lt": one_day_ago}}).to_list(length=None)
+    for user in users_to_delete:
+        await db.users.delete_one({"_id": user["_id"]})
+
+
+async def get_all_users():
+    try:
+        users = await db.users.find().to_list(length=None)
+        for user in users:
+            user["_id"] = str(user["_id"])
+            if "default_avatar" in user and user["default_avatar"]:
+                user["default_avatar"] = str(user["default_avatar"])
+            if "avatars" in user and user["avatars"]:
+                user["avatars"] = [str(avatar) for avatar in user["avatars"]]
+        return users
+    except Exception as e:
+        print(f"Error in get_all_users: {str(e)}")
+        raise
+
+async def fetch_all_users():
+    try:
+        users = await db.users.find({}, {"username": 1, "email": 1, "lastLogin": 1, "disabled": 1}).to_list(length=None)
+        for user in users:
+            user["_id"] = str(user["_id"])
+            if "lastLogin" in user and user["lastLogin"]:
+                user["lastLogin"] = user["lastLogin"].isoformat()
+        return users
+    except Exception as e:
+        print(f"Error in fetch_all_users: {str(e)}")
+        raise
+
+async def enable_user(user_id: str):
+    user = await db.users.find_one({"_id": ObjectId(user_id)})
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    await db.users.update_one({"_id": ObjectId(user_id)}, {"$set": {"disabled": False}})
+    return {"message": "User enabled successfully"}
+
+async def disable_user(user_id: str):
+    user = await db.users.find_one({"_id": ObjectId(user_id)})
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    await db.users.update_one({"_id": ObjectId(user_id)}, {"$set": {"disabled": True}})
+    return {"message": "User disabled successfully"}
+
+async def disable_inactive_users():
+    one_month_ago = datetime.utcnow() - timedelta(days=30)
+    await db.users.update_many(
+        {"lastLogin": {"$lt": one_month_ago}, "disabled": False},
+        {"$set": {"disabled": True}}
+    )
+    return {"message": "Inactive users disabled successfully"}
 
 class UserService:
     @staticmethod

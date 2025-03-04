@@ -9,19 +9,24 @@ import {
   Dimensions,
   Platform,
   ActivityIndicator,
+  ScrollView,
 } from 'react-native';
-import { loginUser } from '../API/user_api';
 import { LinearGradient } from 'expo-linear-gradient';
+import { loginUser, verifyReactivationOTP } from '../API/user_api';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Toast from 'react-native-toast-message';
+import ReactivationModal from './ReactivationModal';
 
 const Login = ({ navigation }) => {
+  const [step, setStep] = useState(1); // Step 1: Login, Step 2: OTP Verification
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false); // State for password visibility
+  const [otp, setOtp] = useState(''); // State for OTP input
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false); // State for loader
+  const [isModalVisible, setIsModalVisible] = useState(false); // State for modal visibility
 
   const showToast = (message, type) => {
     const backgroundColors = {
@@ -82,10 +87,47 @@ const Login = ({ navigation }) => {
       }, 2000);
     } catch (err) {
       console.log('Login error:', err);
+      // If account is disabled, show the reactivation modal
+      setIsModalVisible(true);
+      showToast('Account is disabled. OTP sent to email for reactivation.', 'info');
+
       const errorMessage =
         typeof err === 'object' && err.msg
           ? err.msg
           : 'An error occurred during login';
+      setError(errorMessage);
+
+      // Hide loading toast and show error toast
+      Toast.hide(); // Hide all toasts
+      showToast(errorMessage, 'error');
+      setIsLoading(false); // Hide loader on error
+    }
+  };
+
+  const handleVerifyOtp = async () => {
+    setError('');
+    setIsLoading(true); // Show loader
+
+    // Show loading toast
+    showToast('Verifying OTP... ⏳', 'info');
+
+    try {
+      const response = await verifyReactivationOTP({ email, otp });
+      console.log('OTP verification success:', response);
+
+      // Hide loading toast and show success toast
+      Toast.hide(); // Hide all toasts
+      showToast('Account reactivated successfully! 🎉', 'success');
+
+      // Proceed with login after OTP verification
+      setStep(1); // Move back to login step
+      handleLogin(); // Attempt to log in again
+    } catch (err) {
+      console.log('OTP verification error:', err);
+      const errorMessage =
+        typeof err === 'object' && err.msg
+          ? err.msg
+          : 'Invalid OTP. Please try again.';
       setError(errorMessage);
 
       // Hide loading toast and show error toast
@@ -108,74 +150,136 @@ const Login = ({ navigation }) => {
         <Text style={[styles.logoText, isMobile && styles.mobileLogoText]}>
           FutureProof
         </Text>
+        <Text style={[styles.tagline, isMobile && styles.mobileTagline]}>
+          Embrace the Bear Within—Strong, Resilient, Future-Ready
+        </Text>
       </View>
 
       <LinearGradient
         colors={['#14243b', '#77f3bb']}
         style={[styles.rightSection, isMobile && styles.mobileRightSection]}
       >
-        <Text style={[styles.header, isMobile && styles.mobileHeader]}>
-          Sign in account
-        </Text>
+        <ScrollView contentContainerStyle={styles.scrollContainer} showsVerticalScrollIndicator={false}>
+          <Text style={[styles.header, isMobile && styles.mobileHeader]}>
+            {step === 1 ? 'Sign in account' : 'Verify OTP'}
+          </Text>
 
-        <View
-          style={[styles.inputContainer, isMobile && styles.mobileInputContainer]}
-        >
-          <View style={styles.iconWrapper}>
-            <Icon name="email" size={isMobile ? 20 : 30} color="#ffffff" />
-          </View>
-          <TextInput
-            style={[styles.input, isMobile && styles.mobileInput]}
-            placeholder="Email"
-            placeholderTextColor="#aaa"
-            value={email}
-            onChangeText={setEmail}
-            keyboardType="email-address"
-            autoCapitalize="none"
-          />
-        </View>
+          {step === 1 && (
+            <>
+              <View
+                style={[styles.inputContainer, isMobile && styles.mobileInputContainer]}
+              >
+                <View style={styles.iconWrapper}>
+                  <Icon name="email" size={isMobile ? 20 : 30} color="#ffffff" />
+                </View>
+                <TextInput
+                  style={[styles.input, isMobile && styles.mobileInput]}
+                  placeholder="Email"
+                  placeholderTextColor="#aaa"
+                  value={email}
+                  onChangeText={setEmail}
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                />
+              </View>
 
-        <View
-          style={[styles.inputContainer, isMobile && styles.mobileInputContainer]}
-        >
-          <View style={styles.iconWrapper}>
-            <Icon name="lock" size={isMobile ? 20 : 30} color="#ffffff" />
-          </View>
-          <TextInput
-            style={[styles.input, isMobile && styles.mobileInput]}
-            placeholder="Password"
-            placeholderTextColor="#aaa"
-            secureTextEntry={!showPassword} // Use showPassword state
-            value={password}
-            onChangeText={setPassword}
-          />
-          <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
-            <Icon name={showPassword ? 'visibility' : 'visibility-off'} size={30} color="#333" />
-          </TouchableOpacity>
-        </View>
+              <View
+                style={[styles.inputContainer, isMobile && styles.mobileInputContainer]}
+              >
+                <View style={styles.iconWrapper}>
+                  <Icon name="lock" size={isMobile ? 20 : 30} color="#ffffff" />
+                </View>
+                <TextInput
+                  style={[styles.input, isMobile && styles.mobileInput]}
+                  placeholder="Password"
+                  placeholderTextColor="#aaa"
+                  secureTextEntry={!showPassword} // Use showPassword state
+                  value={password}
+                  onChangeText={setPassword}
+                />
+                <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
+                  <Icon name={showPassword ? 'visibility' : 'visibility-off'} size={30} color="#333" />
+                </TouchableOpacity>
+              </View>
 
-        {error ? <Text style={styles.error}>{error}</Text> : null}
+              {error ? <Text style={styles.error}>{error}</Text> : null}
 
-        <TouchableOpacity
-          style={[styles.button, isMobile && styles.mobileButton]}
-          onPress={handleLogin}
-          disabled={isLoading} // Disable button when loading
-        >
-          {isLoading ? (
-            <ActivityIndicator size="small" color="#ffffff" /> // Show loader
-          ) : (
-            <Text style={[styles.buttonText, isMobile && styles.mobileButtonText]}>
-              LOGIN
-            </Text>
+              <TouchableOpacity
+                style={[styles.button, isMobile && styles.mobileButton]}
+                onPress={handleLogin}
+                disabled={isLoading} // Disable button when loading
+              >
+                {isLoading ? (
+                  <ActivityIndicator size="small" color="#ffffff" /> // Show loader
+                ) : (
+                  <Text style={[styles.buttonText, isMobile && styles.mobileButtonText]}>
+                    NEXT
+                  </Text>
+                )}
+              </TouchableOpacity>
+
+              <TouchableOpacity onPress={() => navigation.navigate('Register')}>
+                <Text style={[styles.forgotPassword, isMobile && styles.mobileForgotPassword]}>
+                  I don't have an account
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity onPress={() => navigation.navigate('Home')}>
+                <Text style={[styles.backToHome, isMobile && styles.mobileBackToHome]}>
+                  Back to Home
+                </Text>
+              </TouchableOpacity>
+            </>
           )}
-        </TouchableOpacity>
 
-       <TouchableOpacity onPress={() => navigation.navigate('Register')}>
-  <Text style={[styles.forgotPassword, isMobile && styles.mobileForgotPassword]}>
-    I don't have an account
-  </Text>
-</TouchableOpacity>
+          {step === 2 && (
+            <>
+              <View
+                style={[styles.inputContainer, isMobile && styles.mobileInputContainer]}
+              >
+                <View style={styles.iconWrapper}>
+                  <Icon name="vpn-key" size={isMobile ? 20 : 30} color="#ffffff" />
+                </View>
+                <TextInput
+                  style={[styles.input, isMobile && styles.mobileInput]}
+                  placeholder="Enter OTP"
+                  placeholderTextColor="#aaa"
+                  value={otp}
+                  onChangeText={setOtp}
+                  keyboardType="numeric"
+                />
+              </View>
+
+              {error ? <Text style={styles.error}>{error}</Text> : null}
+
+              <TouchableOpacity
+                style={[styles.button, isMobile && styles.mobileButton]}
+                onPress={handleVerifyOtp}
+                disabled={isLoading} // Disable button when loading
+              >
+                {isLoading ? (
+                  <ActivityIndicator size="small" color="#ffffff" /> // Show loader
+                ) : (
+                  <Text style={[styles.buttonText, isMobile && styles.mobileButtonText]}>
+                    VERIFY OTP
+                  </Text>
+                )}
+              </TouchableOpacity>
+
+              <TouchableOpacity onPress={() => setStep(1)}>
+                <Text style={[styles.forgotPassword, isMobile && styles.mobileForgotPassword]}>
+                  Back to Login
+                </Text>
+              </TouchableOpacity>
+            </>
+          )}
+        </ScrollView>
       </LinearGradient>
+
+      <ReactivationModal
+        visible={isModalVisible}
+        onClose={() => setIsModalVisible(false)}
+        email={email}
+      />
 
       {/* Toast component */}
       <Toast />
@@ -203,8 +307,18 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   mobileLogoText: { fontSize: 24 },
+  tagline: {
+    fontSize: 18,
+    color: '#004d00',
+    textAlign: 'center',
+    marginTop: 10,
+  },
+  mobileTagline: {
+    fontSize: 14,
+  },
   rightSection: { flex: 1, justifyContent: 'center', padding: 20 },
   mobileRightSection: { padding: 10 },
+  scrollContainer: { flexGrow: 1, justifyContent: 'center' },
   header: {
     fontSize: 55,
     fontWeight: 'bold',
@@ -232,7 +346,7 @@ const styles = StyleSheet.create({
     marginRight: 20,
     alignSelf: 'center',
   },
-  input: { flex: 0.9, height: 40, fontSize: 16, padding: 10,backgroundColor: '#f9f9f9' },
+  input: { flex: 0.9, height: 40, fontSize: 16, padding: 10, backgroundColor: '#f9f9f9' },
   button: {
     backgroundColor: '#004d00',
     paddingVertical: 10,
@@ -246,6 +360,15 @@ const styles = StyleSheet.create({
     fontSize: 18,
     textAlign: 'center',
     marginTop: 10,
+  },
+  backToHome: {
+    color: '#004d00',
+    fontSize: 18,
+    textAlign: 'center',
+    marginTop: 10,
+  },
+  mobileBackToHome: {
+    fontSize: 14,
   },
   error: { color: 'red', marginBottom: 10, textAlign: 'center' },
 });

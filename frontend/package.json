@@ -35,6 +35,7 @@
     "expo-speech": "^13.0.1",
     "expo-status-bar": "~2.0.1",
     "expo-three": "^2.2.1",
+    "expo-video": "~2.0.5",
     "html2canvas": "^1.4.1",
     "jspdf": "^3.0.0",
     "jwt-decode": "^4.0.0",
@@ -69,8 +70,7 @@
     "react-toastify": "^11.0.3",
     "shaka-player": "^4.13.3",
     "three": "^0.173.0",
-    "toastify-js": "^1.12.0",
-    "expo-video": "~2.0.5"
+    "toastify-js": "^1.12.0"
   },
   "devDependencies": {
     "@babel/core": "^7.20.0",

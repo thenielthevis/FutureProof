@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException, Depends
 from fastapi.security import OAuth2PasswordBearer
 from pydantic import BaseModel
-from app.services.user_service import (register_user, login_user, get_user_by_token, toggle_sleep_status, increase_medication, count_total_users, get_user_registrations, get_user_registrations_by_date, UserService, get_user_by_token_health_xp, get_avatar_details)
+from app.services.user_service import (register_user, login_user, get_user_by_token, toggle_sleep_status, increase_medication, count_total_users, get_user_registrations, get_user_registrations_by_date, UserService, get_user_by_token_health_xp, get_avatar_details, disable_user, enable_user, get_all_users, disable_inactive_users, delete_disabled_users, fetch_all_users)
 from app.models.user_model import UserCreate, UserLogin, UserInDB
 from app.models.avatar_model import Avatar
 from app.mailtrap_client import send_otp_email
@@ -36,6 +36,10 @@ class XPUpdateRequest(BaseModel):
 
 class UserUpdate(BaseModel):
     default_avatar: Optional[str] = None
+
+class ReactivationOTPRequest(BaseModel):
+    email: str
+    otp: str
 
 @router.post("/register")
 async def register(user: UserCreate):
@@ -200,3 +204,62 @@ async def user_registrations_by_date():
         return registrations
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+@router.get("/users")
+async def read_users():
+    try:
+        users = await get_all_users()
+        for user in users:
+            user["_id"] = str(user["_id"])
+            if "default_avatar" in user and user["default_avatar"]:
+                user["default_avatar"] = str(user["default_avatar"])
+            if "avatars" in user and user["avatars"]:
+                user["avatars"] = [str(avatar) for avatar in user["avatars"]]
+        return users
+    except Exception as e:
+        print(f"Error fetching users: {str(e)}")
+        raise HTTPException(status_code=500, detail="An error occurred")
+
+@router.put("/users/{user_id}/disable")
+async def disable_user_route(user_id: str):
+    await disable_user(user_id)
+    return {"message": "User disabled successfully"}
+
+@router.put("/users/{user_id}/enable")
+async def enable_user_route(user_id: str):
+    result = await enable_user(user_id)
+    if not result:
+        raise HTTPException(status_code=404, detail="User not found")
+    return {"message": "User enabled successfully"}
+
+@router.post("/users/disable-inactive")
+async def disable_inactive_users_route():
+    await disable_inactive_users()
+    return {"message": "Inactive users disabled"}
+
+@router.post("/users/delete-disabled")
+async def delete_disabled_users_route():
+    await delete_disabled_users()
+    return {"message": "Disabled users deleted"}
+
+@router.get("/all-users")
+async def get_all_users_route():
+    try:
+        users = await fetch_all_users()
+        return users
+    except Exception as e:
+        print(f"Error fetching all users: {str(e)}")
+        raise HTTPException(status_code=500, detail="An error occurred")
+
+@router.post("/verify-reactivation-otp")
+async def verify_reactivation_otp(request: ReactivationOTPRequest):
+    user = await db.users.find_one({"email": request.email})
+    if not user or user.get("otp") != request.otp:
+        raise HTTPException(status_code=400, detail="Invalid OTP")
+    await db.users.update_one({"email": request.email}, {"$set": {"disabled": False, "otp": None}})
+    return {"message": "Account reactivated successfully"}
+
+@router.post("/verify-reactivation-otp")
+async def verify_reactivation_otp_route(request: ReactivationOTPRequest):
+    result = await verify_reactivation_otp(request.email, request.otp)
+    return result
