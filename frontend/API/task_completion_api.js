@@ -99,3 +99,22 @@ export const getTotalTaskCompletionsByUser = async () => {
     throw error;
   }
 };
+
+export const getTotalTimeSpentByUser = async () => {
+  try {
+    const token = await AsyncStorage.getItem('token');
+    const userId = await AsyncStorage.getItem('userId');
+    if (!userId) {
+      throw new Error('No user ID found');
+    }
+    const response = await axios.get(`${API_URL}/task-completion/user/${userId}/total-time`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching total time spent by user:', error.response ? error.response.data : error);
+    throw error;
+  }
+};
