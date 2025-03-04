@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, Image, ActivityIndicator, TouchableOpacity, Dimensions, Animated } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Image, ActivityIndicator, TouchableOpacity, Dimensions, Animated, TextInput, Alert, Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getUser } from '../API/user_api';
 import { getAvatar } from '../API/avatar_api';
@@ -11,6 +11,12 @@ import { LineChart, ProgressChart, PieChart } from 'react-native-chart-kit';
 import { getTaskCompletionsByUser, getTodayTaskCompletionsByUser, getTotalTimeSpentByUser } from '../API/task_completion_api';
 import { getTotalOwnedAssetsCount } from '../API/assets_api';
 import { getTotalAvatarsCount, getTotalCoins } from '../API/user_api';
+import { readUserAssessments } from '../API/daily_assessment_api';
+import * as Print from 'expo-print';
+import { shareAsync } from 'expo-sharing';
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
+import Toast from 'react-native-toast-message';
 
 const screenWidth = Dimensions.get('window').width;
 const isMobile = screenWidth < 768;
@@ -29,6 +35,9 @@ const UserDashboard = ({ navigation }) => {
   const [totalAvatarsCount, setTotalAvatarsCount] = useState(0);
   const [totalCoins, setTotalCoins] = useState(0);
   const [totalTimeSpent, setTotalTimeSpent] = useState(0);
+  const [assessments, setAssessments] = useState([]);
+  const [filteredAssessments, setFilteredAssessments] = useState([]);
+  const [searchQuery, setSearchQuery] = useState('');
   const sidebarAnimation = useState(new Animated.Value(250))[0];
   const contentMarginAnimation = useState(new Animated.Value(250))[0];
 
@@ -162,6 +171,26 @@ const UserDashboard = ({ navigation }) => {
     };
 
     fetchTotalTimeSpent();
+  }, []);
+
+  useEffect(() => {
+    const fetchAssessments = async () => {
+      try {
+        const token = await AsyncStorage.getItem('token');
+        if (!token) {
+          setError('No token found');
+          setLoading(false);
+          return;
+        }
+        const assessmentsData = await readUserAssessments(token);
+        console.log("Fetched User Assessments:", assessmentsData);  // Log fetched assessments
+        setAssessments(assessmentsData);
+        setFilteredAssessments(assessmentsData);
+      } catch (error) {
+        console.error('Error fetching assessments:', error);
+      }
+    };
+    fetchAssessments();
   }, []);
 
   const calculateBMI = (height, weight) => {
@@ -326,6 +355,422 @@ const UserDashboard = ({ navigation }) => {
     setSidebarOpen(!sidebarOpen);
   };
 
+  const handleSearch = () => {
+    const filtered = assessments.filter(assessment =>
+      new Date(assessment.date).toLocaleDateString().includes(searchQuery)
+    );
+    setFilteredAssessments(filtered);
+  };  
+
+  // Convert a local image to a Base64 string (or return remote URL)
+  const convertImageToBase64 = async (uri) => {
+    try {
+      if (uri.startsWith('http://') || uri.startsWith('https://')) {
+        // Fetch remote image and convert to base64
+        const response = await fetch(uri);
+        const blob = await response.blob();
+        return new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onloadend = () => resolve(reader.result);
+          reader.onerror = reject;
+          reader.readAsDataURL(blob);
+        });
+      } else {
+        // Convert local image to base64
+        const base64 = await FileSystem.readAsStringAsync(uri, { encoding: 'base64' });
+        return `data:image/png;base64,${base64}`;
+      }
+    } catch (error) {
+      console.error('Error converting image:', error);
+      return null;
+    }
+  };
+
+  const handleExportPDF = async () => {
+    try {
+      // Convert logo URLs to base64
+      const logo1Base64 = await convertImageToBase64("https://i.ibb.co/GQygLXT9/tuplogo.png");
+      const logo2Base64 = await convertImageToBase64("https://i.ibb.co/YBStKgFC/logo-2.png");
+
+      const htmlContent = filteredAssessments.map(assessment => `
+        <div style="font-family: Arial, sans-serif; padding: 20px; background: #fff; max-width: 900px; margin: 0 auto;">
+          <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 2px solid #f0f0f0; padding-bottom: 10px;">
+            <img src="${logo1Base64}" alt="Logo 1" style="height: 60px; width: auto;">
+            <div style="flex: 1; text-align: center; margin-top: 15px;">
+              <h1 style="font-size: 18px; margin: 0; ">FUTUREPROOF: A Gamified AI Platform for Predictive Health and Preventive Wellness</h1>
+              <h2 style="font-size: 16px; margin: 0; ">Embrace The Bear Within - Strong, Resilient, Future-Ready</h4>
+              <br>
+              <h2 style="font-size: 16px; margin: 0;">Daily Assessment Report</h2>
+              <h4 style="font-size: 14px; margin: 5px 0 0;">${new Date().toLocaleDateString()}</h4>
+          </div>
+            <img src="${logo2Base64}" alt="Logo 2" style="height: 60px; width: auto;">
+          </div>
+          <div style="margin-top: 20px;">
+            <h3>Our Mission</h3>
+            <p>FutureProof empowers individuals with AI-driven, gamified health insights for proactive well-being. By integrating genetic, lifestyle, and environmental data, we deliver personalized, preventive care solutions.</p>
+            <h3>Our Vision</h3>
+            <p>We envision a future where predictive healthcare transforms lives, making well-being accessible, engaging, and proactive through AI and gamification.</p>
+          </div>
+          <div style="margin-top: 20px;">
+            <h3>Assessment Date: ${new Date(assessment.date).toLocaleDateString()}</h3>
+            <h3>User Information</h3>
+            <table style="width: 100%; border-collapse: collapse; margin-top: 20px;">
+              <tr>
+                <th style="padding: 12px; border: 1px solid #ddd; text-align: left; background-color: #f8f9fa;">Username</th>
+                <td style="padding: 12px; border: 1px solid #ddd;">${assessment.username}</td>
+              </tr>
+              <tr>
+                <th style="padding: 12px; border: 1px solid #ddd; text-align: left; background-color: #f8f9fa;">Age</th>
+                <td style="padding: 12px; border: 1px solid #ddd;">${assessment.age}</td>
+              </tr>
+              <tr>
+                <th style="padding: 12px; border: 1px solid #ddd; text-align: left; background-color: #f8f9fa;">Gender</th>
+                <td style="padding: 12px; border: 1px solid #ddd;">${assessment.gender}</td>
+              </tr>
+              <tr>
+                <th style="padding: 12px; border: 1px solid #ddd; text-align: left; background-color: #f8f9fa;">Height</th>
+                <td style="padding: 12px; border: 1px solid #ddd;">${assessment.height} cm</td>
+              </tr>
+              <tr>
+                <th style="padding: 12px; border: 1px solid #ddd; text-align: left; background-color: #f8f9fa;">Weight</th>
+                <td style="padding: 12px; border: 1px solid #ddd;">${assessment.weight} kg</td>
+              </tr>
+              <tr>
+                <th style="padding: 12px; border: 1px solid #ddd; text-align: left; background-color: #f8f9fa;">Environment</th>
+                <td style="padding: 12px; border: 1px solid #ddd;">${assessment.environment}</td>
+              </tr>
+              <tr>
+                <th style="padding: 12px; border: 1px solid #ddd; text-align: left; background-color: #f8f9fa;">Vices</th>
+                <td style="padding: 12px; border: 1px solid #ddd;">${assessment.vices.join(', ')}</td>
+              </tr>
+              <tr>
+                <th style="padding: 12px; border: 1px solid #ddd; text-align: left; background-color: #f8f9fa;">Genetic Diseases</th>
+                <td style="padding: 12px; border: 1px solid #ddd;">${assessment.genetic_diseases.join(', ')}</td>
+              </tr>
+              <tr>
+                <th style="padding: 12px; border: 1px solid #ddd; text-align: left; background-color: #f8f9fa;">Lifestyle</th>
+                <td style="padding: 12px; border: 1px solid #ddd;">${assessment.lifestyle.join(', ')}</td>
+              </tr>
+              <tr>
+                <th style="padding: 12px; border: 1px solid #ddd; text-align: left; background-color: #f8f9fa;">Food Intake</th>
+                <td style="padding: 12px; border: 1px solid #ddd;">${assessment.food_intake.join(', ')}</td>
+              </tr>
+              <tr>
+                <th style="padding: 12px; border: 1px solid #ddd; text-align: left; background-color: #f8f9fa;">Sleep Hours</th>
+                <td style="padding: 12px; border: 1px solid #ddd;">${assessment.sleep_hours}</td>
+              </tr>
+              <tr>
+                <th style="padding: 12px; border: 1px solid #ddd; text-align: left; background-color: #f8f9fa;">Activeness</th>
+                <td style="padding: 12px; border: 1px solid #ddd;">${assessment.activeness}</td>
+              </tr>
+            </table>
+          </div>
+          <div style="margin-top: 20px;">
+            <h3>Prevention Progress</h3>
+            <ul>
+              ${assessment.updated_predictions.map(prediction => `
+                <li>
+                  <b>Condition: ${prediction.condition}</b><br>
+                  <div style="display: flex; align-items: center;">
+                    <div style="width: 100px; height: 10px; background-color: #ddd; margin-right: 10px;">
+                      <div style="width: ${prediction.old_percentage}%; height: 100%; background-color: #3498db;"></div>
+                    </div>
+                    <span>${prediction.old_percentage}%</span>
+                  </div>
+                  <div style="display: flex; align-items: center; margin-top: 5px;">
+                    <div style="width: 100px; height: 10px; background-color: #ddd; margin-right: 10px;">
+                      <div style="width: ${prediction.new_percentage}%; height: 100%; background-color: #2ecc71;"></div>
+                    </div>
+                    <span>${prediction.new_percentage}%</span>
+                  </div>
+                  <p>Reason: ${prediction.reason}</p>
+                </li>
+              `).join('')}
+            </ul>
+          </div>
+          <div style="margin-top: 20px;">
+            <h3>Nutritional Analysis</h3>
+            <table style="width: 100%; border-collapse: collapse; margin-top: 20px;">
+              <thead>
+                <tr>
+                  <th style="padding: 12px; border: 1px solid #ddd; text-align: left; background-color: #f8f9fa;">Question</th>
+                  <th style="padding: 12px; border: 1px solid #ddd; text-align: left; background-color: #f8f9fa;">Answer</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${assessment.nutritional_analysis.questions_answers.map(qa => `
+                  <tr>
+                    <td style="padding: 12px; border: 1px solid #ddd;">${qa.question}</td>
+                    <td style="padding: 12px; border: 1px solid #ddd;">${qa.answer}</td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </div>
+          <div style="margin-top: 20px;">
+            <h3>Recommendations</h3>
+            <ul>
+              ${assessment.recommendations.map(rec => `
+                <li>${rec}</li>
+              `).join('')}
+            </ul>
+          </div>
+        </div>
+      `).join('<div style="page-break-after: always;"></div>');
+
+      if (Platform.OS === 'web') {
+        const container = document.createElement('div');
+        container.style.position = 'absolute';
+        container.style.left = '-9999px';
+        container.innerHTML = htmlContent;
+        document.body.appendChild(container);
+
+        const waitForImages = () => {
+          const images = container.getElementsByTagName('img');
+          return Promise.all(
+            Array.from(images).map((img) => {
+              if (img.complete) return Promise.resolve();
+              return new Promise((resolve, reject) => {
+                img.onload = resolve;
+                img.onerror = reject;
+              });
+            })
+          );
+        };
+
+        try {
+          await waitForImages();
+          const canvas = await html2canvas(container);
+          const imgData = canvas.toDataURL('image/png');
+
+          const pdf = new jsPDF('p', 'pt', 'a4');
+          const pdfWidth = pdf.internal.pageSize.getWidth();
+          const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+          pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+
+          // Add new pages if content exceeds one page
+          let currentHeight = pdfHeight;
+          while (currentHeight > pdf.internal.pageSize.getHeight()) {
+            pdf.addPage();
+            currentHeight -= pdf.internal.pageSize.getHeight();
+            pdf.addImage(imgData, 'PNG', 0, -currentHeight, pdfWidth, pdfHeight);
+          }
+        
+        pdf.save('my-assessment-reports.pdf');
+
+        } catch (err) {
+          console.error('Error generating PDF:', err);
+          Alert.alert('Error', 'Failed to generate PDF. Please try again.');
+        } finally {
+          document.body.removeChild(container);
+        }
+      } else {
+        try {
+          const { uri } = await Print.printToFileAsync({ html: htmlContent });
+          await shareAsync(uri, { UTI: '.pdf', mimeType: 'application/pdf' });
+        } catch (error) {
+          console.error('Error generating PDF:', error);
+          Alert.alert('Error', 'Failed to generate PDF. Please try again.');
+        }
+      }
+    } catch (error) {
+      console.error('Error in handleExportUserPDF:', error);
+      Alert.alert('Error', 'Something went wrong. Please try again.');
+    }
+  };
+
+  const handleExportUserPDF = async (assessment) => {
+    try {
+      // Convert logo URLs to base64
+      const logo1Base64 = await convertImageToBase64("https://i.ibb.co/GQygLXT9/tuplogo.png");
+      const logo2Base64 = await convertImageToBase64("https://i.ibb.co/YBStKgFC/logo-2.png");
+
+      const htmlContent = `
+        <div style="font-family: Arial, sans-serif; padding: 20px; background: #fff; max-width: 900px; margin: 0 auto;">
+          <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 2px solid #f0f0f0; padding-bottom: 10px;">
+            <img src="${logo1Base64}" alt="Logo 1" style="height: 60px; width: auto;">
+            <div style="flex: 1; text-align: center; margin-top: 15px;">
+              <h1 style="font-size: 18px; margin: 0; ">FUTUREPROOF: A Gamified AI Platform for Predictive Health and Preventive Wellness</h1>
+              <br>
+              <h2 style="font-size: 16px; margin: 0;">Daily Assessment Report</h2>
+              <h4 style="font-size: 14px; margin: 5px 0 0;">${new Date().toLocaleDateString()}</h4>
+          </div>
+            <img src="${logo2Base64}" alt="Logo 2" style="height: 60px; width: auto;">
+          </div>
+          <div style="margin-top: 10px;">
+            <h3>Our Mission</h3>
+            <p>FutureProof empowers individuals with AI-driven, gamified health insights for proactive well-being. By integrating genetic, lifestyle, and environmental data, we deliver personalized, preventive care solutions.</p>
+            <h3>Our Vision</h3>
+            <p>We envision a future where predictive healthcare transforms lives, making well-being accessible, engaging, and proactive through AI and gamification.</p>
+          </div>
+          <div style="margin-top: 10px;">
+            <h3>User Information</h3>
+            <table style="width: 100%; border-collapse: collapse; margin-top: 20px;">
+              <tr>
+                <th style="padding: 12px; border: 1px solid #ddd; text-align: left; background-color: #f8f9fa;">Username</th>
+                <td style="padding: 12px; border: 1px solid #ddd;">${assessment.username}</td>
+              </tr>
+              <tr>
+                <th style="padding: 12px; border: 1px solid #ddd; text-align: left; background-color: #f8f9fa;">Age</th>
+                <td style="padding: 12px; border: 1px solid #ddd;">${assessment.age}</td>
+              </tr>
+              <tr>
+                <th style="padding: 12px; border: 1px solid #ddd; text-align: left; background-color: #f8f9fa;">Gender</th>
+                <td style="padding: 12px; border: 1px solid #ddd;">${assessment.gender}</td>
+              </tr>
+              <tr>
+                <th style="padding: 12px; border: 1px solid #ddd; text-align: left; background-color: #f8f9fa;">Height</th>
+                <td style="padding: 12px; border: 1px solid #ddd;">${assessment.height} cm</td>
+              </tr>
+              <tr>
+                <th style="padding: 12px; border: 1px solid #ddd; text-align: left; background-color: #f8f9fa;">Weight</th>
+                <td style="padding: 12px; border: 1px solid #ddd;">${assessment.weight} kg</td>
+              </tr>
+              <tr>
+                <th style="padding: 12px; border: 1px solid #ddd; text-align: left; background-color: #f8f9fa;">Environment</th>
+                <td style="padding: 12px; border: 1px solid #ddd;">${assessment.environment}</td>
+              </tr>
+              <tr>
+                <th style="padding: 12px; border: 1px solid #ddd; text-align: left; background-color: #f8f9fa;">Vices</th>
+                <td style="padding: 12px; border: 1px solid #ddd;">${assessment.vices.join(', ')}</td>
+              </tr>
+              <tr>
+                <th style="padding: 12px; border: 1px solid #ddd; text-align: left; background-color: #f8f9fa;">Genetic Diseases</th>
+                <td style="padding: 12px; border: 1px solid #ddd;">${assessment.genetic_diseases.join(', ')}</td>
+              </tr>
+              <tr>
+                <th style="padding: 12px; border: 1px solid #ddd; text-align: left; background-color: #f8f9fa;">Lifestyle</th>
+                <td style="padding: 12px; border: 1px solid #ddd;">${assessment.lifestyle.join(', ')}</td>
+              </tr>
+              <tr>
+                <th style="padding: 12px; border: 1px solid #ddd; text-align: left; background-color: #f8f9fa;">Food Intake</th>
+                <td style="padding: 12px; border: 1px solid #ddd;">${assessment.food_intake.join(', ')}</td>
+              </tr>
+              <tr>
+                <th style="padding: 12px; border: 1px solid #ddd; text-align: left; background-color: #f8f9fa;">Sleep Hours</th>
+                <td style="padding: 12px; border: 1px solid #ddd;">${assessment.sleep_hours}</td>
+              </tr>
+              <tr>
+                <th style="padding: 12px; border: 1px solid #ddd; text-align: left; background-color: #f8f9fa;">Activeness</th>
+                <td style="padding: 12px; border: 1px solid #ddd;">${assessment.activeness}</td>
+              </tr>
+            </table>
+          </div>
+          <div style="margin-top: 10px;">
+            <h3>Prevention Progress</h3>
+            <ul>
+              ${assessment.updated_predictions.map(prediction => `
+                <li>
+                  <b>Condition: ${prediction.condition}</b><br>
+                  <div style="display: flex; align-items: center;">
+                    <div style="width: 100px; height: 10px; background-color: #ddd; margin-right: 10px;">
+                      <div style="width: ${prediction.old_percentage}%; height: 100%; background-color: #3498db;"></div>
+                    </div>
+                    <span>${prediction.old_percentage}%</span>
+                  </div>
+                  <div style="display: flex; align-items: center; margin-top: 5px;">
+                    <div style="width: 100px; height: 10px; background-color: #ddd; margin-right: 10px;">
+                      <div style="width: ${prediction.new_percentage}%; height: 100%; background-color: #2ecc71;"></div>
+                    </div>
+                    <span>${prediction.new_percentage}%</span>
+                  </div>
+                  <p>Reason: ${prediction.reason}</p>
+                </li>
+              `).join('')}
+            </ul>
+          </div>
+          <div style="margin-top: 10px;">
+            <h3>Nutritional Analysis</h3>
+            <table style="width: 100%; border-collapse: collapse; margin-top: 20px;">
+              <thead>
+                <tr>
+                  <th style="padding: 12px; border: 1px solid #ddd; text-align: left; background-color: #f8f9fa;">Question</th>
+                  <th style="padding: 12px; border: 1px solid #ddd; text-align: left; background-color: #f8f9fa;">Answer</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${assessment.nutritional_analysis.questions_answers.map(qa => `
+                  <tr>
+                    <td style="padding: 12px; border: 1px solid #ddd;">${qa.question}</td>
+                    <td style="padding: 12px; border: 1px solid #ddd;">${qa.answer}</td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </div>
+          <div style="margin-top: 10px;">
+            <h3>Recommendations</h3>
+            <ul>
+              ${assessment.recommendations.map(rec => `
+                <li>${rec}</li>
+              `).join('')}
+            </ul>
+          </div>
+        </div>
+      `;
+
+      if (Platform.OS === 'web') {
+        const container = document.createElement('div');
+        container.style.position = 'absolute';
+        container.style.left = '-9999px';
+        container.innerHTML = htmlContent;
+        document.body.appendChild(container);
+
+        const waitForImages = () => {
+          const images = container.getElementsByTagName('img');
+          return Promise.all(
+            Array.from(images).map((img) => {
+              if (img.complete) return Promise.resolve();
+              return new Promise((resolve, reject) => {
+                img.onload = resolve;
+                img.onerror = reject;
+              });
+            })
+          );
+        };
+
+        try {
+          await waitForImages();
+          const canvas = await html2canvas(container);
+          const imgData = canvas.toDataURL('image/png');
+
+          const pdf = new jsPDF('p', 'pt', 'a4');
+          const pdfWidth = pdf.internal.pageSize.getWidth();
+          const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+          pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+
+          // Add new pages if content exceeds one page
+          let currentHeight = pdfHeight;
+          while (currentHeight > pdf.internal.pageSize.getHeight()) {
+            pdf.addPage();
+            currentHeight -= pdf.internal.pageSize.getHeight();
+            pdf.addImage(imgData, 'PNG', 0, -currentHeight, pdfWidth, pdfHeight);
+          }
+
+        const userName = assessment.username.replace(/\s+/g, '').toLowerCase(); // Remove spaces and convert to lowercase
+        pdf.save(`${userName}-assessment-report.pdf`);
+
+        } catch (err) {
+          console.error('Error generating PDF:', err);
+          Alert.alert('Error', 'Failed to generate PDF. Please try again.');
+        } finally {
+          document.body.removeChild(container);
+        }
+      } else {
+        try {
+          const { uri } = await Print.printToFileAsync({ html: htmlContent });
+          await shareAsync(uri, { UTI: '.pdf', mimeType: 'application/pdf' });
+        } catch (error) {
+          console.error('Error generating PDF:', error);
+          Alert.alert('Error', 'Failed to generate PDF. Please try again.');
+        }
+      }
+    } catch (error) {
+      console.error('Error in handleExportUserPDF:', error);
+      Alert.alert('Error', 'Something went wrong. Please try again.');
+    }
+  };
+
   if (loading) {
     return (
       <LinearGradient colors={['#e8f5e9', '#c8e6c9']} style={styles.loadingContainer}>
@@ -401,7 +846,13 @@ const UserDashboard = ({ navigation }) => {
               <Ionicons name="grid-outline" size={22} color="#ffffff" />
               <Text style={styles.sidebarText}>Dashboard</Text>
             </TouchableOpacity>
-            
+            <TouchableOpacity
+              style={[styles.sidebarItem, activeTab === 'assessments' && styles.activeSidebarItem]}
+              onPress={() => setActiveTab('assessments')}
+            >
+              <Ionicons name="clipboard-outline" size={22} color="#ffffff" />
+              <Text style={styles.sidebarText}>Assessments</Text>
+            </TouchableOpacity>
             <TouchableOpacity style={styles.logoutButton}>
               <Ionicons name="log-out-outline" size={22} color="#ffffff" />
               <Text style={styles.sidebarText}>Logout</Text>
@@ -421,6 +872,9 @@ const UserDashboard = ({ navigation }) => {
               </TouchableOpacity>
               <TouchableOpacity onPress={() => setActiveTab('dashboard')} style={styles.collapsedSidebarItem}>
                 <Ionicons name="grid-outline" size={24} color="#ffffff" />
+              </TouchableOpacity>
+              <TouchableOpacity onPress={() => setActiveTab('assessments')} style={styles.collapsedSidebarItem}>
+                <Ionicons name="clipboard-outline" size={24} color="#ffffff" />
               </TouchableOpacity>
             </View>
           </LinearGradient>
@@ -669,6 +1123,72 @@ const UserDashboard = ({ navigation }) => {
               </View>
             </View>
           )}
+
+{activeTab === 'assessments' && (
+  <View style={styles.assessmentTabContent}>
+    <Text style={styles.assessmentSectionTitle}>Daily Assessments</Text>
+
+    {/* Search and Export Section */}
+    <View style={styles.assessmentSearchExportContainer}>
+      {/* Export All Button */}
+      <TouchableOpacity style={styles.assessmentExportButton} onPress={handleExportPDF}>
+        <Ionicons name="download-outline" size={20} color="#ffffff" />
+        <Text style={styles.assessmentExportButtonText}>Export All as PDF</Text>
+      </TouchableOpacity>
+
+      {/* Search Bar */}
+      <View style={styles.assessmentSearchContainer}>
+        <TextInput
+          style={styles.assessmentSearchInput}
+          placeholder="Search assessments..."
+          value={searchQuery}
+          onChangeText={setSearchQuery}
+        />
+        <TouchableOpacity style={styles.assessmentSearchButton} onPress={handleSearch}>
+          <Ionicons name="search-outline" size={20} color="#ffffff" />
+        </TouchableOpacity>
+      </View>
+    </View>
+
+    {/* Table Structure */}
+    <ScrollView horizontal>
+      <View style={styles.assessmentTableContainer}>
+        {/* Table Header */}
+        <View style={styles.assessmentTableHeader}>
+          <Text style={styles.assessmentTableHeaderText}>Date</Text>
+          <Text style={styles.assessmentTableHeaderText}>Action</Text>
+        </View>
+
+        {/* Table Data */}
+        {filteredAssessments.length > 0 ? (
+          filteredAssessments.map((assessment, index) => (
+            <View key={index} style={styles.assessmentTableRow}>
+  {/* Date Column */}
+  <Text style={styles.assessmentTableCell}>
+    {new Date(assessment.date).toLocaleDateString()}
+  </Text>
+
+  {/* Action Button Column */}
+  <View style={styles.assessmentTableActionCell}>
+    <TouchableOpacity
+      style={styles.assessmentExportButton}
+      onPress={() => handleExportUserPDF(assessment)}
+    >
+      <Ionicons name="download-outline" size={16} color="white" />
+      <Text style={styles.assessmentExportButtonText}>Export</Text>
+    </TouchableOpacity>
+  </View>
+</View>
+
+          ))
+        ) : (
+          <Text style={styles.assessmentNoAssessmentsText}>No assessments found</Text>
+        )}
+      </View>
+    </ScrollView>
+  </View>
+)}
+
         </ScrollView>
       </Animated.View>
     </View>
@@ -676,582 +1196,743 @@ const UserDashboard = ({ navigation }) => {
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#f1f8e9',
-    flexDirection: 'row',
-  },
-  sidebar: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    bottom: 0,
-    zIndex: 999,
-    height: '100%',
-    overflow: 'hidden',
-  },
-  sidebarContent: {
-    flex: 1,
-    justifyContent: 'flex-start',
-    paddingTop: 40,
-  },
-  sidebarHeader: {
-    alignItems: 'center',
-    marginBottom: 30,
-    paddingHorizontal: 15,
-  },
-  sidebarAvatar: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    marginBottom: 10,
-    borderWidth: 3,
-    borderColor: '#ffffff',
-  },
-  sidebarUserName: {
-    color: '#ffffff',
-    fontSize: 18,
-    fontWeight: '600',
-  },
-  toggleButton: {
-    position: 'absolute',
-    top: 20,
-    right: 10,
-    zIndex: 1000,
-    width: 40,
-    height: 40,
-    backgroundColor: 'rgba(0,0,0,0.3)',
-    borderRadius: 20,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  sidebarItem: {
-    paddingVertical: 15,
-    paddingHorizontal: 20,
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderRadius: 8,
-    marginHorizontal: 10,
-    marginBottom: 8,
-  },
-  activeSidebarItem: {
-    backgroundColor: 'rgba(255,255,255,0.2)',
-  },
-  sidebarText: {
-    fontSize: 16,
-    color: '#ffffff',
-    marginLeft: 15,
-  },
-  collapsedSidebar: {
-    flex: 1,
-    paddingTop: 70,
-  },
-  collapsedSidebarContent: {
-    alignItems: 'center',
-  },
-  collapsedSidebarItem: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 15,
-  },
-  logoutButton: {
-    paddingVertical: 15,
-    paddingHorizontal: 20,
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 'auto',
-    marginBottom: 20,
-    marginHorizontal: 10,
-    backgroundColor: 'rgba(255,59,48,0.2)',
-    borderRadius: 8,
-  },
-  mainContent: {
-    flex: 1,
-    backgroundColor: '#f1f8e9',
-  },
-  scrollViewContent: {
-    padding: 20,
-    paddingBottom: 40,
-  },
-  tabContent: {
-    flex: 1,
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  loadingText: {
-    marginTop: 10,
-    fontSize: 16,
-    color: '#2e7d32',
-  },
-  errorContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
-  },
-  errorText: {
-    fontSize: 18,
-    color: '#e63946',
-    textAlign: 'center',
-    marginTop: 10,
-  },
-  retryButton: {
-    marginTop: 20,
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    backgroundColor: '#2e7d32',
-    borderRadius: 8,
-  },
-  retryButtonText: {
-    color: '#ffffff',
-    fontSize: 16,
-  },
-  profileHeader: {
-    marginBottom: 30,
-  },
-  profileHeaderBg: {
-    padding: 20,
-    borderRadius: 10,
-    alignItems: 'center',
-  },
-  profileAvatar: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    borderWidth: 3,
-    borderColor: '#ffffff',
-    marginBottom: 20,
-  },
-  profileInfo: {
-    alignItems: 'center',
-  },
-  profileName: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#ffffff',
-    marginBottom: 10,
-  },
-  profileDetailsBadge: {
-    backgroundColor: 'rgba(255,255,255,0.2)',
-    borderRadius: 20,
-    paddingVertical: 5,
-    paddingHorizontal: 15,
-    marginBottom: 10,
-  },
-  profileDetails: {
-    fontSize: 16,
-    color: '#ffffff',
-  },
-  profileEmailBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(255,255,255,0.2)',
-    borderRadius: 20,
-    paddingVertical: 5,
-    paddingHorizontal: 15,
-  },
-  profileEmailIcon: {
-    marginRight: 5,
-  },
-  profileEmail: {
-    fontSize: 16,
-    color: '#ffffff',
-  },
-  statsRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 20,
-  },
-  statCard: {
-    flex: 1,
-    backgroundColor: '#ffffff',
-    borderRadius: 10,
-    padding: 15,
-    alignItems: 'center',
-    marginHorizontal: 5,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  statContent: {
-    alignItems: 'center',
-  },
-  statValue: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#2e7d32',
-  },
-  statLabel: {
-    fontSize: 16,
-    color: '#689f38',
-  },
-  statStatus: {
-    marginTop: 10,
-    fontSize: 16,
-    color: '#689f38',
-  },
-  sectionContainer: {
-    marginBottom: 20,
-  },
-  sectionTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#2e7d32',
-    marginBottom: 10,
-  },
-  infoRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-  infoCard: {
-    flex: 1,
-    backgroundColor: '#ffffff',
-    borderRadius: 10,
-    padding: 15,
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginHorizontal: 5,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  infoIconContainer: {
-    marginRight: 10,
-  },
-  infoContent: {
-    flex: 1,
-  },
-  infoLabel: {
-    fontSize: 16,
-    color: '#689f38',
-  },
-  infoValue: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#2e7d32',
-  },
-  lifestyleCard: {
-    backgroundColor: '#ffffff',
-    borderRadius: 10,
-    padding: 15,
-    marginBottom: 10,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  lifestyleHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 10,
-  },
-  lifestyleTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#2e7d32',
-    flex: 1,
-    marginLeft: 10,
-  },
-  editButton: {
-    backgroundColor: '#2e7d32',
-    borderRadius: 20,
-    padding: 5,
-  },
-  lifestyleText: {
-    fontSize: 16,
-    color: '#689f38',
-  },
-  medicalCard: {
-    backgroundColor: '#ffffff',
-    borderRadius: 10,
-    padding: 15,
-    marginBottom: 10,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  medicalHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 10,
-  },
-  medicalTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#2e7d32',
-    flex: 1,
-    marginLeft: 10,
-  },
-  medicalText: {
-    fontSize: 16,
-    color: '#689f38',
-  },
-  dashboardTitle: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#2e7d32',
-    marginBottom: 20,
-  },
-  statsGridContainer: {
-    marginBottom: 20,
-  },
-  statsGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
-  },
-  statGridCard: {
-    width: '48%',
-    backgroundColor: '#ffffff',
-    borderRadius: 10,
-    padding: 15,
-    alignItems: 'center',
-    marginBottom: 10,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  statGridPrimary: {
-    backgroundColor: '#2e7d32',
-  },
-  statGridSecondary: {
-    backgroundColor: '#388e3c',
-  },
-  statGridAccent: {
-    backgroundColor: '#43a047',
-  },
-  statGridNeutral: {
-    backgroundColor: '#66bb6a',
-  },
-  statGridValue: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#ffffff',
-  },
-  statGridLabel: {
-    fontSize: 16,
-    color: '#ffffff',
-  },
-  chartCard: {
-    backgroundColor: '#ffffff',
-    borderRadius: 10,
-    padding: 15,
-    marginBottom: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  chartTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#2e7d32',
-    marginBottom: 10,
-  },
-  chart: {
-    borderRadius: 10,
-  },
-  noDataContainer: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    height: 220,
-  },
-  noDataText: {
-    fontSize: 16,
-    color: '#689f38',
-    marginTop: 10,
-  },
-  tasksListContainer: {
-    backgroundColor: '#ffffff',
-    borderRadius: 10,
-    padding: 15,
-    marginBottom: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  tasksListHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 10,
-  },
-  tasksListTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#2e7d32',
-  },
-  viewAllButton: {
-    backgroundColor: '#2e7d32',
-    borderRadius: 20,
-    paddingVertical: 5,
-    paddingHorizontal: 10,
-  },
-  viewAllText: {
-    color: '#ffffff',
-    fontSize: 14,
-  },
-  tasksScrollView: {
-    maxHeight: 200,
-  },
-  taskListItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 10,
-  },
-  taskIconContainer: {
-    marginRight: 10,
-  },
-  taskDetails: {
-    flex: 1,
-  },
-  taskName: {
-    fontSize: 16,
-    color: '#2e7d32',
-  },
-  taskTime: {
-    fontSize: 14,
-    color: '#689f38',
-  },
-  taskDate: {
-    fontSize: 14,
-    color: '#689f38',
-  },
-  noTasksText: {
-    fontSize: 16,
-    color: '#689f38',
-    textAlign: 'center',
-    marginTop: 10,
-  },
-  assetsSection: {
-    marginBottom: 20,
-  },
-  assetsSectionTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#2e7d32',
-    marginBottom: 10,
-  },
-  assetsGrid: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-  assetCard: {
-    flex: 1,
-    backgroundColor: '#ffffff',
-    borderRadius: 10,
-    padding: 15,
-    alignItems: 'center',
-    marginHorizontal: 5,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  assetValue: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#2e7d32',
-    marginTop: 10,
-  },
-  assetLabel: {
-    fontSize: 16,
-    color: '#689f38',
-  },
-  centerContent: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  userInfoCard: {
-    width: '100%',
-    padding: 20,
-    backgroundColor: '#ffffff',
-    borderRadius: 10,
-    marginBottom: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  cardTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#2e7d32',
-    marginBottom: 10,
-  },
-  userDetailsText: {
-    fontSize: 16,
-    color: '#689f38',
-  },
-  predictionSection: {
-    width: '100%',
-    marginBottom: 20,
-  },
-  circleContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-around',
-    width: '100%',
-    marginTop: 20,
-  },
-  riskCard: {
-    width: 150,
-    alignItems: 'center',
-    margin: 10,
-    padding: 10,
-    backgroundColor: '#ffffff',
-    borderRadius: 10,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  progressChartWrapper: {
-    position: 'relative',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  progressChartOverlay: {
-    position: 'absolute',
-    justifyContent: 'center',
-    alignItems: 'center',
-    width: '100%',
-    height: '100%',
-  },
-  riskName: {
-    color: '#2e7d32',
-    fontWeight: 'bold',
-    fontSize: 14,
-    textAlign: 'center',
-    marginTop: 10,
-  },
-  riskPercentage: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#2e7d32',
-  },
-});
+    container: {
+      flex: 1,
+      backgroundColor: '#f1f8e9',
+      flexDirection: 'row',
+    },
+    sidebar: {
+      position: 'absolute',
+      top: 0,
+      left: 0,
+      bottom: 0,
+      zIndex: 999,
+      height: '100%',
+      overflow: 'hidden',
+    },
+    sidebarContent: {
+      flex: 1,
+      justifyContent: 'flex-start',
+      paddingTop: 40,
+    },
+    sidebarHeader: {
+      alignItems: 'center',
+      marginBottom: 30,
+      paddingHorizontal: 15,
+    },
+    sidebarAvatar: {
+      width: 80,
+      height: 80,
+      borderRadius: 40,
+      marginBottom: 10,
+      borderWidth: 3,
+      borderColor: '#ffffff',
+    },
+    sidebarUserName: {
+      color: '#ffffff',
+      fontSize: 18,
+      fontWeight: '600',
+    },
+    toggleButton: {
+      position: 'absolute',
+      top: 20,
+      right: 10,
+      zIndex: 1000,
+      width: 40,
+      height: 40,
+      backgroundColor: 'rgba(0,0,0,0.3)',
+      borderRadius: 20,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    sidebarItem: {
+      paddingVertical: 15,
+      paddingHorizontal: 20,
+      flexDirection: 'row',
+      alignItems: 'center',
+      borderRadius: 8,
+      marginHorizontal: 10,
+      marginBottom: 8,
+    },
+    activeSidebarItem: {
+      backgroundColor: 'rgba(255,255,255,0.2)',
+    },
+    sidebarText: {
+      fontSize: 16,
+      color: '#ffffff',
+      marginLeft: 15,
+    },
+    collapsedSidebar: {
+      flex: 1,
+      paddingTop: 70,
+    },
+    collapsedSidebarContent: {
+      alignItems: 'center',
+    },
+    collapsedSidebarItem: {
+      width: 50,
+      height: 50,
+      borderRadius: 25,
+      justifyContent: 'center',
+      alignItems: 'center',
+      marginBottom: 15,
+    },
+    logoutButton: {
+      paddingVertical: 15,
+      paddingHorizontal: 20,
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginTop: 'auto',
+      marginBottom: 20,
+      marginHorizontal: 10,
+      backgroundColor: 'rgba(255,59,48,0.2)',
+      borderRadius: 8,
+    },
+    mainContent: {
+      flex: 1,
+      backgroundColor: '#f1f8e9',
+    },
+    scrollViewContent: {
+      padding: 20,
+      paddingBottom: 40,
+    },
+    tabContent: {
+      flex: 1,
+    },
+    loadingContainer: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    loadingText: {
+      marginTop: 10,
+      fontSize: 16,
+      color: '#2e7d32',
+    },
+    errorContainer: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+      padding: 20,
+    },
+    errorText: {
+      fontSize: 18,
+      color: '#e63946',
+      textAlign: 'center',
+      marginTop: 10,
+    },
+    retryButton: {
+      marginTop: 20,
+      paddingVertical: 10,
+      paddingHorizontal: 20,
+      backgroundColor: '#2e7d32',
+      borderRadius: 8,
+    },
+    retryButtonText: {
+      color: '#ffffff',
+      fontSize: 16,
+    },
+    profileHeader: {
+      marginBottom: 30,
+    },
+    profileHeaderBg: {
+      padding: 20,
+      borderRadius: 10,
+      alignItems: 'center',
+    },
+    profileAvatar: {
+      width: 100,
+      height: 100,
+      borderRadius: 50,
+      borderWidth: 3,
+      borderColor: '#ffffff',
+      marginBottom: 20,
+    },
+    profileInfo: {
+      alignItems: 'center',
+    },
+    profileName: {
+      fontSize: 24,
+      fontWeight: 'bold',
+      color: '#ffffff',
+      marginBottom: 10,
+    },
+    profileDetailsBadge: {
+      backgroundColor: 'rgba(255,255,255,0.2)',
+      borderRadius: 20,
+      paddingVertical: 5,
+      paddingHorizontal: 15,
+      marginBottom: 10,
+    },
+    profileDetails: {
+      fontSize: 16,
+      color: '#ffffff',
+    },
+    profileEmailBadge: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: 'rgba(255,255,255,0.2)',
+      borderRadius: 20,
+      paddingVertical: 5,
+      paddingHorizontal: 15,
+    },
+    profileEmailIcon: {
+      marginRight: 5,
+    },
+    profileEmail: {
+      fontSize: 16,
+      color: '#ffffff',
+    },
+    statsRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      marginBottom: 20,
+    },
+    statCard: {
+      flex: 1,
+      backgroundColor: '#ffffff',
+      borderRadius: 10,
+      padding: 15,
+      alignItems: 'center',
+      marginHorizontal: 5,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.1,
+      shadowRadius: 4,
+      elevation: 3,
+    },
+    statContent: {
+      alignItems: 'center',
+    },
+    statValue: {
+      fontSize: 24,
+      fontWeight: 'bold',
+      color: '#2e7d32',
+    },
+    statLabel: {
+      fontSize: 16,
+      color: '#689f38',
+    },
+    statStatus: {
+      marginTop: 10,
+      fontSize: 16,
+      color: '#689f38',
+    },
+    sectionContainer: {
+      marginBottom: 20,
+    },
+    sectionTitle: {
+      fontSize: 20,
+      fontWeight: 'bold',
+      color: '#2e7d32',
+      marginBottom: 10,
+    },
+    infoRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+    },
+    infoCard: {
+      flex: 1,
+      backgroundColor: '#ffffff',
+      borderRadius: 10,
+      padding: 15,
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginHorizontal: 5,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.1,
+      shadowRadius: 4,
+      elevation: 3,
+    },
+    infoIconContainer: {
+      marginRight: 10,
+    },
+    infoContent: {
+      flex: 1,
+    },
+    infoLabel: {
+      fontSize: 16,
+      color: '#689f38',
+    },
+    infoValue: {
+      fontSize: 18,
+      fontWeight: 'bold',
+      color: '#2e7d32',
+    },
+    lifestyleCard: {
+      backgroundColor: '#ffffff',
+      borderRadius: 10,
+      padding: 15,
+      marginBottom: 10,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.1,
+      shadowRadius: 4,
+      elevation: 3,
+    },
+    lifestyleHeader: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginBottom: 10,
+    },
+    lifestyleTitle: {
+      fontSize: 18,
+      fontWeight: 'bold',
+      color: '#2e7d32',
+      flex: 1,
+      marginLeft: 10,
+    },
+    editButton: {
+      backgroundColor: '#2e7d32',
+      borderRadius: 20,
+      padding: 5,
+    },
+    lifestyleText: {
+      fontSize: 16,
+      color: '#689f38',
+    },
+    medicalCard: {
+      backgroundColor: '#ffffff',
+      borderRadius: 10,
+      padding: 15,
+      marginBottom: 10,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.1,
+      shadowRadius: 4,
+      elevation: 3,
+    },
+    medicalHeader: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginBottom: 10,
+    },
+    medicalTitle: {
+      fontSize: 18,
+      fontWeight: 'bold',
+      color: '#2e7d32',
+      flex: 1,
+      marginLeft: 10,
+    },
+    medicalText: {
+      fontSize: 16,
+      color: '#689f38',
+    },
+    dashboardTitle: {
+      fontSize: 24,
+      fontWeight: 'bold',
+      color: '#2e7d32',
+      marginBottom: 20,
+    },
+    statsGridContainer: {
+      marginBottom: 20,
+    },
+    statsGrid: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      justifyContent: 'space-between',
+    },
+    statGridCard: {
+      width: '48%',
+      backgroundColor: '#ffffff',
+      borderRadius: 10,
+      padding: 15,
+      alignItems: 'center',
+      marginBottom: 10,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.1,
+      shadowRadius: 4,
+      elevation: 3,
+    },
+    statGridPrimary: {
+      backgroundColor: '#2e7d32',
+    },
+    statGridSecondary: {
+      backgroundColor: '#388e3c',
+    },
+    statGridAccent: {
+      backgroundColor: '#43a047',
+    },
+    statGridNeutral: {
+      backgroundColor: '#66bb6a',
+    },
+    statGridValue: {
+      fontSize: 24,
+      fontWeight: 'bold',
+      color: '#ffffff',
+    },
+    statGridLabel: {
+      fontSize: 16,
+      color: '#ffffff',
+    },
+    chartCard: {
+      backgroundColor: '#ffffff',
+      borderRadius: 10,
+      padding: 15,
+      marginBottom: 20,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.1,
+      shadowRadius: 4,
+      elevation: 3,
+    },
+    chartTitle: {
+      fontSize: 18,
+      fontWeight: 'bold',
+      color: '#2e7d32',
+      marginBottom: 10,
+    },
+    chart: {
+      borderRadius: 10,
+    },
+    noDataContainer: {
+      alignItems: 'center',
+      justifyContent: 'center',
+      height: 220,
+    },
+    noDataText: {
+      fontSize: 16,
+      color: '#689f38',
+      marginTop: 10,
+    },
+    tasksListContainer: {
+      backgroundColor: '#ffffff',
+      borderRadius: 10,
+      padding: 15,
+      marginBottom: 20,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.1,
+      shadowRadius: 4,
+      elevation: 3,
+    },
+    tasksListHeader: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginBottom: 10,
+    },
+    tasksListTitle: {
+      fontSize: 18,
+      fontWeight: 'bold',
+      color: '#2e7d32',
+    },
+    viewAllButton: {
+      backgroundColor: '#2e7d32',
+      borderRadius: 20,
+      paddingVertical: 5,
+      paddingHorizontal: 10,
+    },
+    viewAllText: {
+      color: '#ffffff',
+      fontSize: 14,
+    },
+    tasksScrollView: {
+      maxHeight: 200,
+    },
+    taskListItem: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginBottom: 10,
+    },
+    taskIconContainer: {
+      marginRight: 10,
+    },
+    taskDetails: {
+      flex: 1,
+    },
+    taskName: {
+      fontSize: 16,
+      color: '#2e7d32',
+    },
+    taskTime: {
+      fontSize: 14,
+      color: '#689f38',
+    },
+    taskDate: {
+      fontSize: 14,
+      color: '#689f38',
+    },
+    noTasksText: {
+      fontSize: 16,
+      color: '#689f38',
+      textAlign: 'center',
+      marginTop: 10,
+    },
+    assetsSection: {
+      marginBottom: 20,
+    },
+    assetsSectionTitle: {
+      fontSize: 20,
+      fontWeight: 'bold',
+      color: '#2e7d32',
+      marginBottom: 10,
+    },
+    assetsGrid: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+    },
+    assetCard: {
+      flex: 1,
+      backgroundColor: '#ffffff',
+      borderRadius: 10,
+      padding: 15,
+      alignItems: 'center',
+      marginHorizontal: 5,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.1,
+      shadowRadius: 4,
+      elevation: 3,
+    },
+    assetValue: {
+      fontSize: 24,
+      fontWeight: 'bold',
+      color: '#2e7d32',
+      marginTop: 10,
+    },
+    assetLabel: {
+      fontSize: 16,
+      color: '#689f38',
+    },
+    centerContent: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    userInfoCard: {
+      width: '100%',
+      padding: 20,
+      backgroundColor: '#ffffff',
+      borderRadius: 10,
+      marginBottom: 20,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.1,
+      shadowRadius: 4,
+      elevation: 3,
+    },
+    cardTitle: {
+      fontSize: 18,
+      fontWeight: 'bold',
+      color: '#2e7d32',
+      marginBottom: 10,
+    },
+    userDetailsText: {
+      fontSize: 16,
+      color: '#689f38',
+    },
+    predictionSection: {
+      width: '100%',
+      marginBottom: 20,
+    },
+    circleContainer: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      justifyContent: 'space-around',
+      width: '100%',
+      marginTop: 20,
+    },
+    riskCard: {
+      width: 150,
+      alignItems: 'center',
+      margin: 10,
+      padding: 10,
+      backgroundColor: '#ffffff',
+      borderRadius: 10,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.1,
+      shadowRadius: 4,
+      elevation: 3,
+    },
+    progressChartWrapper: {
+      position: 'relative',
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    progressChartOverlay: {
+      position: 'absolute',
+      justifyContent: 'center',
+      alignItems: 'center',
+      width: '100%',
+      height: '100%',
+    },
+    riskName: {
+      color: '#2e7d32',
+      fontWeight: 'bold',
+      fontSize: 14,
+      textAlign: 'center',
+      marginTop: 10,
+    },
+    riskPercentage: {
+      fontSize: 18,
+      fontWeight: 'bold',
+      color: '#2e7d32',
+    },
+    searchCreateContainer: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginBottom: 20,
+    },
+    searchContainer: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      width: '50%',
+      marginBottom: 20,
+    },
+    searchInput: {
+      flex: 1,
+      borderWidth: 1,
+      borderColor: '#ccc',
+      borderRadius: 5,
+      padding: 15,
+      marginRight: 10,
+      backgroundColor: '#fff',
+    },
+    searchButton: {
+      backgroundColor: '#3498db',
+      padding: 15,
+      borderRadius: 5,
+      alignItems: 'center',
+    },
+    searchButtonText: {
+      color: '#fff',
+      fontWeight: 'bold',
+      fontSize: 16,
+    },
+    assessmentsScrollView: {
+      maxHeight: 400,
+    },
+    assessmentCard: {
+      backgroundColor: '#ffffff',
+      borderRadius: 10,
+      padding: 15,
+      marginBottom: 10,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.1,
+      shadowRadius: 4,
+      elevation: 3,
+    },
+    assessmentUser: {
+      fontSize: 16,
+      fontWeight: 'bold',
+      color: '#2e7d32',
+      marginBottom: 5,
+    },
+    assessmentContent: {
+      fontSize: 14,
+      color: '#689f38',
+      marginBottom: 5,
+    },
+    assessmentDate: {
+      fontSize: 12,
+      color: '#a5d6a7',
+    },
+    
+    // Assessment Tab Styles
+    assessmentTabContent: {
+      flex: 1,
+      padding: 20,
+    },
+    assessmentSectionTitle: {
+      fontSize: 22,
+      fontWeight: 'bold',
+      marginBottom: 15,
+      color: '#333',
+    },
+    assessmentSearchExportContainer: {
+      flexDirection: 'row',
+      justifyContent: 'space-between', // Ensures space between export & search
+      alignItems: 'center',
+      marginBottom: 15,
+    },
+    assessmentExportButton: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: '#28a745',
+      paddingVertical: 8,
+      paddingHorizontal: 12, // Reduce width
+      borderRadius: 5,
+    },
+    assessmentExportButtonText: {
+      color: 'white',
+      fontSize: 16,
+      fontWeight: 'bold',
+      marginLeft: 5,
+      textAlign: 'center',
+    },
+    assessmentSearchContainer: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: '#fff',
+      borderRadius: 5,
+      borderWidth: 1,
+      borderColor: '#ccc',
+      paddingHorizontal: 10,
+    },
+    assessmentSearchInput: {
+      flex: 1,
+      paddingVertical: 8,
+      fontSize: 16,
+    },
+    assessmentSearchButton: {
+      padding: 10,
+      backgroundColor: '#007bff',
+      borderRadius: 5,
+    },
+    assessmentTableContainer: {
+      width: '100%',
+      minWidth: '78vw', // Makes table take full width
+      backgroundColor: '#fff',
+      borderRadius: 8,
+      overflow: 'hidden',
+      borderWidth: 1,
+      borderColor: '#ddd',
+      alignSelf: 'center',
+    },
+    assessmentTableHeader: {
+      flexDirection: 'row',
+      backgroundColor: '#007bff',
+      paddingVertical: 12,
+    },
+    assessmentTableHeaderText: {
+      flex: 2, // Adjusts based on other column widths
+      fontSize: 16,
+      fontWeight: 'bold',
+      color: 'white',
+      textAlign: 'center',
+    },
+    assessmentTableRow: {
+      flexDirection: 'row',
+      borderBottomWidth: 1,
+      borderBottomColor: '#ddd',
+      paddingVertical: 12,
+      alignItems: 'center', // Centers content vertically
+    },
+    assessmentTableCell: {
+      flex: 2, // Makes sure date takes more space
+      textAlign: 'center',
+      fontSize: 16,
+      paddingVertical: 10,
+      color: '#333',
+    },
+    assessmentTableActionCell: {
+      flex: 1, // Smaller column for button
+      justifyContent: 'center',
+      alignItems: 'center',
+    },    
+    assessmentNoAssessmentsText: {
+      padding: 20,
+      textAlign: 'center',
+      fontSize: 16,
+      color: '#777',
+    },
+  });
 
 export default UserDashboard;
