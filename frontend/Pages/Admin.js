@@ -195,12 +195,6 @@ const Admin = () => {
                 <View style={styles.chartHeader}>
                   <Text style={styles.chartTitle}>Weekly User Registrations</Text>
                   <View style={styles.chartActions}>
-                    <TouchableOpacity style={styles.chartAction}>
-                      <MaterialIcons name="refresh" size={18} color="#666" />
-                    </TouchableOpacity>
-                    <TouchableOpacity style={styles.chartAction}>
-                      <FontAwesome name="ellipsis-v" size={18} color="#666" />
-                    </TouchableOpacity>
                   </View>
                 </View>
                 <LineChart
@@ -227,12 +221,6 @@ const Admin = () => {
                 <View style={styles.chartHeader}>
                   <Text style={styles.chartTitle}>Assets by Type</Text>
                   <View style={styles.chartActions}>
-                    <TouchableOpacity style={styles.chartAction}>
-                      <MaterialIcons name="refresh" size={18} color="#666" />
-                    </TouchableOpacity>
-                    <TouchableOpacity style={styles.chartAction}>
-                      <FontAwesome name="ellipsis-v" size={18} color="#666" />
-                    </TouchableOpacity>
                   </View>
                 </View>
                 <PieChart
@@ -253,12 +241,6 @@ const Admin = () => {
                 <View style={styles.chartHeader}>
                   <Text style={styles.chartTitle}>Monthly User Registrations</Text>
                   <View style={styles.chartActions}>
-                    <TouchableOpacity style={styles.chartAction}>
-                      <MaterialIcons name="refresh" size={18} color="#666" />
-                    </TouchableOpacity>
-                    <TouchableOpacity style={styles.chartAction}>
-                      <FontAwesome name="ellipsis-v" size={18} color="#666" />
-                    </TouchableOpacity>
                   </View>
                 </View>
                 <LineChart
@@ -285,12 +267,6 @@ const Admin = () => {
                 <View style={styles.chartHeader}>
                   <Text style={styles.chartTitle}>Top 5 Predicted Diseases</Text>
                   <View style={styles.chartActions}>
-                    <TouchableOpacity style={styles.chartAction}>
-                      <MaterialIcons name="refresh" size={18} color="#666" />
-                    </TouchableOpacity>
-                    <TouchableOpacity style={styles.chartAction}>
-                      <FontAwesome name="ellipsis-v" size={18} color="#666" />
-                    </TouchableOpacity>
                   </View>
                 </View>
                 <PieChart

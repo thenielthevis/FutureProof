@@ -8,7 +8,7 @@ import { MaterialIcons, Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { FontAwesome, FontAwesome5 } from '@expo/vector-icons';
 import { LineChart, ProgressChart, PieChart } from 'react-native-chart-kit';
-import { getTaskCompletionsByUser, getTodayTaskCompletionsByUser, getTotalTimeSpentByUser } from '../API/task_completion_api';
+import { getTaskCompletionsByUser, getTodayTaskCompletionsByUser } from '../API/task_completion_api';
 import { getTotalOwnedAssetsCount } from '../API/assets_api';
 import { getTotalAvatarsCount, getTotalCoins } from '../API/user_api';
 
@@ -72,6 +72,10 @@ const UserDashboard = ({ navigation }) => {
         setTaskCompletions(completions);
         const todayCompletions = await getTodayTaskCompletionsByUser(token);
         setTodayTaskCompletions(todayCompletions);
+
+        // Calculate total time spent
+        const totalTime = completions.reduce((sum, task) => sum + task.time_spent, 0);
+        setTotalTimeSpent(totalTime);
       } catch (err) {
         setError(err.detail || 'An error occurred');
       } finally {
@@ -145,24 +149,14 @@ const UserDashboard = ({ navigation }) => {
     fetchTotalCoins();
   }, []);
 
-  useEffect(() => {
-    const fetchTotalTimeSpent = async () => {
-      try {
-        const token = await AsyncStorage.getItem('token');
-        if (!token) {
-          setError('No token found');
-          setLoading(false);
-          return;
-        }
-        const totalTime = await getTotalTimeSpentByUser(token);
-        setTotalTimeSpent(totalTime);
-      } catch (error) {
-        console.error('Error fetching total time spent:', error);
-      }
-    };
-
-    fetchTotalTimeSpent();
-  }, []);
+  const handleLogout = async () => {
+    try {
+      await AsyncStorage.removeItem('token');
+      navigation.navigate('Login');
+    } catch (err) {
+      setError('Failed to log out');
+    }
+  };
 
   const calculateBMI = (height, weight) => {
     const heightInMeters = height / 100;
@@ -402,7 +396,7 @@ const UserDashboard = ({ navigation }) => {
               <Text style={styles.sidebarText}>Dashboard</Text>
             </TouchableOpacity>
             
-            <TouchableOpacity style={styles.logoutButton}>
+            <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
               <Ionicons name="log-out-outline" size={22} color="#ffffff" />
               <Text style={styles.sidebarText}>Logout</Text>
             </TouchableOpacity>
@@ -627,9 +621,6 @@ const UserDashboard = ({ navigation }) => {
               <View style={styles.tasksListContainer}>
                 <View style={styles.tasksListHeader}>
                   <Text style={styles.tasksListTitle}>Recent Tasks</Text>
-                  <TouchableOpacity style={styles.viewAllButton}>
-                    <Text style={styles.viewAllText}>View All</Text>
-                  </TouchableOpacity>
                 </View>
                 
                 <ScrollView style={styles.tasksScrollView}>
