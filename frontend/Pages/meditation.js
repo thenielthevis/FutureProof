@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import {
-  View, Text, TouchableOpacity, StyleSheet, TextInput, Image, ScrollView, Modal, Alert, Platform, Button
+  View, Text, TouchableOpacity, StyleSheet, TextInput, Image, ScrollView, Modal, Alert, Platform, Button, Animated
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { createMeditationBreathingExercise, getMeditationBreathingExercises, updateMeditationBreathingExercise, deleteMeditationBreathingExercise } from '../API/meditation_api';
 import * as ImagePicker from 'expo-image-picker';
 import * as FileSystem from 'expo-file-system';
 import { LinearGradient } from 'expo-linear-gradient';
-import { FontAwesome, FontAwesome5 } from '@expo/vector-icons';
+import { FontAwesome, FontAwesome5, Ionicons, MaterialIcons } from '@expo/vector-icons';
 import * as Print from 'expo-print';
 import { shareAsync } from 'expo-sharing';
 import jsPDF from 'jspdf';
@@ -27,6 +27,7 @@ const MeditationCRUD = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [filteredMeditations, setFilteredMeditations] = useState([]);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [headerAnimation] = useState(new Animated.Value(0));
 
   useEffect(() => {
     const fetchMeditations = async () => {
@@ -36,9 +37,21 @@ const MeditationCRUD = () => {
         setFilteredMeditations(meditationsData);
       } catch (error) {
         console.error('Error fetching meditations:', error);
+        Toast.show({
+          type: 'error',
+          text1: 'Error',
+          text2: 'Failed to fetch meditations. Please try again.',
+        });
       }
     };
     fetchMeditations();
+    
+    // Animate header on mount
+    Animated.timing(headerAnimation, {
+      toValue: 1,
+      duration: 800,
+      useNativeDriver: true,
+    }).start();
   }, []);
 
   const convertImageToBase64 = async (uri) => {
@@ -263,15 +276,6 @@ const MeditationCRUD = () => {
     setModalVisible(true);
   };
 
-  const handleOpenModal = () => {
-    setEditingMeditation(null);
-    setName('');
-    setDescription('');
-    setFile(null);
-    setInstructions('');
-    setModalVisible(true);
-  };
-
   const handleSearch = () => {
     const filtered = meditations.filter(meditation =>
       meditation.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -287,127 +291,182 @@ const MeditationCRUD = () => {
   return (
     <View style={styles.container}>
       <Sidebar />
-      <View style={styles.content}>
-        <Text style={styles.header}>Meditation Management</Text>
-        <View style={styles.searchCreateContainer}>
-          <TouchableOpacity style={styles.openModalButton} onPress={handleOpenModal}>
-            <Text style={styles.openModalButtonText}>Create Meditation</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.exportButton} onPress={handleExportPDF}>
-            <Text style={styles.exportButtonText}>Export PDF</Text>
-          </TouchableOpacity>
-          <View style={styles.searchContainer}>
-            <TextInput
-              style={styles.searchInput}
-              placeholder="Search Meditations"
-              value={searchQuery}
-              onChangeText={setSearchQuery}
-            />
-            <TouchableOpacity style={styles.searchButton} onPress={handleSearch}>
-              <Text style={styles.searchButtonText}>Search</Text>
+      <View style={styles.mainContent}>
+        <Animated.View 
+          style={[
+            styles.pageHeader,
+            {
+              opacity: headerAnimation,
+              transform: [{ translateY: headerAnimation.interpolate({
+                inputRange: [0, 1],
+                outputRange: [-50, 0]
+              })}]
+            }
+          ]}
+        >
+          <Text style={styles.pageTitle}>Meditation Management</Text>
+          <View style={styles.headerActions}>
+            <TouchableOpacity 
+              style={styles.actionButton} 
+              onPress={() => {
+                setEditingMeditation(null);
+                setName('');
+                setDescription('');
+                setFile(null);
+                setInstructions('');
+                setModalVisible(true);
+              }}
+            >
+              <FontAwesome5 name="plus" size={14} color="white" />
+              <Text style={styles.actionButtonText}>Create Meditation</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.actionButton} onPress={handleExportPDF}>
+              <FontAwesome5 name="file-pdf" size={14} color="white" />
+              <Text style={styles.actionButtonText}>Export PDF</Text>
             </TouchableOpacity>
           </View>
+        </Animated.View>
+
+        <View style={styles.searchBar}>
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Search meditations by name or description..."
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+          />
+          <TouchableOpacity style={styles.searchButton} onPress={handleSearch}>
+            <FontAwesome name="search" size={16} color="white" />
+          </TouchableOpacity>
         </View>
 
         {/* Meditation List */}
-        <ScrollView contentContainerStyle={styles.meditationGrid}>
-          <View style={styles.tableContainer}>
-            <View style={styles.tableHeader}>
-              <Text style={styles.tableHeaderText}>Image</Text>
-              <Text style={styles.tableHeaderText}>Name</Text>
-              <Text style={styles.tableHeaderText}>Description</Text>
-              <Text style={styles.tableHeaderText}>Actions</Text>
-            </View>
+        <ScrollView style={styles.tableWrapper}>
+          <View style={styles.activityGrid}>
             {filteredMeditations.map((item) => (
-              <View style={styles.tableRow} key={item._id}>
-                <Image source={{ uri: item.url }} style={styles.meditationImage} />
-                <Text style={styles.tableCell}>{item.name}</Text>
-                <Text style={styles.tableCell}>{item.description}</Text>
-                <View style={styles.tableCell}>
-                  <TouchableOpacity style={styles.buttonEdit} onPress={() => handleEditMeditation(item)}>
-                    <Text style={styles.buttonText}>Edit</Text>
+              <View style={styles.activityCard} key={item._id}>
+                <Image source={{ uri: item.url }} style={styles.activityImage} />
+                <Text style={styles.activityName}>{item.name}</Text>
+                <Text style={styles.activityDescription} numberOfLines={2}>{item.description}</Text>
+                <View style={styles.actionsContainer}>
+                  <TouchableOpacity 
+                    style={[styles.actionBtn, styles.editBtn]} 
+                    onPress={() => handleEditMeditation(item)}>
+                    <FontAwesome name="pencil" size={14} color="white" />
                   </TouchableOpacity>
-                  <TouchableOpacity style={styles.buttonDelete} onPress={() => handleDeleteMeditation(item._id)}>
-                    <Text style={styles.buttonText}>Delete</Text>
+                  <TouchableOpacity 
+                    style={[styles.actionBtn, styles.deleteBtn]} 
+                    onPress={() => 
+                      Alert.alert(
+                        "Confirm Delete",
+                        "Are you sure you want to delete this meditation?",
+                        [
+                          { text: "Cancel", style: "cancel" },
+                          { text: "Delete", onPress: () => handleDeleteMeditation(item._id), style: "destructive" }
+                        ]
+                      )
+                    }>
+                    <FontAwesome name="trash" size={14} color="white" />
                   </TouchableOpacity>
                 </View>
               </View>
             ))}
+            
+            {filteredMeditations.length === 0 && (
+              <View style={styles.emptyState}>
+                <FontAwesome5 name="spa" size={48} color="#ccc" />
+                <Text style={styles.emptyStateText}>No meditations found</Text>
+                <Text style={styles.emptyStateSubText}>Try a different search or create a new meditation</Text>
+              </View>
+            )}
           </View>
         </ScrollView>
 
         {/* Modal for Create/Update Meditation */}
         <Modal
-          animationType="slide"
+          animationType="fade"
           transparent={true}
           visible={modalVisible}
           onRequestClose={() => setModalVisible(false)}
         >
           <View style={styles.modalOverlay}>
             <View style={styles.modalContent}>
-              <LinearGradient colors={['#1A3B32', '#1A3B32']} style={styles.modalHeader}>
+              <View style={styles.modalHeader}>
                 <Text style={styles.modalHeaderText}>
-                  {editingMeditation ? 'Update Meditation' : 'Create Meditation'}
+                  {editingMeditation ? 'Update Meditation' : 'Create New Meditation'}
                 </Text>
                 <TouchableOpacity style={styles.closeButton} onPress={() => setModalVisible(false)}>
-                  <Text style={styles.closeButtonText}>X</Text>
+                  <FontAwesome name="times" size={20} color="#666" />
                 </TouchableOpacity>
-              </LinearGradient>
-
-              {/* Name Input */}
-              <View style={styles.inputGroup}>
-                <Text style={styles.label}>Name</Text>
-                <TextInput
-                  style={styles.input}
-                  placeholder="Enter meditation name"
-                  value={name}
-                  onChangeText={setName}
-                />
               </View>
 
-              {/* Description Input */}
-              <View style={styles.inputGroup}>
-                <Text style={styles.label}>Description</Text>
-                <TextInput
-                  style={styles.input}
-                  placeholder="Enter meditation description"
-                  value={description}
-                  onChangeText={setDescription}
-                />
-              </View>
+              <ScrollView style={styles.modalBody}>
+                <View style={styles.inputGroup}>
+                  <Text style={styles.inputLabel}>Name</Text>
+                  <TextInput
+                    style={styles.input}
+                    placeholder="Enter meditation name"
+                    value={name}
+                    onChangeText={setName}
+                  />
+                </View>
 
-              {/* Instructions Input */}
-              <View style={styles.inputGroup}>
-                <Text style={styles.label}>Instructions</Text>
-                <TextInput
-                  style={styles.input}
-                  placeholder="Enter meditation instructions"
-                  value={instructions}
-                  onChangeText={setInstructions}
-                />
-              </View>
+                <View style={styles.inputGroup}>
+                  <Text style={styles.inputLabel}>Description</Text>
+                  <TextInput
+                    style={[styles.input, styles.textArea]}
+                    placeholder="Enter description"
+                    value={description}
+                    onChangeText={setDescription}
+                    multiline={true}
+                    numberOfLines={4}
+                  />
+                </View>
 
-              {/* Image Picker */}
-              <View style={styles.inputGroup}>
-                <Text style={styles.label}>Meditation Image</Text>
-                <TouchableOpacity style={styles.button} onPress={handlePickImage}>
-                  <Text style={styles.buttonText}>Pick an Image</Text>
+                <View style={styles.inputGroup}>
+                  <Text style={styles.inputLabel}>Instructions</Text>
+                  <TextInput
+                    style={[styles.input, styles.textArea]}
+                    placeholder="Enter instructions (one per line)"
+                    value={instructions}
+                    onChangeText={setInstructions}
+                    multiline={true}
+                    numberOfLines={4}
+                  />
+                </View>
+
+                <View style={styles.inputGroup}>
+                  <Text style={styles.inputLabel}>Meditation Image</Text>
+                  <TouchableOpacity style={styles.fileButton} onPress={handlePickImage}>
+                    <FontAwesome5 name="image" size={16} color="white" />
+                    <Text style={styles.fileButtonText}>Select Image</Text>
+                  </TouchableOpacity>
+                  {file && (
+                    <View style={styles.previewContainer}>
+                      <Image source={{ uri: file.uri }} style={styles.imagePreviewModal} />
+                      <TouchableOpacity style={styles.removePreviewBtn} onPress={() => setFile(null)}>
+                        <FontAwesome name="times-circle" size={20} color="#ff4d4d" />
+                      </TouchableOpacity>
+                    </View>
+                  )}
+                </View>
+              </ScrollView>
+
+              <View style={styles.modalFooter}>
+                <TouchableOpacity 
+                  style={styles.cancelButton} 
+                  onPress={() => setModalVisible(false)}
+                >
+                  <Text style={styles.cancelButtonText}>Cancel</Text>
                 </TouchableOpacity>
-                {file ? (
-                  <Image source={{ uri: file.uri }} style={styles.imagePreview} />
-                ) : (
-                  <Text style={styles.noImageText}>No image selected</Text>
-                )}
+                <TouchableOpacity
+                  style={styles.submitButton}
+                  onPress={editingMeditation ? handleUpdateMeditation : handleCreateMeditation}
+                >
+                  <Text style={styles.submitButtonText}>
+                    {editingMeditation ? 'Update Meditation' : 'Create Meditation'}
+                  </Text>
+                </TouchableOpacity>
               </View>
-
-              <TouchableOpacity
-                style={styles.buttonPrimary}
-                onPress={editingMeditation ? handleUpdateMeditation : handleCreateMeditation}
-              >
-                <Text style={styles.buttonText}>
-                  {editingMeditation ? 'Update Meditation' : 'Create Meditation'}
-                </Text>
-              </TouchableOpacity>
             </View>
           </View>
         </Modal>
@@ -416,270 +475,297 @@ const MeditationCRUD = () => {
   );
 };
 
+// Styles
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     flexDirection: 'row',
-    backgroundColor: '#F5F5F5',
+    backgroundColor: '#f8f9fc',
   },
-  sidebar: {
-    width: '20%',
-    backgroundColor: '#1A3B32',
-    padding: 20,
+  mainContent: {
+    flex: 1,
+    backgroundColor: '#f8f9fc',
+    paddingHorizontal: 25,
+    paddingTop: 20,
+    paddingBottom: 10,
   },
-  sidebarCollapsed: {
-    width: '5%',
-  },
-  sidebarItem: {
+  pageHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     marginBottom: 20,
+  },
+  pageTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#111827',
+  },
+  headerActions: {
+    flexDirection: 'row',
+  },
+  actionButton: {
+    backgroundColor: '#10B981',
     flexDirection: 'row',
     alignItems: 'center',
-  },
-  sidebarText: {
-    color: '#F5F5F5',
-    fontSize: 18,
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 6,
     marginLeft: 10,
+    shadowColor: '#10B981',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 3,
+    elevation: 2,
   },
-  content: {
-    flex: 1,
-    padding: 20,
+  actionButtonText: {
+    color: 'white',
+    fontWeight: '600',
+    marginLeft: 8,
   },
-  header: {
-    fontSize: 20,
-    fontWeight: 'bold',
+  searchBar: {
+    flexDirection: 'row',
     marginBottom: 20,
   },
-  input: {
+  searchInput: {
+    flex: 1,
+    backgroundColor: 'white',
     borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 5,
-    padding: 10,
-    marginBottom: 10,
-    backgroundColor: '#fff',
-    width: '100%',
+    borderColor: '#E5E7EB',
+    borderRadius: 6,
+    padding: 12,
+    paddingLeft: 16,
+    fontSize: 14,
   },
-  button: {
-    backgroundColor: '#2E7D32',
-    padding: 10,
-    borderRadius: 5,
+  searchButton: {
+    backgroundColor: '#10B981',
+    width: 48,
     alignItems: 'center',
-    marginBottom: 10,
-    width: '100%',
+    justifyContent: 'center',
+    borderRadius: 6,
+    marginLeft: 8,
   },
-  buttonPrimary: {
-    backgroundColor: '#3b88c3',
-    padding: 10,
-    borderRadius: 5,
-    alignItems: 'center',
-    marginBottom: 10,
-    width: '100%',
+  tableWrapper: {
+    flex: 1,
   },
-  buttonText: {
-    color: '#fff',
-    fontWeight: 'bold',
-  },
-  imagePreview: {
-    width: 100,
-    height: 100,
-    marginBottom: 10,
-    borderRadius: 5,
-  },
-  meditationGrid: {
+  activityGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'space-between',
   },
-  tableContainer: {
-    width: '100%',
-    backgroundColor: '#fff',
+  activityCard: {
+    width: '48%',
+    backgroundColor: 'white',
     borderRadius: 10,
     overflow: 'hidden',
     marginBottom: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 4,
   },
-  tableHeader: {
-    flexDirection: 'row',
-    backgroundColor: '#2E7D32',
-    padding: 15,
+  activityImage: {
+    width: '100%',
+    height: 180,
+    resizeMode: 'cover',
   },
-  tableHeaderText: {
-    flex: 1,
+  activityName: {
+    fontSize: 16,
     fontWeight: 'bold',
-    textAlign: 'center',
-    color: '#fff',
+    color: '#111827',
+    paddingHorizontal: 16,
+    paddingTop: 16,
+    paddingBottom: 4,
   },
-  tableRow: {
+  activityType: {
+    fontSize: 14,
+    color: '#4B5563',
+    paddingHorizontal: 16,
+    paddingBottom: 8,
+  },
+  activityDescription: {
+    fontSize: 14,
+    color: '#6B7280',
+    paddingHorizontal: 16,
+    paddingBottom: 16,
+  },
+  actionsContainer: {
     flexDirection: 'row',
-    padding: 15,
-    borderBottomWidth: 1,
-    borderBottomColor: '#eee',
-    backgroundColor: '#fff',
-    marginLeft: 120,
+    padding: 16,
+    borderTopWidth: 1,
+    borderTopColor: '#E5E7EB',
   },
-  tableCell: {
-    flex: 1,
-    textAlign: 'center',
+  actionBtn: {
+    width: 34,
+    height: 34,
+    borderRadius: 6,
+    alignItems: 'center',
     justifyContent: 'center',
-    marginLeft: 150,
+    marginRight: 8,
   },
-  meditationImage: {
-    width: 50,
-    height: 50,
-    borderRadius: 5,
-    alignSelf: 'center',
+  editBtn: {
+    backgroundColor: '#3B82F6',
   },
-  buttonEdit: {
-    backgroundColor: '#3498db',
-    padding: 8,
-    borderRadius: 5,
-    marginRight: 5,
-    marginBottom: 5,
-    width: '45%',
+  deleteBtn: {
+    backgroundColor: '#EF4444',
+  },
+  emptyState: {
     alignItems: 'center',
+    justifyContent: 'center',
+    padding: 40,
+    width: '100%',
   },
-  buttonDelete: {
-    backgroundColor: '#e74c3c',
-    padding: 8,
-    borderRadius: 5,
-    marginBottom: 5,
-    width: '45%',
-    alignItems: 'center',
+  emptyStateText: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#4B5563',
+    marginTop: 16,
   },
-  searchCreateContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-  openModalButton: {
-    backgroundColor: '#3498db',
-    padding: 15,
-    borderRadius: 5,
-    alignItems: 'center',
-    width: 120,
-  },
-  openModalButtonText: {
-    color: '#fff',
-    fontWeight: 'bold',
-  },
-  exportButton: {
-    backgroundColor: '#3498db',
-    padding: 15,
-    borderRadius: 5,
-    alignItems: 'center',
-    marginLeft: 1,
-  },
-  exportButtonText: {
-    color: '#fff',
-    fontWeight: 'bold',
-    fontSize: 16,
-  },
-  searchContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    width: '50%',
-  },
-  searchInput: {
-    flex: 1,
-    borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 5,
-    padding: 15,
-    marginRight: 10,
-    backgroundColor: '#fff',
-  },
-  searchButton: {
-    backgroundColor: '#3498db',
-    padding: 15,
-    borderRadius: 5,
-    alignItems: 'center',
-  },
-  searchButtonText: {
-    color: '#fff',
-    fontWeight: 'bold',
-    fontSize: 16,
+  emptyStateSubText: {
+    fontSize: 14,
+    color: '#6B7280',
+    marginTop: 8,
   },
   modalOverlay: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    padding: 20,
   },
   modalContent: {
-    width: '50%',
-    backgroundColor: '#1A3B32',
-    padding: 20,
+    width: '100%',
+    maxWidth: 500,
+    backgroundColor: 'white',
     borderRadius: 10,
-    alignItems: 'center',
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 16,
+    elevation: 10,
   },
   modalHeader: {
-    width: '100%',
-    backgroundColor: '#2E7D32',
-    padding: 10,
-    borderTopLeftRadius: 10,
-    borderTopRightRadius: 10,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 20,
+    padding: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E5E7EB',
   },
   modalHeaderText: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#fff',
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#111827',
   },
   closeButton: {
-    padding: 10,
-    backgroundColor: '#fff',
-    borderRadius: 20,
+    padding: 5,
   },
-  closeButtonText: {
-    fontSize: 18,
-    color: '#333',
+  modalBody: {
+    padding: 20,
+    maxHeight: 400,
   },
-  sidebarCollapsed: {
-    width: 80,
-  },
-  sidebarContent: {
-    width: '100%',
-    alignItems: 'flex-start',
+  modalFooter: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    padding: 20,
+    borderTopWidth: 1,
+    borderTopColor: '#E5E7EB',
   },
   inputGroup: {
-    marginBottom: 15,
-    width: '100%',
+    marginBottom: 20,
   },
-  label: {
-    color: '#fff',
+  inputLabel: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#374151',
     marginBottom: 8,
-    fontSize: 16,
-    fontWeight: '600',
   },
   input: {
     borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 5,
-    padding: 12,
-    backgroundColor: '#fff',
-    fontSize: 16,
-  },
-  noImageText: {
-    color: '#fff',
-    fontSize: 14,
-    marginTop: 8,
-    textAlign: 'center',
-  },
-  imagePreview: {
-    width: 120,
-    height: 120,
-    marginVertical: 10,
-    borderRadius: 8,
-    alignSelf: 'center',
-  },
-  button: {
-    backgroundColor: '#2E7D32',
-    padding: 12,
+    borderColor: '#D1D5DB',
     borderRadius: 6,
+    padding: 12,
+    fontSize: 14,
+    backgroundColor: '#F9FAFB',
+    color: '#111827',
+  },
+  textArea: {
+    height: 100,
+    textAlignVertical: 'top',
+  },
+  fileButton: {
+    backgroundColor: '#10B981',
+    flexDirection: 'row',
     alignItems: 'center',
-    marginVertical: 8,
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 6,
+    marginTop: 8,
+  },
+  fileButtonText: {
+    color: 'white',
+    fontWeight: '600',
+    marginLeft: 8,
+  },
+  previewContainer: {
+    position: 'relative',
+    marginTop: 10,
+  },
+  imagePreviewModal: {
+    width: '100%',
+    height: 200,
+    borderRadius: 6,
+    resizeMode: 'cover',
+  },
+  removePreviewBtn: {
+    position: 'absolute',
+    top: 5,
+    right: 5,
+    backgroundColor: 'white',
+    borderRadius: 50,
+    padding: 2,
+  },
+  cancelButton: {
+    backgroundColor: '#E5E7EB',
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 6,
+    marginRight: 10,
+  },
+  cancelButtonText: {
+    color: '#374151',
+    fontWeight: '600',
+  },
+  submitButton: {
+    backgroundColor: '#10B981',
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 6,
+  },
+  submitButtonText: {
+    color: 'white',
+    fontWeight: '600',
+  },
+  sidebar: {
+    width: 240,
+    height: '100%',
+    paddingVertical: 20,
+    paddingHorizontal: 0,
+  },
+  sidebarCollapsed: {
+    width: 60,
+  },
+  sidebarItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 9,
+    paddingHorizontal: 20,
+    marginBottom: 1,
+  },
+  sidebarText: {
+    color: 'white',
   },
 });
+
 export default MeditationCRUD;

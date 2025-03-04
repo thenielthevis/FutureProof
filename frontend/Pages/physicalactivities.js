@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import {
-  View, Text, TouchableOpacity, StyleSheet, TextInput, Image, ScrollView, Modal, Alert, Platform, Button,
+  View, Text, TouchableOpacity, StyleSheet, TextInput, Image, ScrollView, Modal, Alert, Platform, Button, Animated
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { createPhysicalActivity, getPhysicalActivities, getPhysicalActivityById, updatePhysicalActivity, deletePhysicalActivity } from '../API/physical_activities_api';
 import * as ImagePicker from 'expo-image-picker';
 import { LinearGradient } from 'expo-linear-gradient';
-import { FontAwesome, FontAwesome5 } from '@expo/vector-icons';
+import { FontAwesome, FontAwesome5, Ionicons, MaterialIcons } from '@expo/vector-icons';
 import Toast from 'react-native-toast-message';
 import * as Print from 'expo-print';
 import { shareAsync } from 'expo-sharing';
@@ -31,6 +31,7 @@ const PhysicalActivitiesCRUD = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [filteredActivities, setFilteredActivities] = useState([]);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [headerAnimation] = useState(new Animated.Value(0));
 
   // Fetch all activities on component mount
   useEffect(() => {
@@ -49,6 +50,13 @@ const PhysicalActivitiesCRUD = () => {
       }
     };
     fetchActivities();
+    
+    // Animate header on mount
+    Animated.timing(headerAnimation, {
+      toValue: 1,
+      duration: 800,
+      useNativeDriver: true,
+    }).start();
   }, []);
 
   // Handle image picker
@@ -291,127 +299,223 @@ const PhysicalActivitiesCRUD = () => {
   return (
     <View style={styles.container}>
       <Sidebar />
-      {/* Main Content */}
-      <View style={styles.content}>
-        <Text style={styles.header}>Physical Activities Management</Text>
-        <View style={styles.searchCreateContainer}>
-          <TouchableOpacity style={styles.openModalButton} onPress={() => setModalVisible(true)}>
-            <Text style={styles.openModalButtonText}>Create Activity</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.exportButton} onPress={handleExportPDF}>
-            <Text style={styles.exportButtonText}>Export PDF</Text>
-          </TouchableOpacity>
-          <View style={styles.searchContainer}>
-            <TextInput
-              style={styles.searchInput}
-              placeholder="Search Activities"
-              value={searchQuery}
-              onChangeText={setSearchQuery}
-            />
-            <TouchableOpacity style={styles.searchButton} onPress={handleSearch}>
-              <Text style={styles.searchButtonText}>Search</Text>
+      <View style={styles.mainContent}>
+        <Animated.View 
+          style={[
+            styles.pageHeader,
+            {
+              opacity: headerAnimation,
+              transform: [{ translateY: headerAnimation.interpolate({
+                inputRange: [0, 1],
+                outputRange: [-50, 0]
+              })}]
+            }
+          ]}
+        >
+          <Text style={styles.pageTitle}>Physical Activities Management</Text>
+          <View style={styles.headerActions}>
+            <TouchableOpacity style={styles.actionButton} onPress={() => setModalVisible(true)}>
+              <FontAwesome5 name="plus" size={14} color="white" />
+              <Text style={styles.actionButtonText}>Create Activity</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.actionButton} onPress={handleExportPDF}>
+              <FontAwesome5 name="file-pdf" size={14} color="white" />
+              <Text style={styles.actionButtonText}>Export PDF</Text>
             </TouchableOpacity>
           </View>
+        </Animated.View>
+
+        <View style={styles.searchBar}>
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Search activities by name or description..."
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+          />
+          <TouchableOpacity style={styles.searchButton} onPress={handleSearch}>
+            <FontAwesome name="search" size={16} color="white" />
+          </TouchableOpacity>
         </View>
 
         {/* Activity List */}
-        <ScrollView contentContainerStyle={styles.activityGrid}>
-          {filteredActivities.map((item) => (
-            <View style={styles.activityCard} key={item._id}>
-              <Image source={{ uri: item.url }} style={styles.activityImage} />
-              <Text style={styles.activityName}>{item.activity_name}</Text>
-              <Text style={styles.activityType}>{item.activity_type}</Text>
-              <Text style={styles.activityDescription}>{item.description}</Text>
-              <View style={styles.actionsContainer}>
-                <TouchableOpacity style={styles.buttonEdit} onPress={() => handleEditActivity(item)}>
-                  <Text style={styles.buttonText}>Edit</Text>
-                </TouchableOpacity>
-                <TouchableOpacity style={styles.buttonDelete} onPress={() => handleDeleteActivity(item._id)}>
-                  <Text style={styles.buttonText}>Delete</Text>
-                </TouchableOpacity>
+        <ScrollView style={styles.tableWrapper}>
+          <View style={styles.activityGrid}>
+            {filteredActivities.map((item) => (
+              <View style={styles.activityCard} key={item._id}>
+                <Image source={{ uri: item.url }} style={styles.activityImage} />
+                <Text style={styles.activityName}>{item.activity_name}</Text>
+                <Text style={styles.activityType}>{item.activity_type}</Text>
+                <Text style={styles.activityDescription} numberOfLines={2}>{item.description}</Text>
+                <View style={styles.actionsContainer}>
+                  <TouchableOpacity 
+                    style={[styles.actionBtn, styles.editBtn]} 
+                    onPress={() => handleEditActivity(item)}>
+                    <FontAwesome name="pencil" size={14} color="white" />
+                  </TouchableOpacity>
+                  <TouchableOpacity 
+                    style={[styles.actionBtn, styles.deleteBtn]} 
+                    onPress={() => 
+                      Alert.alert(
+                        "Confirm Delete",
+                        "Are you sure you want to delete this activity?",
+                        [
+                          { text: "Cancel", style: "cancel" },
+                          { text: "Delete", onPress: () => handleDeleteActivity(item._id), style: "destructive" }
+                        ]
+                      )
+                    }>
+                    <FontAwesome name="trash" size={14} color="white" />
+                  </TouchableOpacity>
+                </View>
               </View>
-            </View>
-          ))}
+            ))}
+            
+            {filteredActivities.length === 0 && (
+              <View style={styles.emptyState}>
+                <FontAwesome5 name="running" size={48} color="#ccc" />
+                <Text style={styles.emptyStateText}>No activities found</Text>
+                <Text style={styles.emptyStateSubText}>Try a different search or create a new activity</Text>
+              </View>
+            )}
+          </View>
         </ScrollView>
 
         {/* Modal for Create/Update Activity */}
         <Modal
-          animationType="slide"
+          animationType="fade"
           transparent={true}
           visible={modalVisible}
           onRequestClose={() => setModalVisible(false)}
         >
           <View style={styles.modalOverlay}>
             <View style={styles.modalContent}>
-              <Text style={styles.modalHeader}>
-                {editingActivity ? 'Update Activity' : 'Create Activity'}
-              </Text>
-
-              <ScrollView>
-                <TextInput
-                  style={styles.input}
-                  placeholder="Activity Name"
-                  value={activityName}
-                  onChangeText={setActivityName}
-                />
-                <TextInput
-                  style={styles.input}
-                  placeholder="Activity Type"
-                  value={activityType}
-                  onChangeText={setActivityType}
-                />
-                <TextInput
-                  style={styles.input}
-                  placeholder="Description"
-                  value={description}
-                  onChangeText={setDescription}
-                  multiline
-                />
-                <TextInput
-                  style={styles.input}
-                  placeholder="URL"
-                  value={url}
-                  onChangeText={setUrl}
-                />
-                <TextInput
-                  style={styles.input}
-                  placeholder="Public ID"
-                  value={publicId}
-                  onChangeText={setPublicId}
-                />
-                <TextInput
-                  style={[styles.input, { height: 100 }]}
-                  placeholder="Instructions (One per line)"
-                  value={instructions}
-                  onChangeText={setInstructions}
-                  multiline
-                />
-                <TextInput
-                  style={styles.input}
-                  placeholder="Repetition (Optional)"
-                  value={repetition}
-                  onChangeText={setRepetition}
-                  keyboardType="numeric"
-                />
-                <TextInput
-                  style={styles.input}
-                  placeholder="Timer (Optional)"
-                  value={timer}
-                  onChangeText={setTimer}
-                  keyboardType="numeric"
-                />
-                <TouchableOpacity style={styles.button} onPress={handlePickImage}>
-                  <Text style={styles.buttonText}>Pick an Image</Text>
+              <View style={styles.modalHeader}>
+                <Text style={styles.modalHeaderText}>
+                  {editingActivity ? 'Update Activity' : 'Create New Activity'}
+                </Text>
+                <TouchableOpacity style={styles.closeButton} onPress={() => setModalVisible(false)}>
+                  <FontAwesome name="times" size={20} color="#666" />
                 </TouchableOpacity>
-                {file && <Image source={{ uri: file.uri }} style={styles.imagePreview} />}
+              </View>
+
+              <ScrollView style={styles.modalBody}>
+                <View style={styles.inputGroup}>
+                  <Text style={styles.inputLabel}>Activity Name</Text>
+                  <TextInput
+                    style={styles.input}
+                    placeholder="Enter activity name"
+                    value={activityName}
+                    onChangeText={setActivityName}
+                  />
+                </View>
+
+                <View style={styles.inputGroup}>
+                  <Text style={styles.inputLabel}>Activity Type</Text>
+                  <TextInput
+                    style={styles.input}
+                    placeholder="Enter activity type"
+                    value={activityType}
+                    onChangeText={setActivityType}
+                  />
+                </View>
+
+                <View style={styles.inputGroup}>
+                  <Text style={styles.inputLabel}>Description</Text>
+                  <TextInput
+                    style={[styles.input, styles.textArea]}
+                    placeholder="Enter description"
+                    value={description}
+                    onChangeText={setDescription}
+                    multiline={true}
+                    numberOfLines={4}
+                  />
+                </View>
+
+                <View style={styles.inputGroup}>
+                  <Text style={styles.inputLabel}>URL</Text>
+                  <TextInput
+                    style={styles.input}
+                    placeholder="Enter URL"
+                    value={url}
+                    onChangeText={setUrl}
+                  />
+                </View>
+
+                <View style={styles.inputGroup}>
+                  <Text style={styles.inputLabel}>Public ID</Text>
+                  <TextInput
+                    style={styles.input}
+                    placeholder="Enter Public ID"
+                    value={publicId}
+                    onChangeText={setPublicId}
+                  />
+                </View>
+
+                <View style={styles.inputGroup}>
+                  <Text style={styles.inputLabel}>Instructions</Text>
+                  <TextInput
+                    style={[styles.input, styles.textArea]}
+                    placeholder="Enter instructions (one per line)"
+                    value={instructions}
+                    onChangeText={setInstructions}
+                    multiline={true}
+                    numberOfLines={4}
+                  />
+                </View>
+
+                <View style={styles.inputGroup}>
+                  <Text style={styles.inputLabel}>Repetition (Optional)</Text>
+                  <TextInput
+                    style={styles.input}
+                    placeholder="Enter repetition"
+                    value={repetition}
+                    onChangeText={setRepetition}
+                    keyboardType="numeric"
+                  />
+                </View>
+
+                <View style={styles.inputGroup}>
+                  <Text style={styles.inputLabel}>Timer (Optional)</Text>
+                  <TextInput
+                    style={styles.input}
+                    placeholder="Enter timer"
+                    value={timer}
+                    onChangeText={setTimer}
+                    keyboardType="numeric"
+                  />
+                </View>
+
+                <View style={styles.inputGroup}>
+                  <Text style={styles.inputLabel}>Activity Image</Text>
+                  <TouchableOpacity style={styles.fileButton} onPress={handlePickImage}>
+                    <FontAwesome5 name="image" size={16} color="white" />
+                    <Text style={styles.fileButtonText}>Select Image</Text>
+                  </TouchableOpacity>
+                  {file && (
+                    <View style={styles.previewContainer}>
+                      <Image source={{ uri: file.uri }} style={styles.imagePreviewModal} />
+                      <TouchableOpacity style={styles.removePreviewBtn} onPress={() => setFile(null)}>
+                        <FontAwesome name="times-circle" size={20} color="#ff4d4d" />
+                      </TouchableOpacity>
+                    </View>
+                  )}
+                </View>
               </ScrollView>
 
-              <View style={styles.buttonContainer}>
-                <TouchableOpacity style={styles.button} onPress={handleCreateOrUpdateActivity}>
-                  <Text style={styles.buttonText}>{editingActivity ? 'Update' : 'Create'}</Text>
+              <View style={styles.modalFooter}>
+                <TouchableOpacity 
+                  style={styles.cancelButton} 
+                  onPress={() => setModalVisible(false)}
+                >
+                  <Text style={styles.cancelButtonText}>Cancel</Text>
                 </TouchableOpacity>
-                <TouchableOpacity style={[styles.button, styles.cancelButton]} onPress={() => setModalVisible(false)}>
-                  <Text style={styles.buttonText}>Cancel</Text>
+                <TouchableOpacity
+                  style={styles.submitButton}
+                  onPress={handleCreateOrUpdateActivity}
+                >
+                  <Text style={styles.submitButtonText}>
+                    {editingActivity ? 'Update Activity' : 'Create Activity'}
+                  </Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -427,72 +531,72 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     flexDirection: 'row',
-    backgroundColor: '#F5F5F5',
+    backgroundColor: '#f8f9fc',
   },
-  sidebar: {
-    width: '20%',
-    backgroundColor: '#1A3B32',
-    padding: 20,
-  },
-  sidebarCollapsed: {
-    width: '5%',
-  },
-  sidebarItem: {
-    marginBottom: 20,
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  sidebarText: {
-    color: '#F5F5F5',
-    fontSize: 18,
-    marginLeft: 10,
-  },
-  content: {
+  mainContent: {
     flex: 1,
-    padding: 20,
+    backgroundColor: '#f8f9fc',
+    paddingHorizontal: 25,
+    paddingTop: 20,
+    paddingBottom: 10,
   },
-  header: {
-    fontSize: 24,
-    marginBottom: 20,
-  },
-  searchCreateContainer: {
+  pageHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 20,
   },
-  openModalButton: {
-    backgroundColor: '#3498db',
-    padding: 15,
-    borderRadius: 5,
-    alignItems: 'center',
-  },
-  openModalButtonText: {
-    color: '#fff',
+  pageTitle: {
+    fontSize: 24,
     fontWeight: 'bold',
+    color: '#111827',
   },
-  searchContainer: {
+  headerActions: {
+    flexDirection: 'row',
+  },
+  actionButton: {
+    backgroundColor: '#10B981',
     flexDirection: 'row',
     alignItems: 'center',
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 6,
+    marginLeft: 10,
+    shadowColor: '#10B981',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 3,
+    elevation: 2,
+  },
+  actionButtonText: {
+    color: 'white',
+    fontWeight: '600',
+    marginLeft: 8,
+  },
+  searchBar: {
+    flexDirection: 'row',
+    marginBottom: 20,
   },
   searchInput: {
     flex: 1,
+    backgroundColor: 'white',
     borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 5,
-    padding: 15,
-    marginRight: 10,
-    backgroundColor: '#fff',
+    borderColor: '#E5E7EB',
+    borderRadius: 6,
+    padding: 12,
+    paddingLeft: 16,
+    fontSize: 14,
   },
   searchButton: {
-    backgroundColor: '#3498db',
-    padding: 15,
-    borderRadius: 5,
+    backgroundColor: '#10B981',
+    width: 48,
     alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 6,
+    marginLeft: 8,
   },
-  searchButtonText: {
-    color: '#fff',
-    fontWeight: 'bold',
+  tableWrapper: {
+    flex: 1,
   },
   activityGrid: {
     flexDirection: 'row',
@@ -501,121 +605,217 @@ const styles = StyleSheet.create({
   },
   activityCard: {
     width: '48%',
-    backgroundColor: '#fff',
-    padding: 10,
-    borderRadius: 8,
-    marginBottom: 10,
+    backgroundColor: 'white',
+    borderRadius: 10,
+    overflow: 'hidden',
+    marginBottom: 20,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    shadowRadius: 8,
+    elevation: 4,
   },
   activityImage: {
     width: '100%',
-    height: 120,
-    borderRadius: 8,
-    marginBottom: 10,
+    height: 180,
+    resizeMode: 'cover',
   },
   activityName: {
     fontSize: 16,
     fontWeight: 'bold',
-    marginBottom: 5,
+    color: '#111827',
+    paddingHorizontal: 16,
+    paddingTop: 16,
+    paddingBottom: 4,
   },
   activityType: {
     fontSize: 14,
-    color: '#555',
-    marginBottom: 5,
+    color: '#4B5563',
+    paddingHorizontal: 16,
+    paddingBottom: 8,
   },
   activityDescription: {
-    fontSize: 12,
-    color: '#777',
+    fontSize: 14,
+    color: '#6B7280',
+    paddingHorizontal: 16,
+    paddingBottom: 16,
   },
   actionsContainer: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginTop: 10,
+    padding: 16,
+    borderTopWidth: 1,
+    borderTopColor: '#E5E7EB',
   },
-  buttonEdit: {
-    backgroundColor: '#3498db',
-    padding: 5,
-    borderRadius: 5,
+  actionBtn: {
+    width: 34,
+    height: 34,
+    borderRadius: 6,
     alignItems: 'center',
-    flex: 1,
-    marginRight: 5,
+    justifyContent: 'center',
+    marginRight: 8,
   },
-  buttonDelete: {
-    backgroundColor: '#e74c3c',
-    padding: 5,
-    borderRadius: 5,
+  editBtn: {
+    backgroundColor: '#3B82F6',
+  },
+  deleteBtn: {
+    backgroundColor: '#EF4444',
+  },
+  emptyState: {
     alignItems: 'center',
-    flex: 1,
-    marginLeft: 5,
+    justifyContent: 'center',
+    padding: 40,
+    width: '100%',
   },
-  buttonText: {
-    color: '#fff',
-    fontWeight: 'bold',
+  emptyStateText: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#4B5563',
+    marginTop: 16,
+  },
+  emptyStateSubText: {
+    fontSize: 14,
+    color: '#6B7280',
+    marginTop: 8,
   },
   modalOverlay: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    padding: 20,
   },
   modalContent: {
-    width: '90%',
-    backgroundColor: '#fff',
-    padding: 20,
+    width: '100%',
+    maxWidth: 500,
+    backgroundColor: 'white',
     borderRadius: 10,
-    maxHeight: '80%',
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 16,
+    elevation: 10,
   },
   modalHeader: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    marginBottom: 20,
-    textAlign: 'center',
-  },
-  input: {
-    height: 40,
-    borderColor: 'gray',
-    borderWidth: 1,
-    marginBottom: 10,
-    padding: 10,
-    borderRadius: 5,
-  },
-  buttonContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E5E7EB',
+  },
+  modalHeaderText: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#111827',
+  },
+  closeButton: {
+    padding: 5,
+  },
+  modalBody: {
+    padding: 20,
+    maxHeight: 400,
+  },
+  modalFooter: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    padding: 20,
+    borderTopWidth: 1,
+    borderTopColor: '#E5E7EB',
+  },
+  inputGroup: {
+    marginBottom: 20,
+  },
+  inputLabel: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#374151',
+    marginBottom: 8,
+  },
+  input: {
+    borderWidth: 1,
+    borderColor: '#D1D5DB',
+    borderRadius: 6,
+    padding: 12,
+    fontSize: 14,
+    backgroundColor: '#F9FAFB',
+    color: '#111827',
+  },
+  textArea: {
+    height: 100,
+    textAlignVertical: 'top',
+  },
+  fileButton: {
+    backgroundColor: '#10B981',
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 6,
+    marginTop: 8,
+  },
+  fileButtonText: {
+    color: 'white',
+    fontWeight: '600',
+    marginLeft: 8,
+  },
+  previewContainer: {
+    position: 'relative',
     marginTop: 10,
   },
-  button: {
-    backgroundColor: '#3498db',
-    padding: 10,
-    borderRadius: 5,
-    alignItems: 'center',
-    flex: 1,
-    marginHorizontal: 5,
+  imagePreviewModal: {
+    width: '100%',
+    height: 200,
+    borderRadius: 6,
+    resizeMode: 'cover',
+  },
+  removePreviewBtn: {
+    position: 'absolute',
+    top: 5,
+    right: 5,
+    backgroundColor: 'white',
+    borderRadius: 50,
+    padding: 2,
   },
   cancelButton: {
-    backgroundColor: '#e74c3c',
+    backgroundColor: '#E5E7EB',
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 6,
+    marginRight: 10,
   },
-  imagePreview: {
-    width: 100,
-    height: 100,
-    marginVertical: 10,
-    borderRadius: 8,
-    alignSelf: 'center',
+  cancelButtonText: {
+    color: '#374151',
+    fontWeight: '600',
   },
-  exportButton: {
-    backgroundColor: '#3498db',
-    padding: 15,
-    borderRadius: 5,
+  submitButton: {
+    backgroundColor: '#10B981',
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 6,
+  },
+  submitButtonText: {
+    color: 'white',
+    fontWeight: '600',
+  },
+  sidebar: {
+    width: 240,
+    height: '100%',
+    paddingVertical: 20,
+    paddingHorizontal: 0,
+  },
+  sidebarCollapsed: {
+    width: 60,
+  },
+  sidebarItem: {
+    flexDirection: 'row',
     alignItems: 'center',
+    paddingVertical: 9,
+    paddingHorizontal: 20,
+    marginBottom: 1,
   },
-  exportButtonText: {
-    color: '#fff',
-    fontWeight: 'bold',
-    fontSize: 16,
+  sidebarText: {
+    color: 'white',
   },
 });
 

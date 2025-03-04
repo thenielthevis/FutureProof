@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, FlatList, ScrollView, Animated } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, FlatList, ScrollView, Animated, Platform, Alert } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { FontAwesome, FontAwesome5, Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -14,11 +14,15 @@ import { getAllTaskCompletions } from '../API/task_completion_api';
 import { getMostPredictedDisease, getTopPredictedDiseases } from '../API/prediction_api';
 import { PieChart, LineChart } from 'react-native-chart-kit';
 import Sidebar from './Sidebar';
+import * as Print from 'expo-print';
+import { shareAsync } from 'expo-sharing';
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
+import Chart from 'chart.js/auto';
 
 const Admin = () => {
   const navigation = useNavigation();
   const [dashboardData, setDashboardData] = useState({
-    totalAssets: 0,
     totalUsers: 0,
     totalAvatars: 0,
     totalMeditationExercises: 0,
@@ -159,6 +163,175 @@ const Admin = () => {
     }
   };
 
+  const convertImageToBase64 = async (uri) => {
+    try {
+      if (uri.startsWith('http://') || uri.startsWith('https://')) {
+        const response = await fetch(uri);
+        const blob = await response.blob();
+        return new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onloadend = () => resolve(reader.result);
+          reader.onerror = reject;
+          reader.readAsDataURL(blob);
+        });
+      } else {
+        const base64 = await FileSystem.readAsStringAsync(uri, { encoding: 'base64' });
+        return `data:image/png;base64,${base64}`;
+      }
+    } catch (error) {
+      console.error('Error converting image:', error);
+      return null;
+    }
+  };
+
+  const handleExportPDF = async () => {
+    try {
+      const logo1Base64 = await convertImageToBase64("https://i.ibb.co/GQygLXT9/tuplogo.png");
+      const logo2Base64 = await convertImageToBase64("https://i.ibb.co/YBStKgFC/logo-2.png");
+  
+      // Generate HTML content for the summary (Page 1)
+      const summaryHtml = `
+        <div style="font-family: Arial, sans-serif; padding: 20px; background: #fff; max-width: 900px; margin: 0 auto;">
+          <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 2px solid #f0f0f0; padding-bottom: 10px;">
+            <img src="${logo1Base64}" alt="Logo 1" style="height: 60px; width: auto;">
+            <div style="flex: 1; text-align: center; margin-top: 15px;">
+              <h1 style="font-size: 18px; margin: 0;">FUTUREPROOF: A Gamified AI Platform for Predictive Health and Preventive Wellness</h1>
+              <br>
+              <h2 style="font-size: 16px; margin: 0;">Admin Dashboard Report</h2>
+              <h4 style="font-size: 14px; margin: 5px 0 0;">${new Date().toLocaleDateString()}</h4>
+            </div>
+            <img src="${logo2Base64}" alt="Logo 2" style="height: 60px; width: auto;">
+          </div>
+          <div style="margin-top: 20px;">
+            <h3>Our Mission</h3>
+            <p>FutureProof empowers individuals with AI-driven, gamified health insights for proactive well-being. By integrating genetic, lifestyle, and environmental data, we deliver personalized, preventive care solutions.</p>
+            <h3>Our Vision</h3>
+            <p>We envision a future where predictive healthcare transforms lives, making well-being accessible, engaging, and proactive through AI and gamification.</p>
+          </div>
+          <div style="margin-top: 20px;">
+            <h3>Summary</h3>
+            <table style="width: 100%; border-collapse: collapse; margin-top: 20px;">
+              ${dashboardCards.map(card => `
+                <tr>
+                  <th style="padding: 12px; border: 1px solid #ddd; text-align: left; background-color: #f8f9fa;">${card.title}</th>
+                  <td style="padding: 12px; border: 1px solid #ddd;">${typeof card.value === 'number' ? card.value.toLocaleString() : card.value}</td>
+                </tr>
+              `).join('')}
+            </table>
+          </div>
+        </div>
+      `;
+  
+      // Generate HTML content for the charts (Page 2 onwards)
+      const chartsHtml = `
+        <div style="font-family: Arial, sans-serif; padding: 20px; background: #fff; max-width: 900px; margin: 0 auto;">
+          <!-- Pair 1: Weekly User Registrations and Assets by Type -->
+          <div style="display: flex; justify-content: space-between; margin-bottom: 20px;">
+            <div style="width: 48%; text-align: center;">
+              <h3>Weekly User Registrations</h3>
+              <img src="${await convertChartToBase64('weeklyRegistrationsChart')}" alt="Weekly User Registrations" style="width: 100%; height: auto;">
+            </div>
+            <div style="width: 48%; text-align: center;">
+              <h3>Assets by Type</h3>
+              <img src="${await convertChartToBase64('assetsByTypeChart')}" alt="Assets by Type" style="width: 100%; height: auto;">
+            </div>
+          </div>
+          <div style="page-break-after: always;"></div>
+  
+          <!-- Pair 2: Monthly User Registrations and Top 5 Predicted Diseases -->
+          <div style="display: flex; justify-content: space-between; margin-bottom: 20px;">
+            <div style="width: 48%; text-align: center;">
+              <h3>Monthly User Registrations</h3>
+              <img src="${await convertChartToBase64('monthlyRegistrationsChart')}" alt="Monthly User Registrations" style="width: 100%; height: auto;">
+            </div>
+            <div style="width: 48%; text-align: center;">
+              <h3>Top 5 Predicted Diseases</h3>
+              <img src="${await convertChartToBase64('topPredictedDiseasesChart')}" alt="Top 5 Predicted Diseases" style="width: 100%; height: auto;">
+            </div>
+          </div>
+        </div>
+      `;
+  
+      if (Platform.OS === 'web') {
+        const summaryContainer = document.createElement('div');
+        summaryContainer.style.position = 'absolute';
+        summaryContainer.style.left = '-9999px';
+        summaryContainer.innerHTML = summaryHtml;
+        document.body.appendChild(summaryContainer);
+  
+        const chartsContainer = document.createElement('div');
+        chartsContainer.style.position = 'absolute';
+        chartsContainer.style.left = '-9999px';
+        chartsContainer.innerHTML = chartsHtml;
+        document.body.appendChild(chartsContainer);
+  
+        const waitForImages = () => {
+          const images = [...summaryContainer.getElementsByTagName('img'), ...chartsContainer.getElementsByTagName('img')];
+          return Promise.all(
+            images.map((img) => {
+              if (img.complete) return Promise.resolve();
+              return new Promise((resolve, reject) => {
+                img.onload = resolve;
+                img.onerror = reject;
+              });
+            })
+          );
+        };
+  
+        try {
+          await waitForImages();
+  
+          const pdf = new jsPDF('p', 'pt', 'a4');
+  
+          // Render summary page
+          const summaryCanvas = await html2canvas(summaryContainer);
+          const summaryImgData = summaryCanvas.toDataURL('image/png');
+          const pdfWidth = pdf.internal.pageSize.getWidth();
+          const summaryPdfHeight = (summaryCanvas.height * pdfWidth) / summaryCanvas.width;
+          pdf.addImage(summaryImgData, 'PNG', 0, 0, pdfWidth, summaryPdfHeight);
+  
+          // Render charts pages
+          const chartsCanvas = await html2canvas(chartsContainer);
+          const chartsImgData = chartsCanvas.toDataURL('image/png');
+          const chartsPdfHeight = (chartsCanvas.height * pdfWidth) / chartsCanvas.width;
+  
+          let currentHeight = 0;
+          while (currentHeight < chartsCanvas.height) {
+            pdf.addPage();
+            pdf.addImage(chartsImgData, 'PNG', 0, -currentHeight, pdfWidth, chartsPdfHeight);
+            currentHeight += pdf.internal.pageSize.getHeight();
+          }
+  
+          pdf.save('admin-dashboard-report.pdf');
+  
+        } catch (err) {
+          console.error('Error generating PDF:', err);
+          Alert.alert('Error', 'Failed to generate PDF. Please try again.');
+        } finally {
+          document.body.removeChild(summaryContainer);
+          document.body.removeChild(chartsContainer);
+        }
+      } else {
+        try {
+          const { uri } = await Print.printToFileAsync({ html: summaryHtml + chartsHtml });
+          await shareAsync(uri, { UTI: '.pdf', mimeType: 'application/pdf' });
+        } catch (error) {
+          console.error('Error generating PDF:', error);
+          Alert.alert('Error', 'Failed to generate PDF. Please try again.');
+        }
+      }
+    } catch (error) {
+      console.error('Error in handleExportPDF:', error);
+      Alert.alert('Error', 'Something went wrong. Please try again.');
+    }
+  };
+
+  const convertChartToBase64 = async (chartId) => {
+    const chart = document.getElementById(chartId);
+    const canvas = await html2canvas(chart);
+    return canvas.toDataURL('image/png');
+  };
+
   return (
     <View style={styles.container}>
       <Sidebar />
@@ -166,7 +339,9 @@ const Admin = () => {
         <ScrollView style={styles.content}>
           <View style={styles.dashboard}>
             <Text style={styles.pageTitle}>Admin Dashboard</Text>
-            
+            <TouchableOpacity style={styles.exportButton} onPress={handleExportPDF}>
+              <Text style={styles.exportButtonText}>Export PDF</Text>
+            </TouchableOpacity>
             {/* Summary Cards */}
             <View style={styles.cardsContainer}>
               <FlatList
@@ -191,7 +366,7 @@ const Admin = () => {
             
             <View style={styles.chartGrid}>
               {/* Weekly User Registrations */}
-              <View style={styles.chartContainer}>
+              <View style={styles.chartContainer} id="weeklyRegistrationsChart">
                 <View style={styles.chartHeader}>
                   <Text style={styles.chartTitle}>Weekly User Registrations</Text>
                   <View style={styles.chartActions}>
@@ -217,7 +392,7 @@ const Admin = () => {
               </View>
               
               {/* Assets by Type */}
-              <View style={styles.chartContainer}>
+              <View style={styles.chartContainer} id="assetsByTypeChart">
                 <View style={styles.chartHeader}>
                   <Text style={styles.chartTitle}>Assets by Type</Text>
                   <View style={styles.chartActions}>
@@ -237,7 +412,7 @@ const Admin = () => {
               </View>
               
               {/* Monthly User Registrations */}
-              <View style={styles.chartContainer}>
+              <View style={styles.chartContainer} id="monthlyRegistrationsChart">
                 <View style={styles.chartHeader}>
                   <Text style={styles.chartTitle}>Monthly User Registrations</Text>
                   <View style={styles.chartActions}>
@@ -263,7 +438,7 @@ const Admin = () => {
               </View>
               
               {/* Top 5 Predicted Diseases */}
-              <View style={styles.chartContainer}>
+              <View style={styles.chartContainer} id="topPredictedDiseasesChart">
                 <View style={styles.chartHeader}>
                   <Text style={styles.chartTitle}>Top 5 Predicted Diseases</Text>
                   <View style={styles.chartActions}>
@@ -481,6 +656,18 @@ const styles = StyleSheet.create({
   chart: {
     borderRadius: 8,
     marginVertical: 8,
+  },
+  exportButton: {
+    backgroundColor: '#2E7D32',
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 5,
+    alignSelf: 'flex-end',
+    marginBottom: 20,
+  },
+  exportButtonText: {
+    color: '#fff',
+    textAlign: 'center',
   },
 });
 

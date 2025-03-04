@@ -17,10 +17,10 @@ import { shareAsync } from 'expo-sharing';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import Toast from 'react-native-toast-message';
+import Chart from 'chart.js/auto';
 
 const screenWidth = Dimensions.get('window').width;
 const isMobile = screenWidth < 768;
-
 const UserDashboard = ({ navigation }) => {
   const [user, setUser] = useState({});
   const [loading, setLoading] = useState(true);
@@ -382,135 +382,92 @@ const UserDashboard = ({ navigation }) => {
 
   const handleExportPDF = async () => {
     try {
-      // Convert logo URLs to base64
       const logo1Base64 = await convertImageToBase64("https://i.ibb.co/GQygLXT9/tuplogo.png");
       const logo2Base64 = await convertImageToBase64("https://i.ibb.co/YBStKgFC/logo-2.png");
 
-      const htmlContent = filteredAssessments.map(assessment => `
+      const profileHtml = `
         <div style="font-family: Arial, sans-serif; padding: 20px; background: #fff; max-width: 900px; margin: 0 auto;">
           <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 2px solid #f0f0f0; padding-bottom: 10px;">
             <img src="${logo1Base64}" alt="Logo 1" style="height: 60px; width: auto;">
             <div style="flex: 1; text-align: center; margin-top: 15px;">
-              <h1 style="font-size: 18px; margin: 0; ">FUTUREPROOF: A Gamified AI Platform for Predictive Health and Preventive Wellness</h1>
-              <h2 style="font-size: 16px; margin: 0; ">Embrace The Bear Within - Strong, Resilient, Future-Ready</h4>
+              <h1 style="font-size: 18px; margin: 0;">FUTUREPROOF: A Gamified AI Platform for Predictive Health and Preventive Wellness</h1>
               <br>
-              <h2 style="font-size: 16px; margin: 0;">Daily Assessment Report</h2>
+              <h2 style="font-size: 16px; margin: 0;">User Profile Report</h2>
               <h4 style="font-size: 14px; margin: 5px 0 0;">${new Date().toLocaleDateString()}</h4>
-          </div>
+            </div>
             <img src="${logo2Base64}" alt="Logo 2" style="height: 60px; width: auto;">
           </div>
           <div style="margin-top: 20px;">
-            <h3>Our Mission</h3>
-            <p>FutureProof empowers individuals with AI-driven, gamified health insights for proactive well-being. By integrating genetic, lifestyle, and environmental data, we deliver personalized, preventive care solutions.</p>
-            <h3>Our Vision</h3>
-            <p>We envision a future where predictive healthcare transforms lives, making well-being accessible, engaging, and proactive through AI and gamification.</p>
-          </div>
-          <div style="margin-top: 20px;">
-            <h3>Assessment Date: ${new Date(assessment.date).toLocaleDateString()}</h3>
             <h3>User Information</h3>
             <table style="width: 100%; border-collapse: collapse; margin-top: 20px;">
               <tr>
                 <th style="padding: 12px; border: 1px solid #ddd; text-align: left; background-color: #f8f9fa;">Username</th>
-                <td style="padding: 12px; border: 1px solid #ddd;">${assessment.username}</td>
+                <td style="padding: 12px; border: 1px solid #ddd;">${user.username}</td>
               </tr>
               <tr>
                 <th style="padding: 12px; border: 1px solid #ddd; text-align: left; background-color: #f8f9fa;">Age</th>
-                <td style="padding: 12px; border: 1px solid #ddd;">${assessment.age}</td>
+                <td style="padding: 12px; border: 1px solid #ddd;">${user.age}</td>
               </tr>
               <tr>
                 <th style="padding: 12px; border: 1px solid #ddd; text-align: left; background-color: #f8f9fa;">Gender</th>
-                <td style="padding: 12px; border: 1px solid #ddd;">${assessment.gender}</td>
+                <td style="padding: 12px; border: 1px solid #ddd;">${user.gender}</td>
               </tr>
               <tr>
                 <th style="padding: 12px; border: 1px solid #ddd; text-align: left; background-color: #f8f9fa;">Height</th>
-                <td style="padding: 12px; border: 1px solid #ddd;">${assessment.height} cm</td>
+                <td style="padding: 12px; border: 1px solid #ddd;">${user.height} cm</td>
               </tr>
               <tr>
                 <th style="padding: 12px; border: 1px solid #ddd; text-align: left; background-color: #f8f9fa;">Weight</th>
-                <td style="padding: 12px; border: 1px solid #ddd;">${assessment.weight} kg</td>
-              </tr>
-              <tr>
-                <th style="padding: 12px; border: 1px solid #ddd; text-align: left; background-color: #f8f9fa;">Environment</th>
-                <td style="padding: 12px; border: 1px solid #ddd;">${assessment.environment}</td>
-              </tr>
-              <tr>
-                <th style="padding: 12px; border: 1px solid #ddd; text-align: left; background-color: #f8f9fa;">Vices</th>
-                <td style="padding: 12px; border: 1px solid #ddd;">${assessment.vices.join(', ')}</td>
-              </tr>
-              <tr>
-                <th style="padding: 12px; border: 1px solid #ddd; text-align: left; background-color: #f8f9fa;">Genetic Diseases</th>
-                <td style="padding: 12px; border: 1px solid #ddd;">${assessment.genetic_diseases.join(', ')}</td>
-              </tr>
-              <tr>
-                <th style="padding: 12px; border: 1px solid #ddd; text-align: left; background-color: #f8f9fa;">Lifestyle</th>
-                <td style="padding: 12px; border: 1px solid #ddd;">${assessment.lifestyle.join(', ')}</td>
-              </tr>
-              <tr>
-                <th style="padding: 12px; border: 1px solid #ddd; text-align: left; background-color: #f8f9fa;">Food Intake</th>
-                <td style="padding: 12px; border: 1px solid #ddd;">${assessment.food_intake.join(', ')}</td>
-              </tr>
-              <tr>
-                <th style="padding: 12px; border: 1px solid #ddd; text-align: left; background-color: #f8f9fa;">Sleep Hours</th>
-                <td style="padding: 12px; border: 1px solid #ddd;">${assessment.sleep_hours}</td>
-              </tr>
-              <tr>
-                <th style="padding: 12px; border: 1px solid #ddd; text-align: left; background-color: #f8f9fa;">Activeness</th>
-                <td style="padding: 12px; border: 1px solid #ddd;">${assessment.activeness}</td>
+                <td style="padding: 12px; border: 1px solid #ddd;">${user.weight} kg</td>
               </tr>
             </table>
-          </div>
-          <div style="margin-top: 20px;">
-            <h3>Prevention Progress</h3>
-            <ul>
-              ${assessment.updated_predictions.map(prediction => `
-                <li>
-                  <b>Condition: ${prediction.condition}</b><br>
-                  <div style="display: flex; align-items: center;">
-                    <div style="width: 100px; height: 10px; background-color: #ddd; margin-right: 10px;">
-                      <div style="width: ${prediction.old_percentage}%; height: 100%; background-color: #3498db;"></div>
-                    </div>
-                    <span>${prediction.old_percentage}%</span>
-                  </div>
-                  <div style="display: flex; align-items: center; margin-top: 5px;">
-                    <div style="width: 100px; height: 10px; background-color: #ddd; margin-right: 10px;">
-                      <div style="width: ${prediction.new_percentage}%; height: 100%; background-color: #2ecc71;"></div>
-                    </div>
-                    <span>${prediction.new_percentage}%</span>
-                  </div>
-                  <p>Reason: ${prediction.reason}</p>
-                </li>
-              `).join('')}
-            </ul>
-          </div>
-          <div style="margin-top: 20px;">
-            <h3>Nutritional Analysis</h3>
-            <table style="width: 100%; border-collapse: collapse; margin-top: 20px;">
-              <thead>
-                <tr>
-                  <th style="padding: 12px; border: 1px solid #ddd; text-align: left; background-color: #f8f9fa;">Question</th>
-                  <th style="padding: 12px; border: 1px solid #ddd; text-align: left; background-color: #f8f9fa;">Answer</th>
-                </tr>
-              </thead>
-              <tbody>
-                ${assessment.nutritional_analysis.questions_answers.map(qa => `
-                  <tr>
-                    <td style="padding: 12px; border: 1px solid #ddd;">${qa.question}</td>
-                    <td style="padding: 12px; border: 1px solid #ddd;">${qa.answer}</td>
-                  </tr>
-                `).join('')}
-              </tbody>
-            </table>
-          </div>
-          <div style="margin-top: 20px;">
-            <h3>Recommendations</h3>
-            <ul>
-              ${assessment.recommendations.map(rec => `
-                <li>${rec}</li>
-              `).join('')}
-            </ul>
           </div>
         </div>
-      `).join('<div style="page-break-after: always;"></div>');
+      `;
+
+      const predictionHtml = `
+        <div style="font-family: Arial, sans-serif; padding: 20px; background: #fff; max-width: 900px; margin: 0 auto;">
+          <div style="margin-top: 20px;">
+            <h3>Health Prediction Analysis</h3>
+            <div id="lineChartContainer" style="text-align: center;">
+              <h4>Risk Analysis</h4>
+              <canvas id="lineChartCanvas" width="300" height="150"></canvas>
+            </div>
+            <div id="pieChartContainer" style="text-align: center; margin-top: 20px;">
+              <h4>Risk Distribution</h4>
+              <canvas id="pieChartCanvas" width="300" height="150"></canvas>
+            </div>
+          </div>
+        </div>
+      `;
+
+      const dashboardHtml = `
+        <div style="font-family: Arial, sans-serif; padding: 20px; background: #fff; max-width: 900px; margin: 0 auto;">
+          <div style="margin-top: 20px;">
+            <h3>Performance Dashboard</h3>
+            <table style="width: 100%; border-collapse: collapse; margin-top: 20px;">
+              <tr>
+                <th style="padding: 12px; border: 1px solid #ddd; text-align: left; background-color: #f8f9fa;">Total Tasks Completed</th>
+                <td style="padding: 12px; border: 1px solid #ddd;">${taskCompletions.length}</td>
+              </tr>
+              <tr>
+                <th style="padding: 12px; border: 1px solid #ddd; text-align: left; background-color: #f8f9fa;">Total Time Spent</th>
+                <td style="padding: 12px; border: 1px solid #ddd;">${totalTimeSpent} minutes</td>
+              </tr>
+              <tr>
+                <th style="padding: 12px; border: 1px solid #ddd; text-align: left; background-color: #f8f9fa;">Total Coins</th>
+                <td style="padding: 12px; border: 1px solid #ddd;">${totalCoins}</td>
+              </tr>
+              <tr>
+                <th style="padding: 12px; border: 1px solid #ddd; text-align: left; background-color: #f8f9fa;">Total Owned Assets</th>
+                <td style="padding: 12px; border: 1px solid #ddd;">${totalOwnedAssetsCount}</td>
+              </tr>
+            </table>
+          </div>
+        </div>
+      `;
+
+      const htmlContent = profileHtml + '<div style="page-break-after: always;"></div>' + predictionHtml + '<div style="page-break-after: always;"></div>' + dashboardHtml;
 
       if (Platform.OS === 'web') {
         const container = document.createElement('div');
@@ -532,8 +489,68 @@ const UserDashboard = ({ navigation }) => {
           );
         };
 
+        const renderCharts = async () => {
+          const lineChartCanvas = document.getElementById('lineChartCanvas');
+          const pieChartCanvas = document.getElementById('pieChartCanvas');
+
+          const lineChartData = {
+            labels: prediction.predicted_diseases.map((item) => item.condition),
+            datasets: [{
+              label: 'Risk Analysis',
+              data: prediction.predicted_diseases.map((item) => parseInt(item.details.match(/\d+/)?.[0] || 0)),
+              borderColor: 'rgba(76, 175, 80, 1)',
+              backgroundColor: 'rgba(76, 175, 80, 0.2)',
+              borderWidth: 2,
+              fill: true,
+            }],
+          };
+
+          const pieChartData = {
+            labels: prediction.predicted_diseases.map((item) => item.condition),
+            datasets: [{
+              data: prediction.predicted_diseases.map((item) => parseInt(item.details.match(/\d+/)?.[0] || 0)),
+              backgroundColor: ['#00C853', '#69F0AE', '#00E676', '#1B5E20', '#388E3C', '#43A047'],
+              borderWidth: 1,
+            }],
+          };
+
+          const lineChartConfig = {
+            type: 'line',
+            data: lineChartData,
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              scales: {
+                x: {
+                  beginAtZero: true,
+                },
+                y: {
+                  beginAtZero: true,
+                },
+              },
+            },
+          };
+
+          const pieChartConfig = {
+            type: 'pie',
+            data: pieChartData,
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+            },
+          };
+
+          const lineChart = new Chart(lineChartCanvas, lineChartConfig);
+          const pieChart = new Chart(pieChartCanvas, pieChartConfig);
+
+          await new Promise((resolve) => setTimeout(resolve, 1000)); // Wait for charts to render
+
+          return Promise.all([lineChart, pieChart]);
+        };
+
         try {
           await waitForImages();
+          await renderCharts();
           const canvas = await html2canvas(container);
           const imgData = canvas.toDataURL('image/png');
 
@@ -542,15 +559,14 @@ const UserDashboard = ({ navigation }) => {
           const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
           pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
 
-          // Add new pages if content exceeds one page
           let currentHeight = pdfHeight;
           while (currentHeight > pdf.internal.pageSize.getHeight()) {
             pdf.addPage();
             currentHeight -= pdf.internal.pageSize.getHeight();
             pdf.addImage(imgData, 'PNG', 0, -currentHeight, pdfWidth, pdfHeight);
           }
-        
-        pdf.save('my-assessment-reports.pdf');
+
+          pdf.save('user-dashboard-report.pdf');
 
         } catch (err) {
           console.error('Error generating PDF:', err);
@@ -568,7 +584,7 @@ const UserDashboard = ({ navigation }) => {
         }
       }
     } catch (error) {
-      console.error('Error in handleExportUserPDF:', error);
+      console.error('Error in handleExportPDF:', error);
       Alert.alert('Error', 'Something went wrong. Please try again.');
     }
   };
@@ -1000,12 +1016,18 @@ const UserDashboard = ({ navigation }) => {
                   <Text style={styles.medicalText}>{user.vices || 'No risk factors recorded'}</Text>
                 </View>
               </View>
+              <TouchableOpacity style={styles.exportButton} onPress={handleExportPDF}>
+                <Text style={styles.exportButtonText}>Export PDF</Text>
+              </TouchableOpacity>
             </View>
           )}
 
           {activeTab === 'prediction' && (
             <View style={styles.tabContent}>
               {formatPrediction(prediction)}
+              <TouchableOpacity style={styles.exportButton} onPress={handleExportPDF}>
+                <Text style={styles.exportButtonText}>Export PDF</Text>
+              </TouchableOpacity>
             </View>
           )}
 
@@ -1112,6 +1134,9 @@ const UserDashboard = ({ navigation }) => {
                   </View>
                 </View>
               </View>
+              <TouchableOpacity style={styles.exportButton} onPress={handleExportPDF}>
+                <Text style={styles.exportButtonText}>Export PDF</Text>
+              </TouchableOpacity>
             </View>
           )}
 
@@ -1922,6 +1947,18 @@ const styles = StyleSheet.create({
       textAlign: 'center',
       fontSize: 16,
       color: '#777',
+    },
+    exportButton: {
+      backgroundColor: '#2E7D32',
+      paddingVertical: 8,
+      paddingHorizontal: 12,
+      borderRadius: 5,
+      alignSelf: 'flex-end',
+      marginBottom: 20,
+    },
+    exportButtonText: {
+      color: '#fff',
+      textAlign: 'center',
     },
   });
 

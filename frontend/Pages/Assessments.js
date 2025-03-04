@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import {
-  View, Text, TouchableOpacity, StyleSheet, TextInput, ScrollView, Modal, Alert, Platform
+  View, Text, TouchableOpacity, StyleSheet, TextInput, ScrollView, Modal, Alert, Platform, Animated
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { readAssessments } from '../API/daily_assessment_api';
 import { LinearGradient } from 'expo-linear-gradient';
-import { FontAwesome } from '@expo/vector-icons';
+import { FontAwesome, FontAwesome5, Ionicons, MaterialIcons } from '@expo/vector-icons';
 import * as Print from 'expo-print';
 import { shareAsync } from 'expo-sharing';
 import jsPDF from 'jspdf';
@@ -19,6 +19,7 @@ const Assessments = () => {
   const [filteredAssessments, setFilteredAssessments] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [headerAnimation] = useState(new Animated.Value(0));
 
   useEffect(() => {
     const fetchAssessments = async () => {
@@ -31,6 +32,13 @@ const Assessments = () => {
       }
     };
     fetchAssessments();
+    
+    // Animate header on mount
+    Animated.timing(headerAnimation, {
+      toValue: 1,
+      duration: 800,
+      useNativeDriver: true,
+    }).start();
   }, []);
 
 // Convert a local image to a Base64 string (or return remote URL)
@@ -443,8 +451,7 @@ const Assessments = () => {
 
   const handleSearch = () => {
     const filtered = assessments.filter(assessment =>
-      assessment.user.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      assessment.content.toLowerCase().includes(searchQuery.toLowerCase())
+      assessment.username && assessment.username.toLowerCase().includes(searchQuery.toLowerCase())
     );
     setFilteredAssessments(filtered);
   };
@@ -456,50 +463,73 @@ const Assessments = () => {
   return (
     <View style={styles.container}>
       <Sidebar />
-      {/* Main Content */}
-      <View style={styles.content}>
-        <Text style={styles.header}>User Assessments</Text>
-        <View style={styles.searchCreateContainer}>
-          <TouchableOpacity style={styles.exportButton} onPress={handleExportPDF}>
-            <Text style={styles.exportButtonText}>Export All PDF</Text>
-          </TouchableOpacity>
-          <View style={styles.searchContainer}>
-            <TextInput
-              style={styles.searchInput}
-              placeholder="Search Assessments"
-              value={searchQuery}
-              onChangeText={setSearchQuery}
-            />
-            <TouchableOpacity style={styles.searchButton} onPress={handleSearch}>
-              <Text style={styles.searchButtonText}>Search</Text>
+      <View style={styles.mainContent}>
+        <Animated.View 
+          style={[
+            styles.pageHeader,
+            {
+              opacity: headerAnimation,
+              transform: [{ translateY: headerAnimation.interpolate({
+                inputRange: [0, 1],
+                outputRange: [-50, 0]
+              })}]
+            }
+          ]}
+        >
+          <Text style={styles.pageTitle}>Assessments Management</Text>
+          <View style={styles.headerActions}>
+            <TouchableOpacity style={styles.actionButton} onPress={handleExportPDF}>
+              <FontAwesome5 name="file-pdf" size={14} color="white" />
+              <Text style={styles.actionButtonText}>Export All PDF</Text>
             </TouchableOpacity>
           </View>
+        </Animated.View>
+
+        <View style={styles.searchBar}>
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Search assessments by username..."
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+          />
+          <TouchableOpacity style={styles.searchButton} onPress={handleSearch}>
+            <FontAwesome name="search" size={16} color="white" />
+          </TouchableOpacity>
         </View>
 
-        {/* Assessment List */}
-        <ScrollView contentContainerStyle={styles.assessmentGrid}>
-  <View style={styles.tableContainer}>
-    <View style={styles.tableHeader}>
-      <Text style={styles.tableHeaderText}>User Name</Text>
-      <Text style={styles.tableHeaderText}>Date</Text>
-      <Text style={styles.tableHeaderText}>Export PDF</Text>
-    </View>
-    {filteredAssessments.map((item) => (
-      <View style={styles.tableRow} key={item._id}>
-        <View style={styles.tableCell}>
-          <Text style={styles.tableCellText}>{item.username}</Text>
-        </View>
-        <View style={styles.tableCell}>
-          <Text style={styles.tableCellText}>{new Date(item.date).toLocaleDateString()}</Text>
-        </View>
-        <TouchableOpacity style={[styles.tableCell, styles.exportButton]} onPress={() => handleExportUserPDF(item)}>
-          <Text style={styles.exportButtonText}>Export PDF</Text>
-        </TouchableOpacity>
-      </View>
-    ))}
-  </View>
-</ScrollView>
-
+        <ScrollView style={styles.tableWrapper}>
+          <View style={styles.tableContainer}>
+            <View style={styles.tableHeader}>
+              <Text style={[styles.tableHeaderText, {flex: 1}]}>Username</Text>
+              <Text style={[styles.tableHeaderText, {flex: 1}]}>Date</Text>
+              <Text style={[styles.tableHeaderText, {flex: 0.8}]}>Actions</Text>
+            </View>
+            
+            {filteredAssessments.map((item) => (
+              <View style={styles.tableRow} key={item._id}>
+                <Text style={[styles.tableCell, {flex: 1}]}>{item.username}</Text>
+                <Text style={[styles.tableCell, {flex: 1}]}>{new Date(item.date).toLocaleDateString()}</Text>
+                <View style={[styles.tableCell, styles.actionCell, {flex: 0.8}]}>
+                  <TouchableOpacity 
+                    style={[styles.actionBtn, styles.exportBtn]} 
+                    onPress={() => handleExportUserPDF(item)}
+                  >
+                    <FontAwesome name="file-pdf-o" size={14} color="white" />
+                    <Text style={styles.actionBtnText}>Export PDF</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            ))}
+            
+            {filteredAssessments.length === 0 && (
+              <View style={styles.emptyState}>
+                <FontAwesome5 name="clipboard-list" size={48} color="#ccc" />
+                <Text style={styles.emptyStateText}>No assessments found</Text>
+                <Text style={styles.emptyStateSubText}>Try a different search</Text>
+              </View>
+            )}
+          </View>
+        </ScrollView>
       </View>
     </View>
   );
@@ -509,115 +539,253 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     flexDirection: 'row',
-    backgroundColor: '#F5F5F5',
+    backgroundColor: '#f8f9fc',
   },
+  // Modern Sidebar styles
   sidebar: {
-    width: '20%',
-    backgroundColor: '#1A3B32',
-    padding: 20,
+    width: 240,
+    height: '100%',
+    paddingVertical: 20,
+    paddingHorizontal: 0,
   },
   sidebarCollapsed: {
-    width: '5%',
+    width: 60,
   },
-  sidebarItem: {
-    marginBottom: 20,
+  sidebarTop: {
+    alignItems: 'center',
+    marginBottom: 25,
+  },
+  sidebarHeader: {
     flexDirection: 'row',
     alignItems: 'center',
+    paddingHorizontal: 20,
+    position: 'relative',
+    width: '100%',
   },
-  sidebarText: {
-    color: '#F5F5F5',
+  sidebarBrand: {
+    color: 'white',
     fontSize: 18,
-    marginLeft: 10,
-  },
-  content: {
-    flex: 1,
-    padding: 20,
-  },
-  header: {
-    fontSize: 20,
     fontWeight: 'bold',
+  },
+  collapseButton: {
+    position: 'absolute',
+    right: 5,
+  },
+  sidebarLogoCollapsed: {
+    marginTop: 10,
     marginBottom: 20,
   },
-  searchCreateContainer: {
+  sidebarContent: {
+    flex: 1,
+  },
+  menuGroup: {
+    marginBottom: 22,
+  },
+  menuLabel: {
+    color: 'rgba(255, 255, 255, 0.6)',
+    fontSize: 11,
+    paddingHorizontal: 20,
+    marginBottom: 8,
+    fontWeight: '600',
+    letterSpacing: 0.5,
+  },
+  sidebarItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 9,
+    paddingHorizontal: 20,
+    marginBottom: 1,
+  },
+  sidebarIconOnly: {
+    alignItems: 'center',
+    paddingVertical: 12,
+    width: 60,
+    marginBottom: 1,
+  },
+  activeMenuItem: {
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    borderLeftWidth: 3,
+    borderLeftColor: '#10B981',
+  },
+  sidebarText: {
+    color: 'white',
+    fontSize: 13,
+    marginLeft: 10,
+  },
+  collapsedMenuItems: {
+    alignItems: 'center',
+  },
+  
+  // Main content styles
+  mainContent: {
+    flex: 1,
+    backgroundColor: '#f8f9fc',
+    paddingHorizontal: 25,
+    paddingTop: 20,
+    paddingBottom: 10,
+  },
+  pageHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 20,
   },
-  searchContainer: {
+  pageTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#111827',
+  },
+  headerActions: {
+    flexDirection: 'row',
+  },
+  actionButton: {
+    backgroundColor: '#10B981',
     flexDirection: 'row',
     alignItems: 'center',
-    width: '50%',
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 6,
+    marginLeft: 10,
+    shadowColor: '#10B981',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 3,
+    elevation: 2,
+  },
+  actionButtonText: {
+    color: 'white',
+    fontWeight: '600',
+    marginLeft: 8,
+  },
+  searchBar: {
+    flexDirection: 'row',
+    marginBottom: 20,
   },
   searchInput: {
     flex: 1,
+    backgroundColor: 'white',
     borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 5,
-    padding: 15,
-    marginRight: 10,
-    backgroundColor: '#fff',
+    borderColor: '#E5E7EB',
+    borderRadius: 6,
+    padding: 12,
+    paddingLeft: 16,
+    fontSize: 14,
   },
   searchButton: {
-    backgroundColor: '#3498db',
-    padding: 15,
-    borderRadius: 5,
+    backgroundColor: '#10B981',
+    width: 48,
     alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 6,
+    marginLeft: 8,
   },
-  searchButtonText: {
-    color: '#fff',
-    fontWeight: 'bold',
-    fontSize: 16,
-  },
-  assessmentGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
+  
+  // Table styles
+  tableWrapper: {
+    flex: 1,
   },
   tableContainer: {
-    width: '100%',
-    backgroundColor: '#fff',
+    backgroundColor: 'white',
     borderRadius: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 4,
     overflow: 'hidden',
     marginBottom: 20,
   },
   tableHeader: {
     flexDirection: 'row',
-    backgroundColor: '#2E7D32',
+    backgroundColor: '#F3F4F6',
     paddingVertical: 15,
+    paddingHorizontal: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E5E7EB',
   },
   tableHeaderText: {
-    flex: 1,
-    fontWeight: 'bold',
-    textAlign: 'center',
-    color: '#fff',
+    fontWeight: '600',
+    color: '#4B5563',
+    fontSize: 14,
   },
   tableRow: {
     flexDirection: 'row',
     borderBottomWidth: 1,
-    borderBottomColor: '#eee',
-    backgroundColor: '#fff',
-    alignItems: 'center', // Ensures vertical centering
-    paddingVertical: 15, // Maintain consistent height
+    borderBottomColor: '#E5E7EB',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    alignItems: 'center',
   },
   tableCell: {
-    flex: 1,
+    fontSize: 14,
+    color: '#374151',
+  },
+  actionCell: {
+    flexDirection: 'row',
+    justifyContent: 'flex-start',
+  },
+  actionBtn: {
+    width: 50,
+    height: 34,
+    borderRadius: 6,
+    alignItems: 'center',
     justifyContent: 'center',
-    alignItems: 'center', // Ensures proper vertical alignment
+    marginRight: 8,
   },
-  tableCellText: {
-    textAlign: 'center',
-  },
-  exportButton: {
-    backgroundColor: '#2E7D32',
+  exportBtn: {
+    backgroundColor: '#10B981',
+    flexDirection: 'row',
+    alignItems: 'center',
     paddingVertical: 8,
     paddingHorizontal: 12,
-    borderRadius: 5,
+    borderRadius: 6,
+    width: 100 ,
   },
-  exportButtonText: {
-    color: '#fff',
-    textAlign: 'center',
+  actionBtnText: {
+    color: 'white',
+    fontSize: 12,
+    marginLeft: 4,
   },
+  
+  // Empty state
+  emptyState: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 40,
+  },
+  emptyStateText: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#4B5563',
+    marginTop: 16,
+  },
+  emptyStateSubText: {
+    fontSize: 14,
+    color: '#6B7280',
+    marginTop: 8,
+  },
+  
+  // Modal styles (in case needed in future)
+  modalOverlay: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    padding: 20,
+  },
+  modalContent: {
+    width: '100%',
+    maxWidth: 800,
+    backgroundColor: 'white',
+    borderRadius: 10,
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 16,
+    elevation: 10,
+  }
 });
 
 export default Assessments;
+
