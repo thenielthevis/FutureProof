@@ -93,6 +93,26 @@ const NutritionalTrackingModal = ({ visible, onClose, onBack }) => {
     }, 300);
   };
 
+  const handleClose = () => {
+    setQuestionsAnswers([]);
+    setCurrentQuestionIndex(0);
+    setCurrentResponse('');
+    setStarted(false);
+    setShowCongratulations(false);
+    setRewards({ xp: 0, coins: 0 });
+    onClose();
+  };
+
+  const handleBack = () => {
+    setQuestionsAnswers([]);
+    setCurrentQuestionIndex(0);
+    setCurrentResponse('');
+    setStarted(false);
+    setShowCongratulations(false);
+    setRewards({ xp: 0, coins: 0 });
+    onBack();
+  };
+
   if (loading) {
     return (
       <Modal visible={visible} transparent={true} animationType="slide">
@@ -125,10 +145,10 @@ const NutritionalTrackingModal = ({ visible, onClose, onBack }) => {
       <Modal visible={visible} transparent={true} animationType="slide">
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
-            <TouchableOpacity onPress={onClose} style={styles.closeButtonTopRight}>
+            <TouchableOpacity onPress={handleClose} style={styles.closeButtonTopRight}>
               <FontAwesome name="close" size={20} color="#fff" />
             </TouchableOpacity>
-            <TouchableOpacity onPress={onBack} style={styles.backButtonTopLeft}>
+            <TouchableOpacity onPress={handleBack} style={styles.backButtonTopLeft}>
               <FontAwesome name="arrow-left" size={20} color="#fff" />
             </TouchableOpacity>
             <Text style={styles.modalHeader}>Nutritional Tracking</Text>

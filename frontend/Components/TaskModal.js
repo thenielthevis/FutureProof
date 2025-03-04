@@ -8,7 +8,7 @@ import NutritionalTrackingModal from './NutritionalTrackingModal';
 
 const TaskModal = ({ visible, onClose }) => {
   const [healthQuizVisible, setHealthQuizVisible] = useState(false);
-  const [meditationbreathingVisible, setMeditationBreathingVisible] = useState(false);
+  const [meditationBreathingVisible, setMeditationBreathingVisible] = useState(false);
   const [physicalActivitiesVisible, setPhysicalActivitiesVisible] = useState(false);
   const [nutritionalTrackingVisible, setNutritionalTrackingVisible] = useState(false);
 
@@ -34,6 +34,9 @@ const TaskModal = ({ visible, onClose }) => {
 
   const handleBackToTaskModal = () => {
     setHealthQuizVisible(false);
+    setMeditationBreathingVisible(false);
+    setPhysicalActivitiesVisible(false);
+    setNutritionalTrackingVisible(false);
     onClose();
   };
 
@@ -71,7 +74,7 @@ const TaskModal = ({ visible, onClose }) => {
       {/* Health Quiz Modal */}
       <HealthQuizModal visible={healthQuizVisible} onClose={() => setHealthQuizVisible(false)} onBack={handleBackToTaskModal} />
       {/* Meditation Breathing Modal */}
-      <MeditationBreathingModal visible={meditationbreathingVisible} onClose={() => setMeditationBreathingVisible(false)} onBack={handleBackToTaskModal} />
+      <MeditationBreathingModal visible={meditationBreathingVisible} onClose={() => setMeditationBreathingVisible(false)} onBack={handleBackToTaskModal} />
       {/* Physical Activities Modal */}
       <PhysicalActivitiesModal visible={physicalActivitiesVisible} onClose={() => setPhysicalActivitiesVisible(false)} onBack={handleBackToTaskModal} />
       {/* Nutritional Tracking Modal */}

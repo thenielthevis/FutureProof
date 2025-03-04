@@ -94,19 +94,42 @@ const PhysicalActivitiesModal = ({ visible, onClose, onBack }) => {
   };
 
   const stopAudio = async () => {
-    const isSetup = await TrackPlayer.getState().then(state => state !== TrackPlayer.STATE_NONE);
-    if (isSetup) {
-      await TrackPlayer.stop();
-      await TrackPlayer.reset();
+    try {
+      const isSetup = await TrackPlayer.isServiceRunning();
+      if (isSetup) {
+        await TrackPlayer.stop();
+        await TrackPlayer.reset();
+      }
+    } catch (error) {
+      console.warn("TrackPlayer stop failed:", error.message);
     }
     Speech.stop();
-  };
+  };  
 
   const handleClose = async () => {
     await stopAudio();
     setCurrentIndex(0);
     setStarted(false);
+    setCategory(null);
+    setRestTime(20);
+    setIsResting(false);
+    setShowCongratulations(false);
+    setRewards({ xp: 0, coins: 0 });
+    setCompletedExercises([]);
     onClose();
+  };
+
+  const handleBack = async () => {
+    await stopAudio();
+    setCurrentIndex(0);
+    setStarted(false);
+    setCategory(null);
+    setRestTime(20);
+    setIsResting(false);
+    setShowCongratulations(false);
+    setRewards({ xp: 0, coins: 0 });
+    setCompletedExercises([]);
+    onBack();
   };
 
   const handleNavigation = async (direction) => {
@@ -233,7 +256,7 @@ const PhysicalActivitiesModal = ({ visible, onClose, onBack }) => {
             <TouchableOpacity onPress={handleClose} style={styles.closeButtonTopRight}>
               <FontAwesome name="close" size={20} color="#fff" />
             </TouchableOpacity>
-            <TouchableOpacity onPress={onBack} style={styles.backButtonTopLeft}>
+            <TouchableOpacity onPress={handleBack} style={styles.backButtonTopLeft}>
               <FontAwesome name="arrow-left" size={20} color="#fff" />
             </TouchableOpacity>
             <Text style={styles.modalHeader}>Physical Activities</Text>

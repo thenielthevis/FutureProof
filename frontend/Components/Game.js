@@ -15,6 +15,7 @@ import { getUser, updateUserMedication, updateUserSleep } from '../API/user_api'
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { UserStatusContext } from '../Context/UserStatusContext';
 import { Audio } from 'expo-av';
+import { readQuotes } from '../API/quotes_api'; // Import readQuotes function
 
 // Reusable Model Component with Color
 function Model({ scale, uri, position, color }) { // Added color prop
@@ -46,6 +47,15 @@ function OptionButton({ label, onPress, isSelected, preview }) {
   );
 }
 
+const getEyesUri = (isAsleep, sleep) => {
+  if (isAsleep) {
+    return 'https://res.cloudinary.com/dv4vzq7pv/image/upload/v1739961144/Eyes.007_kyevtv.glb';
+  }
+  return sleep < 50
+    ? 'https://res.cloudinary.com/dv4vzq7pv/image/upload/v1739961145/Eyes.009_snhzzz.glb'
+    : 'https://res.cloudinary.com/dv4vzq7pv/image/upload/v1739961141/Eyes.001_uab6p6.glb';
+};
+
 export default function Game() {
   const navigation = useNavigation();
   const pan = useRef(new Animated.ValueXY()).current; // Move initialization here
@@ -74,6 +84,11 @@ export default function Game() {
   const [sound, setSound] = useState();
   const [equippedAssets, setEquippedAssets] = useState({}); // State to track equipped assets
   const [loading, setLoading] = useState(true); // Add loading state
+  const [quotes, setQuotes] = useState([]);
+  const [currentQuoteIndex, setCurrentQuoteIndex] = useState(0);
+  const [quoteVisible, setQuoteVisible] = useState(false);
+  const [eyesUri, setEyesUri] = useState(getEyesUri(isAsleep, status.sleep));
+
   const icons = [
     require('../assets/icons/Navigation/dailyassessment.png'),
     require('../assets/icons/Navigation/dailyrewards.png'),
@@ -87,6 +102,12 @@ export default function Game() {
   };
 
   useEffect(() => {
+    const newEyesUri = getEyesUri(isAsleep, status.sleep);
+    console.log('Updating eyesUri to:', newEyesUri); // Log new eyesUri
+    setEyesUri(newEyesUri); // Update eyes when state changes
+  }, [isAsleep, status.sleep]);
+
+  useEffect(() => {
     const fetchData = async () => {
       try {
         const items = await readPurchasedItems();
@@ -97,6 +118,7 @@ export default function Game() {
 
         const token = await AsyncStorage.getItem('token');
         const userData = await getUser(token);
+        console.log('User isAsleep:', userData.isasleep); // Log isAsleep field
         const now = new Date();
         const nextClaimTime = new Date(userData.next_claim_time);
         if (now >= nextClaimTime) {
@@ -276,13 +298,17 @@ export default function Game() {
   };
 
   const handleSleepToggle = async () => {
-    const newIsAsleep = !isAsleep;
-    setIsAsleep(newIsAsleep);
-    setStatus((prevStatus) => ({ ...prevStatus, sleep: newIsAsleep ? prevStatus.sleep + 1 : prevStatus.sleep }));
+    setIsAsleep((prev) => !prev);  // Toggle sleep state safely
+    setStatus((prevStatus) => ({
+      ...prevStatus,
+      sleep: !isAsleep ? prevStatus.sleep + 1 : prevStatus.sleep, // Ensure correct sleep update
+    }));
+  
     try {
       const token = await AsyncStorage.getItem('token');
       await playSwitchSound();
-      await updateUserSleep(token, { isasleep: newIsAsleep });
+      await updateUserSleep(token, { isasleep: !isAsleep });
+      console.log('Updated isAsleep to:', !isAsleep); // Log updated isAsleep field
     } catch (error) {
       console.error('Error updating sleep status:', error);
     }
@@ -317,14 +343,7 @@ export default function Game() {
     }
     return null;
   };
-
-  const getEyesUri = () => {
-    if (isAsleep) {
-      return SleepEyes();
-    }
-    return LowSleep();
-  };
-
+  
   useEffect(() => {
     const fetchUserData = async () => {
       try {
@@ -381,6 +400,42 @@ export default function Game() {
     return null;
   };
 
+  useEffect(() => {
+    const fetchQuotes = async () => {
+      try {
+        const quotesData = await readQuotes();
+        setQuotes(quotesData);
+      } catch (error) {
+        console.error('Error fetching quotes:', error);
+      }
+    };
+
+    fetchQuotes();
+  }, []);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (quotes.length > 0) {
+        setQuoteVisible(true);
+        playMenuSelect();
+        setCurrentQuoteIndex((prevIndex) => (prevIndex + 1) % quotes.length);
+      }
+    }, 180000); // 3 minutes in milliseconds
+
+    return () => clearInterval(interval);
+  }, [quotes]);
+
+  const handleQuoteClose = async () => {
+    setQuoteVisible(false);
+    await playMenuClose();
+  };
+
+  const playMenuClose = async () => {
+    const { sound } = await Audio.Sound.createAsync(require('../assets/sound-effects/menu-close.mp3'));
+    setSound(sound);
+    await sound.playAsync();
+  };
+
   if (loading) {
     return (
       <View style={styles.loaderContainer}>
@@ -402,7 +457,7 @@ export default function Game() {
           <Suspense fallback={null}>
             <Model scale={modelScale} uri='https://res.cloudinary.com/dv4vzq7pv/image/upload/v1739961165/NakedFullBody_jaufkc.glb' position={modelPosition} />
             <Model scale={modelScale} uri='https://res.cloudinary.com/dv4vzq7pv/image/upload/v1739961163/Head.001_p5sjoz.glb' position={modelPosition} color={LowHealth().color} />
-            <Model scale={modelScale} uri={getEyesUri()} position={modelPosition} /> {/* Eyes */}
+            <Model scale={modelScale} uri={eyesUri} position={modelPosition} key={eyesUri} /> {/* Eyes */}
             <Model scale={modelScale} uri='https://res.cloudinary.com/dv4vzq7pv/image/upload/v1739961165/Nose.001_s4fxsi.glb' position={modelPosition} color={LowHealth().color}/> {/* Nose */}
             {selectedHair && <Model scale={modelScale} uri={selectedHair} position={modelPosition} />}
             {selectedHead && <Model scale={modelScale} uri={selectedHead} position={modelPosition} />}  {/* Add selectedHead */}
@@ -507,6 +562,19 @@ export default function Game() {
       <TaskModal visible={taskModalVisible} onClose={() => setTaskModalVisible(false)} />
       {/* Sleep Overlay Condition */}
       {isAsleep && <View style={styles.sleepOverlay} />}
+      {quoteVisible && (
+        <Modal visible={quoteVisible} animationType="slide" transparent>
+          <View style={styles.quoteModalContainer}>
+            <View style={styles.quoteModalContent}>
+              <Text style={styles.quoteText}>{quotes[currentQuoteIndex].text}</Text>
+              <Text style={styles.quoteAuthor}>- {quotes[currentQuoteIndex].author}</Text>
+              <TouchableOpacity style={styles.quoteButton} onPress={handleQuoteClose}>
+                <Text style={styles.quoteButtonText}>Got it!</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </Modal>
+      )}
     </LinearGradient>
   );  
 }
@@ -787,5 +855,39 @@ bmiGameButtonText: {
   fontSize: 16,
   fontWeight: 'bold',
 },
-
+quoteModalContainer: {
+  flex: 1,
+  justifyContent: 'center',
+  alignItems: 'center',
+  backgroundColor: 'rgba(0, 0, 0, 0.5)',
+},
+quoteModalContent: {
+  backgroundColor: '#2c3e50',
+  padding: 20,
+  borderRadius: 10,
+  width: '50%',
+  alignItems: 'center',
+},
+quoteText: {
+  fontSize: 18,
+  marginBottom: 10,
+  textAlign: 'center',
+  color: '#fff',
+},
+quoteAuthor: {
+  fontSize: 16,
+  fontStyle: 'italic',
+  marginBottom: 20,
+  textAlign: 'center',
+  color: '#fff',
+},
+quoteButton: {
+  backgroundColor: '#3498db',
+  padding: 10,
+  borderRadius: 5,
+},
+quoteButtonText: {
+  color: '#fff',
+  fontSize: 16,
+},
 });

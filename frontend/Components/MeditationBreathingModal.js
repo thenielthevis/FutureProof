@@ -114,7 +114,24 @@ const MeditationBreathingModal = ({ visible, onClose, onBack }) => {
     setCurrentIndex(0);
     setStarted(false);
     setPlaying(false);
+    setShowGif(false);
+    setShowCongratulations(false);
+    setRewards({ xp: 0, coins: 0 });
+    setCompletedExercises([]);
     onClose();
+  };
+
+  const handleBack = async () => {
+    await stopAudio();
+    await TrackPlayer.reset();
+    setCurrentIndex(0);
+    setStarted(false);
+    setPlaying(false);
+    setShowGif(false);
+    setShowCongratulations(false);
+    setRewards({ xp: 0, coins: 0 });
+    setCompletedExercises([]);
+    onBack();
   };
 
   const handleNavigation = (direction) => {
@@ -222,7 +239,7 @@ const MeditationBreathingModal = ({ visible, onClose, onBack }) => {
         <TouchableOpacity onPress={handleClose} style={styles.closeButtonTopRight}>
           <FontAwesome name="close" size={20} color="#fff" />
         </TouchableOpacity>
-          <TouchableOpacity onPress={onBack} style={styles.backButtonTopLeft}>
+          <TouchableOpacity onPress={handleBack} style={styles.backButtonTopLeft}>
             <FontAwesome name="arrow-left" size={20} color="#fff" />
           </TouchableOpacity>
           <Text style={styles.modalHeader}>Meditation & Breathing Exercises</Text>
