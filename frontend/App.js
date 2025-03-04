@@ -18,6 +18,7 @@ import Profile from './Components/Profile';
 import Admin from './Pages/Admin';
 import AvatarCRUD from './Pages/AvatarCRUD';
 import DailyRewardsCRUD from './Pages/DailyRewardsCRUD';
+import AchievementsCRUD from './Pages/AchievementsCRUD';
 import Shop from './Components/Shop';
 import DailyRewards from './Components/DailyRewards';
 import TaskModal from './Components/TaskModal';
@@ -28,6 +29,7 @@ import { UserLevelProvider } from './Context/UserLevelContext'; // Import the Us
 import physicalactivities from './Pages/physicalactivities';
 import meditation from './Pages/meditation';
 import UserDashboard from './Components/userDashboard';
+import BMIGame from './Components/BMIGame';
 
 const Stack = createStackNavigator();
 const { width, height } = Dimensions.get('window');
@@ -64,6 +66,7 @@ export default function App() {
                   <Stack.Screen name="Admin" component={Admin} />
                   <Stack.Screen name="AvatarCRUD" component={AvatarCRUD} />
                   <Stack.Screen name="DailyRewardsCRUD" component={DailyRewardsCRUD} />
+                  <Stack.Screen name="AchievementsCRUD" component={AchievementsCRUD} />
                   <Stack.Screen name="Shop" component={Shop} />
                   <Stack.Screen name="DailyRewards" component={DailyRewards} />
                   <Stack.Screen name="TaskModal" component={TaskModal} />
@@ -72,6 +75,7 @@ export default function App() {
                   <Stack.Screen name="physicalactivities" component={physicalactivities} />
                   <Stack.Screen name="meditation" component={meditation} />
                   <Stack.Screen name="UserDashboard" component={UserDashboard} />
+                  <Stack.Screen name="BMIGame" component={BMIGame} />
                 </Stack.Navigator>
               </NavigationContainer>
             </ScrollView>

@@ -13,7 +13,7 @@ import TaskModal from '../Components/TaskModal'; // Import the TaskModal compone
 
 const GameNavbar = () => {
   const navigation = useNavigation();
-  const { status, setStatus, avatarUrl, setAvatarUrl } = useContext(UserStatusContext); // Use the context
+  const { status, setStatus, avatarUrl, setAvatarUrl, updateSleepStatus } = useContext(UserStatusContext); // Use the context
   const { levelData } = useContext(UserLevelContext); // Use the new context
   const [profileVisible, setProfileVisible] = useState(false);
   const [rewardsVisible, setRewardsVisible] = useState(false); // State for Daily Rewards modal
@@ -117,8 +117,8 @@ useEffect(() => {
           battery: userData.battery || 0,
           health: userData.health || 0,
           medication: userData.medication || 0,
+          isAsleep: userData.isasleep || false,
         });
-        setMedicationLevel(userData.medication || 0); // Set medication level
       }
     } catch (error) {
       console.error('Error fetching user data:', error);
@@ -127,6 +127,7 @@ useEffect(() => {
 
   fetchUserData();
 }, []);
+
 useEffect(() => {
   Animated.timing(sleepAnim, {
     toValue: status.sleep,
@@ -156,7 +157,7 @@ useEffect(() => {
 // Sleep increases every 60 seconds
 useEffect(() => {
   let interval;
-  if (status.sleep < 100) {
+  if (status.isAsleep) {
     interval = setInterval(() => {
       setStatus((prevStatus) => {
         const newSleep = Math.min(prevStatus.sleep + 1, 100);
@@ -170,8 +171,12 @@ useEffect(() => {
     }, 60000); // Increment sleep every 60 seconds
   }
   return () => clearInterval(interval);
-}, [status.sleep]);
+}, [status.isAsleep]);
 
+const handleSleepToggle = async () => {
+  const newIsAsleep = !status.isAsleep;
+  await updateSleepStatus(newIsAsleep);
+};
 
   return (
     <View style={styles.navbar}>

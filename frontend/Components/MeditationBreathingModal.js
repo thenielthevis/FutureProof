@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, ActivityIndicator, Modal, Dimensions, FlatList, Image } from 'react-native';
 import { getMeditationBreathingExercises } from '../API/meditation_api';
 import { claimRewards } from '../API/health_quiz_api';
-import { FontAwesome } from '@expo/vector-icons';
+import { FontAwesome, FontAwesome5 } from '@expo/vector-icons';
 import Video from 'react-native-video';
 import TrackPlayer, { usePlaybackState } from 'react-native-track-player';
 import * as Speech from 'expo-speech';
@@ -288,6 +288,16 @@ const MeditationBreathingModal = ({ visible, onClose, onBack }) => {
                   onPress={() => handleNavigation('prev')}>
                   <FontAwesome name="arrow-left" size={30} color="#fff" />
                 </TouchableOpacity>
+                      <View style={styles.footerContainer}>
+                        <View style={styles.footerCoin}>
+                          <FontAwesome5 name="coins" size={20} color="gold" />
+                          <Text style={styles.footerText}>50</Text>
+                        </View>
+                        <View style={styles.footerStar}>
+                          <FontAwesome5 name="star" size={20} color="gold" />
+                          <Text style={styles.footerText}>25</Text>
+                        </View>
+                      </View>
                 {currentIndex === meditations.length - 1 ? (
                   <TouchableOpacity 
                     style={styles.finishButton} 
@@ -327,7 +337,7 @@ const styles = StyleSheet.create({
     closeButtonTopRight: { position: 'absolute', top: 10, right: 10, backgroundColor: '#c0392b', padding: 5, borderRadius: 15 },
     backButtonTopLeft: { position: 'absolute', top: 10, left: 10, backgroundColor: '#3498db', padding: 5, borderRadius: 15 },
     exerciseListItem: { backgroundColor: '#fff', padding: 10, borderRadius: 8, marginBottom: 10, alignItems: 'center', maxHeight: 100, height: 100 },
-    videoPreview: { width: 100, height: 100, marginBottom: 5 },
+    videoPreview: { width: 100, height: 100, marginBottom: 5, marginTop: 10 },
     video: { width: 400, height: 400 },
     startButton: { backgroundColor: '#27ae60', padding: 10, borderRadius: 8, alignItems: 'center', marginTop: 10 },
     exerciseItem: { backgroundColor: '#fff', padding: 10, borderRadius: 8, marginBottom: 10, alignItems: 'center', maxHeight: 400, height: 400 },
@@ -345,6 +355,10 @@ const styles = StyleSheet.create({
     voiceButton: { position: 'absolute', top: 10, left: 50, backgroundColor: '#8e44ad', padding: 5, borderRadius: 15, justifyContent: 'center', alignItems: 'center' },
     breathingGif: { width: '100%', height: 500, alignSelf: 'center', marginBottom: 20, padding: 10, borderRadius: 8, },
     finishButton: { backgroundColor: '#27ae60', padding: 10, borderRadius: 8, margin: 10, justifyContent: 'center', alignItems: 'center', width: '50px' },
+    footerContainer: { flexDirection: 'row', justifyContent: 'center', marginTop: 5, marginLeft: 20, marginRight: 20 },  
+    footerCoin: { flex: 1, alignItems: 'center', margin: 10 },  
+    footerStar: { flex: 1, alignItems: 'center', margin: 10 },  
+    footerText: { color: '#fff', fontSize: 16, fontWeight: 'bold' },      
   });
 
 export default MeditationBreathingModal;
