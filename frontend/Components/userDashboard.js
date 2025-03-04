@@ -384,7 +384,7 @@ const UserDashboard = ({ navigation }) => {
     try {
       const logo1Base64 = await convertImageToBase64("https://i.ibb.co/GQygLXT9/tuplogo.png");
       const logo2Base64 = await convertImageToBase64("https://i.ibb.co/YBStKgFC/logo-2.png");
-
+  
       const profileHtml = `
         <div style="font-family: Arial, sans-serif; padding: 20px; background: #fff; max-width: 900px; margin: 0 auto;">
           <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 2px solid #f0f0f0; padding-bottom: 10px;">
@@ -396,6 +396,13 @@ const UserDashboard = ({ navigation }) => {
               <h4 style="font-size: 14px; margin: 5px 0 0;">${new Date().toLocaleDateString()}</h4>
             </div>
             <img src="${logo2Base64}" alt="Logo 2" style="height: 60px; width: auto;">
+          </div>
+  
+          <div style="margin-top: 10px;">
+            <h3>Our Mission</h3>
+            <p>FutureProof empowers individuals with AI-driven, gamified health insights for proactive well-being. By integrating genetic, lifestyle, and environmental data, we deliver personalized, preventive care solutions.</p>
+            <h3>Our Vision</h3>
+            <p>We envision a future where predictive healthcare transforms lives, making well-being accessible, engaging, and proactive through AI and gamification.</p>
           </div>
           <div style="margin-top: 20px;">
             <h3>User Information</h3>
@@ -424,23 +431,23 @@ const UserDashboard = ({ navigation }) => {
           </div>
         </div>
       `;
-
+  
       const predictionHtml = `
-        <div style="font-family: Arial, sans-serif; padding: 20px; background: #fff; max-width: 900px; margin: 0 auto;">
+        <div style="font-family: Arial, sans-serif; padding: 20px; background: #fff; max-width: 500px; margin: 0 auto;">
           <div style="margin-top: 20px;">
             <h3>Health Prediction Analysis</h3>
-            <div id="lineChartContainer" style="text-align: center;">
+            <div id="lineChartContainer" style="text-align: center; margin-bottom: 50px;">
               <h4>Risk Analysis</h4>
-              <canvas id="lineChartCanvas" width="300" height="150"></canvas>
+              <canvas id="lineChartCanvas" width="400" height="250"></canvas>
             </div>
-            <div id="pieChartContainer" style="text-align: center; margin-top: 20px;">
+            <div id="pieChartContainer" style="text-align: center; margin-top: 50px;">
               <h4>Risk Distribution</h4>
-              <canvas id="pieChartCanvas" width="300" height="150"></canvas>
+              <canvas id="pieChartCanvas" width="400" height="250"></canvas>
             </div>
           </div>
         </div>
       `;
-
+  
       const dashboardHtml = `
         <div style="font-family: Arial, sans-serif; padding: 20px; background: #fff; max-width: 900px; margin: 0 auto;">
           <div style="margin-top: 20px;">
@@ -466,33 +473,35 @@ const UserDashboard = ({ navigation }) => {
           </div>
         </div>
       `;
-
+  
       const htmlContent = profileHtml + '<div style="page-break-after: always;"></div>' + predictionHtml + '<div style="page-break-after: always;"></div>' + dashboardHtml;
-
+  
       if (Platform.OS === 'web') {
         const container = document.createElement('div');
         container.style.position = 'absolute';
         container.style.left = '-9999px';
         container.innerHTML = htmlContent;
         document.body.appendChild(container);
-
+  
         const waitForImages = () => {
           const images = container.getElementsByTagName('img');
           return Promise.all(
             Array.from(images).map((img) => {
               if (img.complete) return Promise.resolve();
-              return new Promise((resolve, reject) => {
+              return new Promise((resolve) => {
                 img.onload = resolve;
-                img.onerror = reject;
+                img.onerror = resolve;
               });
             })
           );
         };
-
+  
+        await waitForImages();
+  
         const renderCharts = async () => {
           const lineChartCanvas = document.getElementById('lineChartCanvas');
           const pieChartCanvas = document.getElementById('pieChartCanvas');
-
+  
           const lineChartData = {
             labels: prediction.predicted_diseases.map((item) => item.condition),
             datasets: [{
@@ -504,7 +513,7 @@ const UserDashboard = ({ navigation }) => {
               fill: true,
             }],
           };
-
+  
           const pieChartData = {
             labels: prediction.predicted_diseases.map((item) => item.condition),
             datasets: [{
@@ -513,7 +522,7 @@ const UserDashboard = ({ navigation }) => {
               borderWidth: 1,
             }],
           };
-
+  
           const lineChartConfig = {
             type: 'line',
             data: lineChartData,
@@ -521,16 +530,12 @@ const UserDashboard = ({ navigation }) => {
               responsive: true,
               maintainAspectRatio: false,
               scales: {
-                x: {
-                  beginAtZero: true,
-                },
-                y: {
-                  beginAtZero: true,
-                },
+                x: { beginAtZero: true },
+                y: { beginAtZero: true },
               },
             },
           };
-
+  
           const pieChartConfig = {
             type: 'pie',
             data: pieChartData,
@@ -539,48 +544,37 @@ const UserDashboard = ({ navigation }) => {
               maintainAspectRatio: false,
             },
           };
-
-          const lineChart = new Chart(lineChartCanvas, lineChartConfig);
-          const pieChart = new Chart(pieChartCanvas, pieChartConfig);
-
-          await new Promise((resolve) => setTimeout(resolve, 1000)); // Wait for charts to render
-
-          return Promise.all([lineChart, pieChart]);
+  
+          new Chart(lineChartCanvas, lineChartConfig);
+          new Chart(pieChartCanvas, pieChartConfig);
+  
+          await new Promise(resolve => setTimeout(resolve, 1000)); // Wait for charts to render
         };
-
+  
         try {
-          await waitForImages();
           await renderCharts();
           const canvas = await html2canvas(container);
           const imgData = canvas.toDataURL('image/png');
-
+  
           const pdf = new jsPDF('p', 'pt', 'a4');
           const pdfWidth = pdf.internal.pageSize.getWidth();
           const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+  
           pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
-
+  
           let currentHeight = pdfHeight;
           while (currentHeight > pdf.internal.pageSize.getHeight()) {
             pdf.addPage();
             currentHeight -= pdf.internal.pageSize.getHeight();
             pdf.addImage(imgData, 'PNG', 0, -currentHeight, pdfWidth, pdfHeight);
           }
-
+  
           pdf.save('user-dashboard-report.pdf');
-
         } catch (err) {
           console.error('Error generating PDF:', err);
           Alert.alert('Error', 'Failed to generate PDF. Please try again.');
         } finally {
           document.body.removeChild(container);
-        }
-      } else {
-        try {
-          const { uri } = await Print.printToFileAsync({ html: htmlContent });
-          await shareAsync(uri, { UTI: '.pdf', mimeType: 'application/pdf' });
-        } catch (error) {
-          console.error('Error generating PDF:', error);
-          Alert.alert('Error', 'Failed to generate PDF. Please try again.');
         }
       }
     } catch (error) {
@@ -588,7 +582,7 @@ const UserDashboard = ({ navigation }) => {
       Alert.alert('Error', 'Something went wrong. Please try again.');
     }
   };
-
+  
   const handleExportUserPDF = async (assessment) => {
     try {
       // Convert logo URLs to base64
@@ -913,13 +907,13 @@ const UserDashboard = ({ navigation }) => {
               </View>
 
               <View style={styles.statsRow}>
-                <View style={[styles.statCard, { backgroundColor: bmiColor }]}>
-                  <View style={styles.statContent}>
-                    <Text style={styles.statValue}>{bmi}</Text>
-                    <Text style={styles.statLabel}>BMI</Text>
-                  </View>
-                  <Text style={styles.statStatus}>{bmiStatus}</Text>
-                </View>
+  <View style={[styles.statCard, { backgroundColor: '#ffffff' }]}>
+    <View style={styles.statContent}>
+      <Text style={styles.statValue}>{bmi}</Text>
+      <Text style={styles.statLabel}>BMI</Text>
+    </View>
+    <Text style={styles.statStatus}>{bmiStatus}</Text>
+  </View>
                 
                 <View style={styles.statCard}>
                   <View style={styles.statContent}>
@@ -1402,6 +1396,7 @@ const styles = StyleSheet.create({
       flexDirection: 'row',
       justifyContent: 'space-between',
       marginBottom: 20,
+      
     },
     statCard: {
       flex: 1,
