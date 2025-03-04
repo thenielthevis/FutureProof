@@ -157,11 +157,11 @@ Drizzle of olive oil
     setSelectedFood(foodDescriptions[foodKey].description);
   };
 
-    const playEatingSound = async () => {
-      const { sound } = await Audio.Sound.createAsync(require('../assets/food/eating.mp3'));
-      setSound(sound);
-      await sound.playAsync();
-    };
+    //const playEatingSound = async () => {
+     // const { sound } = await Audio.Sound.createAsync(require('../assets/food/eating.MP3'));
+      //setSound(sound);
+      //await sound.playAsync();
+ //   };
 
   return (
     <LinearGradient colors={['#14243b', '#77f3bb']} style={styles.container}>

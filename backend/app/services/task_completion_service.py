@@ -35,21 +35,4 @@ class TaskCompletionService:
         task_completions_cursor = db.task_completions.find()
         task_completions = await task_completions_cursor.to_list(length=None)  # Convert cursor to list
         return [TaskCompletion(**task_completion) for task_completion in task_completions]
-    
-    @staticmethod
-    async def get_total_time_spent_by_user(user_id: str) -> int:
-        try:
-            logger.info(f"Calculating total time spent for user: {user_id}")
-            task_completions = await db.task_completions.find({"user_id": user_id}).to_list(length=None)
-            
-            logger.info(f"Found {len(task_completions)} task completions")
-            
-            # Sum the time_spent for all tasks
-            total_time_spent = sum(task["time_spent"] for task in task_completions if task.get("time_spent") is not None)
-            
-            logger.info(f"Total time spent calculated: {total_time_spent}")
-            return total_time_spent
-        except Exception as e:
-            logger.error(f"Error calculating total time spent by user: {str(e)}")
-            raise HTTPException(status_code=400, detail=str(e))
 
