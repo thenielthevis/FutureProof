@@ -79,6 +79,10 @@ const Sidebar = () => {
               <FontAwesome5 name="tachometer-alt" size={16} color="white" />
               <Text style={styles.sidebarText}>Dashboard</Text>
             </TouchableOpacity>
+            <TouchableOpacity style={styles.sidebarItem} onPress={() => navigation.navigate('Assessments')}>
+              <FontAwesome5 name="clipboard-list" size={16} color="white" />
+              <Text style={styles.sidebarText}>Assessments</Text>
+            </TouchableOpacity>
           </View>
           
           <View style={styles.menuGroup}>
