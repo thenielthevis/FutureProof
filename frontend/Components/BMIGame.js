@@ -5,6 +5,7 @@ import { OrbitControls, useGLTF } from '@react-three/drei/native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { getEquippedAssets } from '../API/assets_api'; // Re-add this import
 import GameNavbar from '../Navbar/GameNavbar';
+import { Audio } from 'expo-av';
 
 // Reusable Model Component with Color
 function Model({ scale, uri, position }) {
@@ -31,6 +32,7 @@ export default function Game() {
   const [selectedFood, setSelectedFood] = useState(null); // State to track selected food item
   const [gameCompleted, setGameCompleted] = useState(false); // State to track if the game is completed
   const [modelScale, setModelScale] = useState({ x: 3, y: 5, z: 4 }); // Initial scale for Underweight
+  const [sound, setSound] = useState();
 
   const modelScaleDefault = { x: 5, y: 5, z: 5 }; // 2x larger
   const modelPosition = { x: 0, y: -5, z: 0 }; // Adjusted position to move the model downwards
@@ -150,9 +152,16 @@ Drizzle of olive oil
   };
 
   const handleFoodHover = (foodKey) => {
+    playEatingSound();
     setHighlightedFood(foodKey);
     setSelectedFood(foodDescriptions[foodKey].description);
   };
+
+    const playEatingSound = async () => {
+      const { sound } = await Audio.Sound.createAsync(require('../assets/food/eating.mp3'));
+      setSound(sound);
+      await sound.playAsync();
+    };
 
   return (
     <LinearGradient colors={['#14243b', '#77f3bb']} style={styles.container}>

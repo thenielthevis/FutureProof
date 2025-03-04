@@ -13,6 +13,7 @@ import { readQuotes } from '../API/quotes_api';
 import { getAllTaskCompletions } from '../API/task_completion_api';
 import { getMostPredictedDisease, getTopPredictedDiseases } from '../API/prediction_api';
 import { PieChart, LineChart } from 'react-native-chart-kit';
+import Sidebar from './Sidebar';
 
 const Admin = () => {
   const navigation = useNavigation();
@@ -124,44 +125,9 @@ const Admin = () => {
           </TouchableOpacity>
         </View>
              {!sidebarCollapsed && (
-                    <View style={styles.sidebarContent}>
-                       <TouchableOpacity style={styles.sidebarItem} onPress={() => navigation.navigate('Home')}>
-                         <FontAwesome name="home" size={24} color="white" />
-                         <Text style={styles.sidebarText}>Home</Text>
-                       </TouchableOpacity>
-                       <TouchableOpacity style={styles.sidebarItem} onPress={() => navigation.navigate('Admin')}>
-                         <FontAwesome name="dashboard" size={24} color="white" />
-                         <Text style={styles.sidebarText}>Dashboard</Text>
-                       </TouchableOpacity>
-                       <TouchableOpacity style={styles.sidebarItem} onPress={() => navigation.navigate('AvatarCRUD')}>
-                         <FontAwesome name="user" size={24} color="white" />
-                         <Text style={styles.sidebarText}>Avatars</Text>
-                       </TouchableOpacity>
-                       <TouchableOpacity style={styles.sidebarItem} onPress={() => navigation.navigate('DailyRewardsCRUD')}>
-                         <FontAwesome5 name="gift" size={24} color="white" />
-                         <Text style={styles.sidebarText}>Daily Rewards</Text>
-                       </TouchableOpacity>
-                       <TouchableOpacity style={styles.sidebarItem} onPress={() => navigation.navigate('AchievementsCRUD')}>
-                         <FontAwesome5 name="trophy" size={24} color="white" />
-                         <Text style={styles.sidebarText}>Achievements</Text>
-                       </TouchableOpacity>
-                       <TouchableOpacity style={styles.sidebarItem} onPress={() => navigation.navigate('quotes')}>
-                         <FontAwesome name="quote-left" size={24} color="white" />
-                         <Text style={styles.sidebarText}>Quotes</Text>
-                       </TouchableOpacity>
-                       <TouchableOpacity style={styles.sidebarItem} onPress={() => navigation.navigate('asset')}>
-                         <FontAwesome name="archive" size={24} color="white" />
-                         <Text style={styles.sidebarText}>Assets</Text>
-                       </TouchableOpacity>
-                       <TouchableOpacity style={styles.sidebarItem} onPress={() => navigation.navigate('physicalactivities')}>
-                         <FontAwesome5 name="running" size={24} color="white" />
-                         <Text style={styles.sidebarText}>Physical Activities</Text>
-                       </TouchableOpacity>
-                       <TouchableOpacity style={styles.sidebarItem} onPress={() => navigation.navigate('meditation')}>
-                         <FontAwesome5 name="spa" size={24} color="white" />
-                         <Text style={styles.sidebarText}>Meditation Breathing</Text>
-                       </TouchableOpacity>
-             </View>
+                <View style={styles.sidebarContent}>
+                  <Sidebar />
+                </View>
            )}
       </LinearGradient>
 

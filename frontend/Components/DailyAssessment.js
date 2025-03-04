@@ -124,6 +124,28 @@ return (
                             <Text key={index} style={styles.dataText}>• {task.task_type}: {task.time_spent ?? 'N/A'} mins, {task.coins_received} coins</Text>
                         ))}
 
+                      <Text style={styles.subtitle}>Nutritional Tracking</Text>
+                        {assessmentData.nutritional_tracking?.map((task, index) => (
+                            <View key={index}>
+                              <Text style={styles.dataText}>• {task.task_type}: {task.time_spent ?? 'N/A'} mins, {task.coins_received} coins</Text>
+                              {console.log('Questions and Answers:', task.questions_answers)}
+                              {task.questions_answers?.map((qa, qaIndex) => (
+                                <View key={qaIndex}>
+                                  <Text style={styles.dataText}>  - Q: {qa.question}</Text>
+                                  <Text style={styles.dataText}>    A: {qa.answer}</Text>
+                                </View>
+                              ))}
+                            </View>
+                        ))}
+
+                        <Text style={styles.subtitle}>Nutritional Tracking</Text>
+                        {assessmentData.nutritional_analysis?.questions_answers?.map((qa, index) => (
+                            <View key={index}>
+                              <Text style={styles.dataText}>• Q: {qa.question}</Text>
+                              <Text style={styles.dataText}>  A: {qa.answer}</Text>
+                            </View>
+                        ))}
+
                         <Text style={styles.subtitle}>Recommendations</Text>
                         <View style={styles.bulletedList}>
                             {assessmentData.recommendations?.map((rec, index) => (

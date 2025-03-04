@@ -730,6 +730,7 @@ const styles = StyleSheet.create({
     width: 150,
     height: 150,
     zIndex: 10,
+    resizeMode: 'contain',
   },
 blanket: {
   position: 'absolute',
@@ -772,6 +773,7 @@ lowBatteryImage: {
   width: 150,
   height: 150,
   zIndex: 10,
+  resizeMode: 'contain',
 },
 bmiGameButton: {
   backgroundColor: '#4CAF50',

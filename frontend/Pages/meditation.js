@@ -13,6 +13,7 @@ import { shareAsync } from 'expo-sharing';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import Toast from 'react-native-toast-message';
+import Sidebar from './Sidebar';
 
 const MeditationCRUD = () => {
   const navigation = useNavigation();
@@ -294,38 +295,7 @@ const MeditationCRUD = () => {
         </View>
         {!sidebarCollapsed && (
           <View style={styles.sidebarContent}>
-            <TouchableOpacity style={styles.sidebarItem} onPress={() => navigation.navigate('Home')}>
-              <FontAwesome name="home" size={24} color="white" />
-              <Text style={styles.sidebarText}>Home</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.sidebarItem} onPress={() => navigation.navigate('Admin')}>
-              <FontAwesome name="dashboard" size={24} color="white" />
-              <Text style={styles.sidebarText}>Dashboard</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.sidebarItem} onPress={() => navigation.navigate('AvatarCRUD')}>
-              <FontAwesome name="user" size={24} color="white" />
-              <Text style={styles.sidebarText}>Avatars</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.sidebarItem} onPress={() => navigation.navigate('DailyRewardsCRUD')}>
-              <FontAwesome5 name="gift" size={24} color="white" />
-              <Text style={styles.sidebarText}>Daily Rewards</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.sidebarItem} onPress={() => navigation.navigate('quotes')}>
-              <FontAwesome name="quote-left" size={24} color="white" />
-              <Text style={styles.sidebarText}>Quotes</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.sidebarItem} onPress={() => navigation.navigate('asset')}>
-              <FontAwesome name="archive" size={24} color="white" />
-              <Text style={styles.sidebarText}>Assets</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.sidebarItem} onPress={() => navigation.navigate('physicalactivities')}>
-              <FontAwesome5 name="running" size={24} color="white" />
-              <Text style={styles.sidebarText}>Physical Activities</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.sidebarItem} onPress={() => navigation.navigate('meditation')}>
-              <FontAwesome5 name="spa" size={24} color="white" />
-              <Text style={styles.sidebarText}>Meditation Breathing</Text>
-            </TouchableOpacity>
+            <Sidebar />
           </View>
         )}
       </LinearGradient>

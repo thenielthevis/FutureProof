@@ -219,3 +219,54 @@ async def get_daily_assessment(user_id: str):
             daily_assessment[key] = str(value)
 
     return jsonable_encoder(daily_assessment)  # Ensure it's JSON serializable
+
+async def read_all_assessments():
+    """Fetches all users' daily assessments and includes user details (name, age, gender, height, weight, environment, vices, genetic diseases, lifestyle, food intake, sleep hours, activeness)."""
+    assessments = await daily_assessments_collection.find().to_list(None)
+
+    # Extract user IDs from assessments
+    user_ids = [assessment['user_id'] for assessment in assessments]
+
+    # Fetch users matching these IDs
+    users = await db.users.find(
+        {"_id": {"$in": [ObjectId(user_id) for user_id in user_ids]}},
+        {"username": 1, "email": 1, "age": 1, "gender": 1, "height": 1, "weight": 1, "environment": 1, "vices": 1, "genetic_diseases": 1, "lifestyle": 1, "food_intake": 1, "sleep_hours": 1, "activeness": 1}  # Fetch only required fields
+    ).to_list(None)
+
+    # Create a dictionary mapping user_id to user details
+    user_dict = {str(user['_id']): {
+        "username": user["username"],
+        "email": user["email"],
+        "age": user["age"],
+        "gender": user["gender"],
+        "height": user["height"],
+        "weight": user["weight"],
+        "environment": user["environment"],
+        "vices": user["vices"],
+        "genetic_diseases": user["genetic_diseases"],
+        "lifestyle": user["lifestyle"],
+        "food_intake": user["food_intake"],
+        "sleep_hours": user["sleep_hours"],
+        "activeness": user["activeness"]
+    } for user in users}
+
+    # Attach user details to assessments
+    for assessment in assessments:
+        user_info = user_dict.get(assessment['user_id'], {
+            'username': 'Unknown User',
+            'email': 'Unknown',
+            'age': None,
+            'gender': None,
+            'height': None,
+            'weight': None,
+            'environment': None,
+            'vices': [],
+            'genetic_diseases': [],
+            'lifestyle': [],
+            'food_intake': [],
+            'sleep_hours': None,
+            'activeness': None
+        })
+        assessment.update(user_info)  # Merge user data into assessment
+
+    return [convert_objectid_to_str(assessment) for assessment in assessments]

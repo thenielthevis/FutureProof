@@ -37,3 +37,13 @@ export const getDailyAssessment = async (token) => {
     throw error.response ? error.response.data : { detail: 'An error occurred' };
   }
 };
+
+export const readAssessments = async () => {
+  try {
+    const response = await axios.get(`${API_URL}/daily-assessments`);
+    return response.data.assessments;
+  } catch (error) {
+    console.error('Error fetching assessments:', error.response ? error.response.data : error);
+    throw error.response ? error.response.data : { detail: 'An error occurred' };
+  }
+};

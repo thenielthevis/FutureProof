@@ -6,6 +6,7 @@ import { readAvatars, getAvatar } from '../API/avatar_api';
 import { LinearGradient } from 'expo-linear-gradient';
 import { FontAwesome, FontAwesome5 } from '@expo/vector-icons';
 import Toast from 'react-native-toast-message';
+import Sidebar from './Sidebar';
 
 const AchievementsCRUD = () => {
   const navigation = useNavigation();
@@ -176,31 +177,7 @@ const AchievementsCRUD = () => {
 
   return (
     <View style={styles.container}>
-      <LinearGradient colors={['#003C2C', '#005C3C']} style={styles.sidebar}>
-        <View style={styles.sidebarTop}>
-          <TouchableOpacity style={styles.sidebarItem} onPress={() => navigation.navigate('Home')}>
-            <FontAwesome name="home" size={24} color="white" />
-            <Text style={styles.sidebarText}>Home</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.sidebarItem} onPress={() => navigation.navigate('Admin')}>
-            <FontAwesome name="dashboard" size={24} color="white" />
-            <Text style={styles.sidebarText}>Dashboard</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.sidebarItem} onPress={() => navigation.navigate('AvatarCRUD')}>
-            <FontAwesome name="user" size={24} color="white" />
-            <Text style={styles.sidebarText}>Avatars</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.sidebarItem} onPress={() => navigation.navigate('DailyRewardsCRUD')}>
-            <FontAwesome5 name="gift" size={24} color="white" />
-            <Text style={styles.sidebarText}>Daily Rewards</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.sidebarItem} onPress={() => navigation.navigate('AchievementsCRUD')}>
-            <FontAwesome5 name="trophy" size={24} color="white" />
-            <Text style={styles.sidebarText}>Achievements</Text>
-          </TouchableOpacity>
-        </View>
-      </LinearGradient>
-
+      <Sidebar />
       <View style={styles.content}>
         <Text style={styles.header}>Achievements Management</Text>
 
