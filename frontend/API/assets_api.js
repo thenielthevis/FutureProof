@@ -157,6 +157,17 @@ export const getOwnedAssets = async () => {
   }
 };
 
+// Fetch total number of owned assets
+export const getTotalOwnedAssetsCount = async () => {
+  try {
+    const ownedAssets = await getOwnedAssets();
+    return ownedAssets.asset_ids.length;
+  } catch (error) {
+    console.error('Error fetching total owned assets count:', error.response ? error.response.data : error);
+    throw error.response ? error.response.data : { detail: 'An error occurred' };
+  }
+};
+
 // Buy an asset
 export const buyAsset = async (assetId) => {
   try {

@@ -8,7 +8,9 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { FontAwesome, FontAwesome5 } from '@expo/vector-icons';
 import { LineChart, ProgressChart } from 'react-native-chart-kit';
-import { getTaskCompletionsByUser, getTodayTaskCompletionsByUser } from '../API/task_completion_api';
+import { getTaskCompletionsByUser, getTodayTaskCompletionsByUser, getTotalTimeSpentByUser } from '../API/task_completion_api';
+import { getTotalOwnedAssetsCount } from '../API/assets_api';
+import { getTotalAvatarsCount, getTotalCoins } from '../API/user_api';
 
 const screenWidth = Dimensions.get('window').width;
 const isMobile = screenWidth < 768;
@@ -22,7 +24,11 @@ const UserDashboard = ({ navigation }) => {
   const [activeTab, setActiveTab] = useState('profile');
   const [taskCompletions, setTaskCompletions] = useState([]);
   const [todayTaskCompletions, setTodayTaskCompletions] = useState([]);
-  const [sidebarOpen, setSidebarOpen] = useState(true);  // Sidebar state
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [totalOwnedAssetsCount, setTotalOwnedAssetsCount] = useState(0);
+  const [totalAvatarsCount, setTotalAvatarsCount] = useState(0);
+  const [totalCoins, setTotalCoins] = useState(0);
+  const [totalTimeSpent, setTotalTimeSpent] = useState(0);
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -72,6 +78,90 @@ const UserDashboard = ({ navigation }) => {
     };
 
     fetchTaskCompletions();
+  }, []);
+
+  useEffect(() => {
+    const fetchTotalOwnedAssetsCount = async () => {
+      try {
+        const token = await AsyncStorage.getItem('token');
+        if (!token) {
+          setError('No token found');
+          setLoading(false);
+          return;
+        }
+        const totalCount = await getTotalOwnedAssetsCount();
+        setTotalOwnedAssetsCount(totalCount);
+      } catch (err) {
+        setError(err.detail || 'An error occurred');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchTotalOwnedAssetsCount();
+  }, []);
+
+  useEffect(() => {
+    const fetchTotalAvatarsCount = async () => {
+      try {
+        const token = await AsyncStorage.getItem('token');
+        if (!token) {
+          setError('No token found');
+          setLoading(false);
+          return;
+        }
+        const totalCount = await getTotalAvatarsCount();
+        setTotalAvatarsCount(totalCount);
+      } catch (err) {
+        setError(err.detail || 'An error occurred');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchTotalAvatarsCount();
+  }, []);
+
+  useEffect(() => {
+    const fetchTotalCoins = async () => {
+      try {
+        const token = await AsyncStorage.getItem('token');
+        if (!token) {
+          setError('No token found');
+          setLoading(false);
+          return;
+        }
+        const totalCoins = await getTotalCoins();
+        setTotalCoins(totalCoins);
+      } catch (err) {
+        setError(err.detail || 'An error occurred');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchTotalCoins();
+  }, []);
+
+  useEffect(() => {
+    const fetchTotalTimeSpent = async () => {
+      try {
+        const token = await AsyncStorage.getItem('token');
+        if (!token) {
+          setError('No token found');
+          setLoading(false);
+          return;
+        }
+        const totalTime = await getTotalTimeSpentByUser();
+        setTotalTimeSpent(totalTime);
+      } catch (err) {
+        setError(err.detail || 'An error occurred');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchTotalTimeSpent();
   }, []);
 
   const calculateBMI = (height, weight) => {
@@ -165,7 +255,7 @@ const UserDashboard = ({ navigation }) => {
   };
 
   const toggleSidebar = () => {
-    setSidebarOpen(!sidebarOpen);  // Toggle the sidebar state
+    setSidebarOpen(!sidebarOpen);
   };
 
   if (loading) {
@@ -183,6 +273,17 @@ const UserDashboard = ({ navigation }) => {
       </View>
     );
   }
+
+  const taskCompletionChartData = {
+    labels: taskCompletions.map((task, index) => `Task ${index + 1}`),
+    datasets: [
+      {
+        data: taskCompletions.map((task) => task.time_spent),
+        color: (opacity = 1) => `rgba(0, 123, 255, ${opacity})`,
+        strokeWidth: 2,
+      },
+    ],
+  };
 
   return (
     <LinearGradient colors={['#ffffff', '#ffffff']} style={styles.container}>
@@ -228,9 +329,9 @@ const UserDashboard = ({ navigation }) => {
       </View>
 
       {/* Main Content Area */}
-      <ScrollView contentContainerStyle={styles.scrollViewContent} showsVerticalScrollIndicator={false}>
+      <ScrollView contentContainerStyle={[styles.scrollViewContent, { marginLeft: sidebarOpen ? 250 : 60 }]} showsVerticalScrollIndicator={false}>
         {activeTab === 'profile' && (
-          <>
+          <View style={styles.centerContent}>
             <View style={styles.profileHeader}>
               {avatarUrl && <Image source={{ uri: avatarUrl }} style={styles.avatar} />}
               <Text style={styles.userName}>{user.username}</Text>
@@ -256,9 +357,7 @@ const UserDashboard = ({ navigation }) => {
                 <Text style={styles.bmiText}>Height: {user.height} cm</Text>
                 <Text style={styles.bmiText}>Weight: {user.weight} kg</Text>
                 <Text style={styles.bmiResult}>BMI: {bmi}</Text>
-                <Text style={[styles.bmiStatus, { color: bmiStatus === 'Underweight' ? '#FF9800' : '#4CAF50' }]}>
-                  {bmiStatus}
-                </Text>
+                <Text style={[styles.bmiStatus, { color: bmiStatus === 'Underweight' ? '#FF9800' : '#4CAF50' }]}> {bmiStatus} </Text>
               </View>
             </View>
 
@@ -292,15 +391,68 @@ const UserDashboard = ({ navigation }) => {
                 <MaterialIcons name="edit" size={24} color="#4CAF50" style={styles.editIcon} />
               </View>
             </View>
-          </>
+          </View>
         )}
-        {activeTab === 'prediction' && formatPrediction(prediction)}
+        {activeTab === 'prediction' && (
+          <View style={styles.centerContent}>
+            {formatPrediction(prediction)}
+          </View>
+        )}
         {activeTab === 'dashboard' && (
-          <View style={styles.card}>
-            <Text style={styles.cardHeader}>Task Completions</Text>
-            <Text style={styles.cardText}>Total Tasks Completed: {taskCompletions.length}</Text>
-            <Text style={styles.cardText}>Tasks Completed Today: {todayTaskCompletions.length}</Text>
-            <ScrollView></ScrollView>
+          <View style={styles.centerContent}>
+            <View style={styles.row}>
+              <View style={styles.card}>
+                <Text style={styles.cardHeader}>Task Completions</Text>
+                <Text style={styles.cardText}>Total Tasks Completed: {taskCompletions.length}</Text>
+                <Text style={styles.cardText}>Tasks Completed Today: {todayTaskCompletions.length}</Text>
+                <Text style={styles.cardText}>Total Time Spent: {totalTimeSpent} minutes</Text>
+                <ScrollView>
+                  {taskCompletions.map((task, index) => (
+                    <View key={index} style={styles.taskItem}>
+                      <Text style={styles.taskText}>{task.task_type}</Text>
+                      <Text style={styles.taskDate}>{new Date(task.date_completed).toLocaleDateString()}</Text>
+                    </View>
+                  ))}
+                </ScrollView>
+              </View>
+              <View style={styles.card}>
+                <Text style={styles.cardHeader}>Owned Assets</Text>
+                <Text style={styles.cardText}>Total Owned Assets: {totalOwnedAssetsCount}</Text>
+              </View>
+            </View>
+            <View style={styles.row}>
+              <View style={styles.card}>
+                <Text style={styles.cardHeader}>Total Avatars</Text>
+                <Text style={styles.cardText}>Total Avatars: {totalAvatarsCount}</Text>
+              </View>
+              <View style={styles.card}>
+                <Text style={styles.cardHeader}>Total Coins</Text>
+                <Text style={styles.cardText}>Total Coins: {totalCoins}</Text>
+              </View>
+            </View>
+            <View style={styles.card}>
+              <Text style={styles.cardHeader}>Task Completion Time</Text>
+              <LineChart
+                data={taskCompletionChartData}
+                width={screenWidth - 40}
+                height={220}
+                chartConfig={{
+                  backgroundColor: '#2c3e50',
+                  backgroundGradientFrom: '#2c3e50',
+                  backgroundGradientTo: '#2c3e50',
+                  decimalPlaces: 2,
+                  color: (opacity = 1) => `rgba(0, 123, 255, ${opacity})`,
+                  labelColor: (opacity = 1) => `rgba(255, 255, 255, ${opacity})`,
+                  fillShadowGradient: '#007bff',
+                  fillShadowGradientOpacity: 0.3,
+                }}
+                bezier
+                style={{
+                  marginVertical: 15,
+                  borderRadius: 16,
+                }}
+              />
+            </View>
           </View>
         )}
       </ScrollView>
@@ -310,23 +462,75 @@ const UserDashboard = ({ navigation }) => {
 
 const styles = StyleSheet.create({
   container: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 16 },
-  sidebar: { position: 'absolute', top: 0, left: 0, bottom: 0, backgroundColor: '#003C2C', zIndex: 999 },
-  sidebarContent: { flex: 1, justifyContent: 'flex-start', paddingTop: 50, paddingHorizontal: 10 },
-  toggleButton: { padding: 10, position: 'absolute', top: 10, left: 10, zIndex: 1000 },
-  sidebarItem: { paddingVertical: 15, paddingHorizontal: 10, flexDirection: 'row', alignItems: 'center', borderBottomWidth: 1, borderColor: '#005C3C' },
+  sidebar: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    bottom: 0,
+    backgroundColor: '#003C2C',
+    zIndex: 999,
+    width: 250, // Sidebar width to fit content
+    height: '100%', // Ensure the sidebar height matches the screen height
+  },
+  sidebarContent: {
+    flex: 1,
+    justifyContent: 'flex-start',
+    paddingTop: 50,
+    paddingHorizontal: 10,
+  },
+  toggleButton: {
+    padding: 10,
+    position: 'absolute',
+    top: 10,
+    left: 10,
+    zIndex: 1000,
+  },
+  sidebarItem: {
+    paddingVertical: 15,
+    paddingHorizontal: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderBottomWidth: 1,
+    borderColor: '#005C3C',
+  },
   activeSidebarItem: { backgroundColor: '#4189E5' },
   sidebarText: { fontSize: 20, color: '#ffffff', marginLeft: 10 },
   activeSidebarText: { fontWeight: 'bold' },
-  scrollViewContent: { flexGrow: 1, width: '100%' },
-  profileHeader: { alignItems: 'center', marginBottom: 30, backgroundColor: '#003C2C', padding: 20, borderRadius: 10 },
-  avatar: { width: 150, height: 150, borderRadius: 75, borderWidth: 3, borderColor: '#4CAF50', marginBottom: 20 },
-  userName: { fontSize: 32, fontWeight: 'bold', color: '#ffffff', marginBottom: 10 },
-  userDetails: { fontSize: 20, color: '#ffffff' },
-  row: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 20, width: '100%' },
+  scrollViewContent: {
+    flexGrow: 1,
+    width: '100%',
+    marginLeft: 250, // Adjusted to match the sidebar width
+    paddingLeft: 16,
+    paddingTop: 30, // Added to avoid cutting the top of the content
+  },
+  profileHeader: {
+    alignItems: 'center',
+    marginBottom: 30,
+    backgroundColor: '#003C2C',
+    padding: 20,
+    borderRadius: 10,
+  },
+  avatar: {
+    width: 100, // Adjusted size
+    height: 100, // Adjusted size
+    borderRadius: 50, // Keep it circular
+    borderWidth: 3,
+    borderColor: '#4CAF50',
+    marginBottom: 20,
+  },
+  userName: { fontSize: 24, fontWeight: 'bold', color: '#ffffff', marginBottom: 10 },
+  userDetails: { fontSize: 18, color: '#ffffff' },
+  row: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 20,
+    width: '100%',
+    flexWrap: 'wrap',
+  },
   card: {
     backgroundColor: '#2c3e50',
     borderRadius: 15,
-    padding: 20,
+    padding: 15,
     flex: 1,
     marginHorizontal: 10,
     shadowColor: '#000',
@@ -334,26 +538,38 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.3,
     shadowRadius: 6,
     elevation: 5,
+    minHeight: 130, // Ensures that cards are appropriately sized
+    marginBottom: 20, // Adds space between cards
+    width: '100%', // Ensure the cards take full width without cutting off
   },
   bmiCard: { marginVertical: 20 },
-  cardHeader: { fontSize: 22, fontWeight: 'bold', color: '#ecf0f1', marginBottom: 15 },
-  cardText: { fontSize: 18, color: '#bdc3c7' },
+  cardHeader: { fontSize: 20, fontWeight: 'bold', color: '#ecf0f1', marginBottom: 15 },
+  cardText: { fontSize: 16, color: '#bdc3c7' },
   editIcon: { position: 'absolute', right: 15, top: 15 },
   bmiContainer: { alignItems: 'center' },
-  bmiText: { fontSize: 18, color: '#bdc3c7' },
-  bmiResult: { fontSize: 24, fontWeight: 'bold', color: '#4CAF50', marginTop: 15 },
-  bmiStatus: { fontSize: 20, marginTop: 10, color: '#ecf0f1' },
+  bmiText: { fontSize: 16, color: '#bdc3c7' },
+  bmiResult: { fontSize: 20, fontWeight: 'bold', color: '#4CAF50', marginTop: 15 },
+  bmiStatus: { fontSize: 18, marginTop: 10, color: '#ecf0f1' },
   error: { color: 'red', fontSize: 22, textAlign: 'center', marginBottom: 20 },
   backButton: { backgroundColor: '#14243b', padding: 15, borderRadius: 10, alignItems: 'center', marginTop: 30, width: '100%' },
   backButtonText: { color: 'white', fontWeight: 'bold', fontSize: 20 },
   centerContent: { flex: 1, justifyContent: 'center', alignItems: 'center' },
   circleContainer: { flexDirection: 'row', justifyContent: 'space-around', marginTop: 30, width: '100%', flexWrap: 'wrap' },
-  circleWrapper: { width: 180, height: 180, justifyContent: 'center', alignItems: 'center', marginBottom: 20, borderRadius: 90 },
-  circleText: { color: '#2c3e50', fontWeight: 'bold', fontSize: 16, textAlign: 'center', marginTop: 10, marginBottom: 15, width: 120 },
-  circleValue: { color: '#2c3e50', fontSize: 24, fontWeight: 'bold', textAlign: 'center', marginTop: 10 },
+  circleWrapper: { width: 150, height: 150, justifyContent: 'center', alignItems: 'center', marginBottom: 20, borderRadius: 90 },
+  circleText: { color: '#2c3e50', fontWeight: 'bold', fontSize: 14, textAlign: 'center', marginTop: 10, marginBottom: 15, width: 120 },
+  circleValue: { color: '#2c3e50', fontSize: 20, fontWeight: 'bold', textAlign: 'center', marginTop: 10 },
   sectionHeader: { fontSize: 26, fontWeight: 'bold', color: '#000000', marginBottom: 20, textAlign: 'center' },
-  userDetailsContainer: { width: isMobile ? '100%' : '90%', padding: 20, backgroundColor: '#34495e', borderRadius: 15, marginBottom: 30 },
-  userDetailsText: { fontSize: 18, color: '#ecf0f1', lineHeight: 28 },
+  userDetailsContainer: {
+    width: '100%',
+    padding: 20,
+    backgroundColor: '#34495e',
+    borderRadius: 15,
+    marginBottom: 30,
+  },
+  userDetailsText: { fontSize: 16, color: '#ecf0f1', lineHeight: 28 },
+  taskItem: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: '#bdc3c7' },
+  taskText: { fontSize: 16, color: '#ecf0f1' },
+  taskDate: { fontSize: 14, color: '#bdc3c7' },
 });
 
 export default UserDashboard;
