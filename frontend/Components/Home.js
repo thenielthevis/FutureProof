@@ -449,53 +449,6 @@ const Home = ({ navigation }) => {
           <Contacts />
         </View>
 
-{/* Framework Section */}
-<View style={styles.section}>
-  <Text style={styles.sectionTitle}>Technologies We Use</Text>
-  <View style={styles.frameworkContainer}>
-    <View style={styles.frameworkGroup}>
-      <Text style={styles.frameworkGroupTitle}>Languages</Text>
-      <View style={styles.frameworkItem}>
-        <Text style={styles.frameworkText}>Python</Text>
-        <Text style={styles.frameworkText}>JavaScript</Text>
-      </View>
-    </View>
-
-    <View style={styles.frameworkGroup}>
-      <Text style={styles.frameworkGroupTitle}>Frameworks</Text>
-      <View style={styles.frameworkItem}>
-        <Text style={styles.frameworkText}>React Native</Text>
-        <Text style={styles.frameworkText}>FastAPI</Text>
-        <Text style={styles.frameworkText}>Node.js</Text>
-      </View>
-    </View>
-
-    <View style={styles.frameworkGroup}>
-      <Text style={styles.frameworkGroupTitle}>Database & Storage</Text>
-      <View style={styles.frameworkItem}>
-        <Text style={styles.frameworkText}>MongoDB</Text>
-        <Text style={styles.frameworkText}>Cloudinary</Text>
-      </View>
-    </View>
-
-    <View style={styles.frameworkGroup}>
-      <Text style={styles.frameworkGroupTitle}>Testing & Development</Text>
-      <View style={styles.frameworkItem}>
-        <Text style={styles.frameworkText}>Mailtrap</Text>
-        <Text style={styles.frameworkText}>Insomnia</Text>
-      </View>
-    </View>
-
-    <View style={styles.frameworkGroup}>
-      <Text style={styles.frameworkGroupTitle}>Assets & AI</Text>
-      <View style={styles.frameworkItem}>
-        <Text style={styles.frameworkText}>Creatie</Text>
-        <Text style={styles.frameworkText}>WawaAvatars</Text>
-        <Text style={styles.frameworkText}>GroqCloud Llama 3.2</Text>
-      </View>
-    </View>
-  </View>
-</View>
 
 
 
@@ -507,14 +460,15 @@ const Home = ({ navigation }) => {
           <View style={styles.teamContainer}>
             <Animated.View style={[styles.teamMemberCard, activeCardIndex === 0 && styles.activeTeamCard, { transform: [{ scale: cardScales[0] }] }]}>
               <TouchableOpacity onPress={() => animateCard(0)}>
-                <View style={styles.imageWrapper}>
-                  <Image 
-                    source={require('../assets/member/team1.jpg')} 
-                    style={styles.teamMemberImage} 
-                  />
-                  <View style={styles.overlay}>
-                    <Text style={styles.overlayText}>Backend Development</Text>
-                  </View>
+              <View style={styles.imageWrapper}>
+  <Image 
+    source={require('../assets/member/team1.jpg')} 
+    style={styles.teamMemberImage} 
+  />
+  <TouchableOpacity style={styles.overlay} activeOpacity={0.8}>
+    <Text style={styles.overlayText}>Backend Development</Text>
+  </TouchableOpacity>
+
                 </View>
                 <Text style={[styles.teamMemberName, activeCardIndex === 0 && styles.activeText]}>
                   Rene Cian Baloloy
@@ -536,10 +490,11 @@ const Home = ({ navigation }) => {
                     source={require('../assets/member/team2.jpg')} 
                     style={styles.teamMemberImage} 
                   />
-                  <View style={styles.overlay}>
+                 <TouchableOpacity style={styles.overlay} activeOpacity={0.8}>
                     <Text style={styles.overlayText}>UI/UX Design</Text>
+                    </TouchableOpacity>
                   </View>
-                </View>
+   
                 <Text style={[styles.teamMemberName, activeCardIndex === 1 && styles.activeText]}>
                   Rean Joy Cicat
                 </Text>
@@ -559,9 +514,9 @@ const Home = ({ navigation }) => {
                     source={require('../assets/member/team3.png')} 
                     style={styles.teamMemberImage} 
                   />
-                  <View style={styles.overlay}>
+             <TouchableOpacity style={styles.overlay} activeOpacity={0.8}>
                     <Text style={styles.overlayText}>Frontend Development</Text>
-                  </View>
+                    </TouchableOpacity>
                 </View>
                 <Text style={[styles.teamMemberName, activeCardIndex === 2 && styles.activeText]}>
                   Mark Al Bartolome
@@ -582,9 +537,9 @@ const Home = ({ navigation }) => {
                     source={require('../assets/member/team4.jpg')} 
                     style={styles.teamMemberImage} 
                   />
-                  <View style={styles.overlay}>
+                <TouchableOpacity style={styles.overlay} activeOpacity={0.8}>
                     <Text style={styles.overlayText}>Full Stack Development</Text>
-                  </View>
+                    </TouchableOpacity>
                 </View>
                 <Text style={[styles.teamMemberName, activeCardIndex === 3 && styles.activeText]}>
                   Daniel Davis
@@ -599,6 +554,7 @@ const Home = ({ navigation }) => {
             </Animated.View>
           </View>
         </View>
+       
         {/* Footer Section */}
 <View style={styles.footer}>
   <View style={styles.footerContent}>
@@ -609,21 +565,32 @@ const Home = ({ navigation }) => {
         Empowering your wellness journey through gamification and AI-driven insights.
       </Text>
     </View>
-
     <View style={styles.footerLinksContainer}>
-      <View style={styles.footerLinkSection}>
-        <Text style={styles.footerLinkTitle}>Quick Links</Text>
-        <TouchableOpacity onPress={() => scrollToSection('about')}>
-          <Text style={styles.footerLink}>About</Text>
-        </TouchableOpacity>
-        <TouchableOpacity onPress={() => scrollToSection('features')}>
-          <Text style={styles.footerLink}>Features</Text>
-        </TouchableOpacity>
-        <TouchableOpacity onPress={() => scrollToSection('contact')}>
-          <Text style={styles.footerLink}>Contact</Text>
-        </TouchableOpacity>
+      <View style={styles.footerColumn}>
+        <View style={styles.footerLinkSection}>
+          <Text style={styles.footerLinkTitle}>Quick Links</Text>
+          <TouchableOpacity onPress={() => scrollToSection('about')}>
+            <Text style={styles.footerLink}>About</Text>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={() => scrollToSection('features')}>
+            <Text style={styles.footerLink}>Features</Text>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={() => scrollToSection('contact')}>
+            <Text style={styles.footerLink}>Contact</Text>
+          </TouchableOpacity>
+          <Text style={[styles.footerLinkTitle, { marginTop: 30 }]}>Technologies we Used</Text>
+          <View style={styles.techLogos}>
+            <Image source={require('../assets/tech/1.png')} style={styles.techLogo} />
+            <Image source={require('../assets/tech/2.png')} style={styles.techLogo} />
+            <Image source={require('../assets/tech/3.png')} style={styles.techLogo} />
+            <Image source={require('../assets/tech/4.png')} style={styles.techLogo} />
+            <Image source={require('../assets/tech/5.png')} style={styles.techLogo} />
+            <Image source={require('../assets/tech/6.png')} style={styles.techLogo} />
+            <Image source={require('../assets/tech/7.png')} style={styles.techLogo} />
+            <Image source={require('../assets/tech/8.png')} style={styles.techLogo} />
+          </View>
+        </View>
       </View>
-
       <View style={styles.footerLinkSection}>
         <Text style={styles.footerLinkTitle}>Connect</Text>
         <TouchableOpacity>
@@ -639,29 +606,27 @@ const Home = ({ navigation }) => {
     </View>
   </View>
   
-  <View style={styles.footerBottom}>
+  {/* Move footerBottom outside of footerContent */}
+  <View style={[styles.footerBottom, { marginTop: 'auto' }]}>
     <Text style={styles.copyright}>
       © {new Date().getFullYear()} FutureProof. All rights reserved.
     </Text>
     <View style={styles.footerSocial}>
-      <TouchableOpacity style={styles.socialIcon} onPress={() => Linking.openURL('mailto:davmarrearen@gmail.com')}
-      >
+      <TouchableOpacity style={styles.socialIcon} onPress={() => Linking.openURL('mailto:davmarrearen@gmail.com')}>
         <Icon name="github" size={20} color="#ffffff" />
       </TouchableOpacity>
-      <TouchableOpacity style={styles.socialIcon}
-      onPress={() => Linking.openURL('mailto:davmarrearen@gmail.com')}
-      >
+      <TouchableOpacity style={styles.socialIcon} onPress={() => Linking.openURL('mailto:davmarrearen@gmail.com')}>
         <Icon name="linkedin" size={20} color="#ffffff" />
       </TouchableOpacity>
-      <TouchableOpacity 
-  style={styles.socialIcon}
-  onPress={() => Linking.openURL('mailto:davmarrearen@gmail.com')}
->
-  <Icon name="envelope" size={20} color="#ffffff" />
-</TouchableOpacity>
+      <TouchableOpacity style={styles.socialIcon} onPress={() => Linking.openURL('mailto:davmarrearen@gmail.com')}>
+        <Icon name="envelope" size={20} color="#ffffff" />
+      </TouchableOpacity>
     </View>
   </View>
 </View>
+   
+
+
       </ScrollView>
 
       
@@ -1199,11 +1164,11 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: isMobile ? 40 : 60,
+    fontWeight: 'bold',
     color: '#ffffff',
     textAlign: 'center',
-    marginBottom: 40,
-    color: '#f0fdf7',
-   fontWeight: 'bold',
+    marginTop: 30,
+    marginBottom: 20,
   
   },
 
@@ -1215,6 +1180,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
   },
   teamMemberCard: {
+    
     backgroundColor: '#ffffff',
     borderRadius: 20,
     padding: 20,
@@ -1227,32 +1193,51 @@ const styles = StyleSheet.create({
     elevation: 5,
     transform: [{ translateY: 0 }],
     transition: 'transform 0.3s ease',
+    '&:hover': {
+      '& .overlay': {
+        opacity: 1, // Show on hover
+      }
+    }
   },
   imageWrapper: {
     position: 'relative',
     marginBottom: 20,
     overflow: 'hidden',
-    borderRadius: 15,
+    borderRadius: 100, // Make it perfectly circular
+    width: 200, // Match the image width
+    height: 200, // Match the image height
+    borderWidth: 4, // Add thick border
+    borderColor: '#388E3C', // Green border color
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 5,
   },
   teamMemberImage: {
-    width: 200,
-    height: 200,
-    borderRadius: 15,
+    width: '100%',
+    height: '100%',
+    borderRadius: 100, // Make image circular to match wrapper
   },
+  
   overlay: {
     position: 'absolute',
-    bottom: 0,
+    top: 0,
     left: 0,
     right: 0,
-    backgroundColor: 'rgba(20, 36, 59, 0.8)',
-    padding: 10,
+    bottom: 0,
+    backgroundColor: 'rgba(20, 36, 59, 0.7)', // Semi-transparent background
+    justifyContent: 'center',
     alignItems: 'center',
-    transform: [{ translateY: 0 }],
+    opacity: 0, // Start invisible
+    transition: '0.3s ease',
   },
   overlayText: {
     color: '#ffffff',
-    fontSize: 14,
-    fontWeight: '600',
+    fontSize: 18,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    padding: 10,
   },
   teamMemberName: {
     fontSize: 22,
@@ -1297,59 +1282,54 @@ const styles = StyleSheet.create({
     color: '#ffffff', // White text for active card
   },
 
-  frameworkContainer: {
-
-    borderRadius: 20,
-    padding: 20,
-    flexDirection: isMobile ? 'column' : 'row',
+  // Add to your StyleSheet
+  techLogosContainer: {
+    marginTop: 20,
+    width: isMobile ? '100%' : '30%', // Match footerSection width
+    alignItems: 'flex-start', // Align content to the left like footerSection
+    paddingHorizontal: 20,
+  },
+  
+  techLogos: {
+    flexDirection: 'row',
     flexWrap: 'wrap',
-    justifyContent: 'center',
-    gap: 20,
+    justifyContent: 'flex-start', // Align to the left
+    gap: 15,
+    marginTop: 15,
   },
-  frameworkGroup: {
-    backgroundColor: '#ffffff',
-    borderRadius: 15,
-    padding: 15,
-    width: isMobile ? '100%' : '30%',
-    minWidth: 250,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-    marginBottom: 50,
+  techLogo: {
+    width: 35,
+    height: 35,
+    resizeMode: 'contain',
+    opacity: 0.8,
   },
-  frameworkGroupTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#14243b',
-    marginBottom: 10,
-    textAlign: 'center',
-    borderBottomWidth: 2,
-    borderBottomColor: '#388E3C',
-    paddingBottom: 5,
-  },
-  frameworkItem: {
-    alignItems: 'center',
-  },
-  frameworkText: {
-    fontSize: 16,
-    color: '#388E3C',
-    marginVertical: 5,
-    textAlign: 'center',
-  },
+  
   footer: {
     backgroundColor: '#14243b',
     paddingTop: 40,
-    paddingBottom: 20,
+    paddingBottom: 0, // Remove bottom padding
     marginTop: 40,
     borderTopLeftRadius: 110,
     borderTopRightRadius: 110,
     marginBottom: -40,
-    marginHorizontal: -40, // Add negative margin to extend past padding
+    marginHorizontal: -40,
     alignSelf: 'stretch',
     width: '105vw',
+    display: 'flex',
+    flexDirection: 'column',
+    minHeight: 300,
   },
+  
+  footerBottom: {
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(255, 255, 255, 0.1)',
+    paddingVertical: 20,
+    alignItems: 'center',
+    width: '100%',
+    backgroundColor: 'rgba(0, 0, 0, 0.1)', // Optional: slightly darker background
+    marginTop: 'auto', // Push to bottom
+  },
+  
   footerContent: {
     flexDirection: isMobile ? 'column' : 'row',
     justifyContent: 'space-around',
@@ -1386,10 +1366,10 @@ const styles = StyleSheet.create({
     marginBottom: isMobile ? 20 : 0,
   },
   footerLinkTitle: {
-    fontSize: 18,
+    fontSize: 24,
     fontWeight: 'bold',
     color: '#ffffff',
-    marginBottom: 15,
+    marginBottom: 10,
   },
   footerLink: {
     fontSize: 14,
@@ -1400,18 +1380,17 @@ const styles = StyleSheet.create({
   footerBottom: {
     borderTopWidth: 1,
     borderTopColor: 'rgba(255, 255, 255, 0.1)',
-    marginTop: 20,
-    paddingTop: 20,
-    flexDirection: 'column', // Change to column for better centering
-    alignItems: 'center', // Center items horizontally
-    paddingHorizontal: 20,
-    gap: 20, // Add gap between copyright and social icons
+    paddingVertical: 20,
+    alignItems: 'center',
+    width: '100%',
+    backgroundColor: 'rgba(0, 0, 0, 0.1)', // Optional: slightly darker background
+    marginTop: 'auto', // Push to bottom
   },
   copyright: {
     fontSize: 14,
     color: '#ffffff',
     opacity: 0.8,
-    marginBottom: isMobile ? 15 : 0,
+    marginBottom: isMobile ? 15 : 5,
   },
   footerSocial: {
     flexDirection: 'row',
@@ -1427,6 +1406,9 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255, 255, 255, 0.1)',
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  footerColumn: {
+    flex: 1,
   },
 });
 
