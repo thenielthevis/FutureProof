@@ -5,10 +5,11 @@ from typing import Dict, Optional
 class EquippedAsset(BaseModel):
     asset_id: str
     url: str
+    color: Optional[str] = None  # Make color optional
 
 class DefaultAsset(BaseModel):
     user_id: ObjectId
-    equipped_assets: Dict[str, EquippedAsset]  # asset_type -> EquippedAsset
+    equipped_assets: Dict[str, EquippedAsset]
 
     class Config:
         json_encoders = {

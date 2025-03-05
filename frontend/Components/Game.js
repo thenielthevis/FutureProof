@@ -811,7 +811,7 @@ blanket: {
 },
 lowHealthImage: {
   position: 'absolute',
-  right: 850, // Increased to move left
+  right: 1000, // Increased to move left
   top: 20,
   bottom: 20,
   width: 150,

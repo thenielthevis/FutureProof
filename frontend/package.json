@@ -13,6 +13,7 @@
     "@babel/runtime": "^7.26.9",
     "@expo/metro-runtime": "~4.0.1",
     "@react-native-async-storage/async-storage": "^1.23.1",
+    "@react-native-community/slider": "^4.5.6",
     "@react-navigation/native": "^7.0.14",
     "@react-navigation/stack": "^7.1.1",
     "@react-three/drei": "^9.121.4",
@@ -47,6 +48,7 @@
     "react-native": "0.76.6",
     "react-native-blob-util": "^0.21.2",
     "react-native-chart-kit": "^6.12.0",
+    "react-native-color-picker": "^0.6.0",
     "react-native-confetti-cannon": "^1.5.2",
     "react-native-gesture-handler": "~2.20.2",
     "react-native-linear-gradient": "^2.8.3",
@@ -71,6 +73,7 @@
     "react-toastify": "^11.0.3",
     "shaka-player": "^4.13.3",
     "three": "^0.173.0",
+    "tinycolor2": "^1.6.0",
     "toastify-js": "^1.12.0",
     "typescript": "^5.3.3"
   },

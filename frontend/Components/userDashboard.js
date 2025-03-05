@@ -1318,7 +1318,6 @@ const styles = StyleSheet.create({
     marginTop: 'auto',
     marginBottom: 20,
     marginHorizontal: 10,
-    backgroundColor: 'rgba(255,59,48,0.2)',
     borderRadius: 8,
   },
   mainContent: {

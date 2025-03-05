@@ -1,19 +1,32 @@
 import React, { useState, useEffect, Suspense } from 'react';
+import { 
+  View, 
+  Image, 
+  TouchableOpacity, 
+  StyleSheet, 
+  ScrollView, 
+  Text, 
+  Alert, 
+  ActivityIndicator, 
+  TextInput
+} from 'react-native';
+import Slider from '@react-native-community/slider';  // Update this import
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls, useGLTF } from '@react-three/drei';
-import { View, Image, TouchableOpacity, StyleSheet, ScrollView, Text, Alert, ActivityIndicator } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import { Ionicons } from '@expo/vector-icons'; // For icons
+import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import GameNavbar from '../Navbar/GameNavbar';
 import { readAssets, buyAsset, purchaseItem, addOwnedAsset, getOwnedAssets, equipAsset, getEquippedAssets, unequipAsset } from '../API/assets_api'; // Import the API functions to fetch and buy assets
 import { getUser } from '../API/user_api';
-import { LinearGradient } from 'expo-linear-gradient'; // Import LinearGradient
+import { LinearGradient } from 'expo-linear-gradient';
+import { ColorPicker } from 'react-native-color-picker';
+import tinycolor from 'tinycolor2';  // Add this import
 
-function Model({ bodyUri, headUri, outfitUri, eyesUri, noseUri, scale, position }) {
+function Model({ bodyUri, headUri, outfitUri, eyesUri, noseUri, scale, position, color }) {
   if (!bodyUri || !headUri || !eyesUri || !noseUri) {
     console.error("Missing required model URIs", { bodyUri, headUri, eyesUri, noseUri, outfitUri });
-    return null; // Prevents the model from rendering if URIs are missing
+    return null;
   }
 
   const { scene: bodyScene } = useGLTF(bodyUri, true);
@@ -34,6 +47,11 @@ function Model({ bodyUri, headUri, outfitUri, eyesUri, noseUri, scale, position 
   if (outfitScene) {
     outfitScene.scale.set(scale.x, scale.y, scale.z);
     outfitScene.position.set(position.x, position.y, position.z);
+    outfitScene.traverse((child) => {
+      if (child.isMesh) {
+        child.material.color.set(color);
+      }
+    });
   }
 
   return (
@@ -60,10 +78,54 @@ export default function Shop() {
   const [ownedAssets, setOwnedAssets] = useState([]); // State to track owned assets
   const [equippedAssets, setEquippedAssets] = useState({}); // State to track equipped assets
   const navigation = useNavigation(); // Hook for navigation
+  const [selectedColor, setSelectedColor] = useState(null);
+  const [assetColors, setAssetColors] = useState({});  // Add this new state
+  const [hue, setHue] = useState(0);
+  const [saturation, setSaturation] = useState(100);
+  const [brightness, setBrightness] = useState(100);
+  const [hexInput, setHexInput] = useState(null);
+
+  const handleColorChange = (h, s, b) => {
+    const color = tinycolor({ h, s, b });
+    const hexColor = color.toHexString();
+    console.log('Color changed:', hexColor); // Add logging
+    
+    setHexInput(hexColor);
+    setSelectedColor(hexColor);
+    
+    if (selectedOutfit) {
+      setAssetColors(prev => {
+        const updated = {
+          ...prev,
+          [selectedOutfit]: hexColor
+        };
+        console.log('Updated asset colors:', updated); // Add logging
+        return updated;
+      });
+    }
+  };
+
+  const handleHexInput = (hex) => {
+    const color = tinycolor(hex);
+    if (color.isValid()) {
+      const hsv = color.toHsv();
+      setHue(hsv.h);
+      setSaturation(hsv.s * 100);
+      setBrightness(hsv.v * 100);
+      setHexInput(hex);
+      setSelectedColor(hex);
+      
+      if (selectedOutfit) {
+        setAssetColors(prev => ({
+          ...prev,
+          [selectedOutfit]: hex
+        }));
+      }
+    }
+  };
 
   useEffect(() => {
-    // Fetch assets from the backend
-    const fetchAssets = async () => {
+    const fetchData = async () => {
       try {
         const fetchedAssets = await readAssets();
 
@@ -81,16 +143,8 @@ export default function Shop() {
         // Filter out Body, Head, Eyes, and Nose from selection cards
         const filteredAssets = fetchedAssets.filter(asset => asset.name !== 'Body' && asset.name !== 'Head' && asset.name !== 'Eyes' && asset.name !== 'Nose');
         setAssets(filteredAssets);
-      } catch (error) {
-        console.error('Error fetching assets:', error);
-      } finally {
-        setLoading(false); // Set loading to false after fetching assets
-      }
-    };
 
-    // Fetch user data
-    const fetchUserData = async () => {
-      try {
+        // Fetch user data
         const token = await AsyncStorage.getItem('token');
         const userData = await getUser(token);
         setUser(userData);
@@ -99,16 +153,27 @@ export default function Shop() {
         const ownedAssets = await getOwnedAssets();
         setOwnedAssets(ownedAssets.asset_ids); // Assuming setOwnedAssets is a state setter for owned assets
 
-        // Fetch equipped assets
-        const equippedAssets = await getEquippedAssets();
-        setEquippedAssets(equippedAssets || {}); // Ensure equippedAssets is an object
+        // Fetch equipped assets with their colors
+        const equippedAssetsData = await getEquippedAssets();
+        setEquippedAssets(equippedAssetsData);
+        
+        // Initialize assetColors with equipped assets' colors
+        const initialColors = {};
+        Object.entries(equippedAssetsData).forEach(([type, asset]) => {
+          if (asset.url && asset.color) {
+            initialColors[asset.url] = asset.color;
+          }
+        });
+        setAssetColors(initialColors);
+        
       } catch (error) {
-        console.error('Error fetching user data:', error);
+        console.error('Error fetching data:', error);
+      } finally {
+        setLoading(false);
       }
     };
 
-    fetchAssets();
-    fetchUserData();
+    fetchData();
   }, []);
 
   // Group assets by asset_type
@@ -143,20 +208,21 @@ export default function Shop() {
 
   const handleEquip = async (assetType, assetId) => {
     try {
-      console.log('Equipping asset:', assetType, assetId); // Log equipping action
-      await equipAsset(assetType, assetId);
+      const color = assetColors[selectedOutfit];
+      await equipAsset(assetType, assetId, color); // Modified to include color
       Alert.alert('Success', 'Item equipped successfully!');
       setEquippedAssets(prevEquippedAssets => {
         const updatedEquippedAssets = { ...prevEquippedAssets };
         if (assetType === 'costume') {
-          // Deselect other items when a costume is equipped
           Object.keys(updatedEquippedAssets).forEach(type => {
-            if (type !== 'costume') {
-              delete updatedEquippedAssets[type];
-            }
+            if (type !== 'costume') delete updatedEquippedAssets[type];
           });
         }
-        updatedEquippedAssets[assetType] = { _id: assetId, url: assets.find(asset => asset._id.toString() === assetId).url };
+        updatedEquippedAssets[assetType] = { 
+          _id: assetId, 
+          url: assets.find(asset => asset._id.toString() === assetId).url,
+          color: color
+        };
         return updatedEquippedAssets;
       });
     } catch (error) {
@@ -181,6 +247,92 @@ export default function Shop() {
     }
   };
 
+  // Modified ColorSelector component
+  const ColorSelector = () => {
+    const colorSuggestions = [
+      { value: null, label: 'Original' }, // First option resets to original
+      { value: '#B22222', label: 'Red' },      // Firebrick (Muted Red)
+      { value: '#228B22', label: 'Green' },    // Forest Green (Natural Green)
+      { value: '#4169E1', label: 'Blue' },     // Royal Blue (Muted but rich)
+      { value: '#CCCC00', label: 'Yellow' },   // Olive Yellow (Less vibrant)
+      { value: '#8B008B', label: 'Magenta' },  // Dark Magenta (Deeper shade)
+      { value: '#20B2AA', label: 'Cyan' },     // Light Sea Green (More natural cyan)
+      { value: '#F5F5F5', label: 'White' },    // Whitesmoke (Softer white)
+      { value: '#333333', label: 'Black' }     // Dark Gray (Softer than pure black)
+    ];
+
+    if (!selectedOutfit || !ownedAssets.includes(assets.find(asset => asset.url === selectedOutfit)?._id.toString())) {
+      return null;
+    }
+
+    return (
+      <View style={styles.colorSelectorContainer}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+          {colorSuggestions.map((color, index) => (
+            <TouchableOpacity
+              key={index}
+              style={[
+                styles.colorSuggestion,
+                { 
+                  backgroundColor: color.value || 'transparent',
+                  borderWidth: !color.value ? 2 : 1,
+                  borderColor: color.value || '#ddd',
+                },
+                selectedColor === color.value && styles.selectedColorSuggestion
+              ]}
+              onPress={() => {
+                setSelectedColor(color.value);
+                setAssetColors(prev => ({
+                  ...prev,
+                  [selectedOutfit]: color.value // null for original color
+                }));
+              }}
+            >
+              {!color.value && (
+                <Text style={styles.originalColorText}>{color.label}</Text>
+              )}
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+      </View>
+    );
+  };
+
+  // Modified handleCardPress to keep original color
+  const handleCardPress = (asset) => {
+    setSelectedOutfit(null);
+    setTimeout(() => {
+      setSelectedOutfit(asset.url);
+      // Check if asset is equipped and has a color
+      const equippedAsset = Object.values(equippedAssets).find(ea => ea.url === asset.url);
+      if (equippedAsset && equippedAsset.color) {
+        setSelectedColor(equippedAsset.color);
+      } else {
+        setSelectedColor(null); // Reset to original color
+      }
+    }, 10);
+  };
+
+  // Modified renderModel to handle null color
+  const renderModel = (props) => (
+    <Model
+      {...props}
+      color={props.outfitUri && (
+        // Use equipped asset color if available, otherwise use selected/asset color
+        equippedAssets[props.assetType]?.color || 
+        assetColors[props.outfitUri] || 
+        null
+      )}
+    />
+  );
+
+  // Add helper function to check if asset is equipped
+  const isAssetEquipped = (asset) => {
+    return Object.values(equippedAssets).some(
+      equipped => equipped._id === asset._id.toString()
+    );
+  };
+
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
@@ -191,117 +343,138 @@ export default function Shop() {
 
   return (
     <LinearGradient colors={['#14243b', '#77f3bb']} style={styles.container}>
-      <GameNavbar /> {/* Navbar added here */}
+      <GameNavbar />
+      <View style={styles.mainContainer}>
+        <TouchableOpacity style={styles.backButton} onPress={() => navigation.navigate('Game')}>
+          <Ionicons name="arrow-back" size={24} color="white" />
+        </TouchableOpacity>
 
-      {/* Back Button */}
-      <TouchableOpacity style={styles.backButton} onPress={() => navigation.navigate('Game')}>
-        <Ionicons name="arrow-back" size={24} color="white" />
-      </TouchableOpacity>
-
-      {/* Left Half - 3D Model */}
-      <View style={styles.leftHalf}>
-        {/* Model Display */}
-        <View style={styles.modelContainer}>
-          <Canvas>
-            <ambientLight intensity={0.5} />
-            <directionalLight position={[5, 5, 5]} />
-            <Suspense fallback={null}>
-              <Model
-                bodyUri={defaultBodyUri}
-                headUri={defaultHeadUri}
-                eyesUri={defaultEyesUri}
-                noseUri={defaultNoseUri}
-                outfitUri={selectedOutfit}
-                scale={{ x: 2.5, y: 2.5, z: 2.5 }}
-                position={{ x: 0, y: -3, z: 0 }}
-              />
-              {Object.keys(equippedAssets).map(assetType => (
-                <Model
-                  key={assetType}
-                  bodyUri={defaultBodyUri}
-                  headUri={defaultHeadUri}
-                  eyesUri={defaultEyesUri}
-                  noseUri={defaultNoseUri}
-                  outfitUri={equippedAssets[assetType].url}
-                  scale={{ x: 2, y: 2, z: 2 }}
-                  position={{ x: 0, y: -2.6, z: 0 }}
-                />
-              ))}
-            </Suspense>
-            <OrbitControls />
-          </Canvas>
-        </View>
-      </View>
-
-      {/* Right Half - Category Buttons and Cards */}
-      <View style={styles.rightHalf}>
-        <ScrollView contentContainerStyle={styles.categoryButtonsContainer}>
-          {Object.keys(groupedAssets).map((assetType) => (
-            <View key={assetType}>
-              <TouchableOpacity
-                style={[styles.categoryButton, selectedCategory === assetType && styles.selectedCategoryButton]}
-                onPress={() => setSelectedCategory(assetType)}
-              >
-                <Text style={styles.categoryButtonText}>{assetType.toUpperCase()}</Text>
-              </TouchableOpacity>
-              {selectedCategory === assetType && (
-                <View style={styles.cardsContainer}>
-                  {groupedAssets[assetType].map((asset, index) => (
-                    <TouchableOpacity
-                      key={index}
-                      onPress={() => {
-                        setSelectedOutfit(null); // Reset first
-                        setTimeout(() => setSelectedOutfit(asset ? asset.url : null), 10); // Then update after a short delay
-                      }}
-                      style={[
-                        styles.card,
-                        selectedOutfit === asset?.url && styles.selectedCard,
-                        equippedAssets[asset.asset_type] && equippedAssets[asset.asset_type]._id === asset._id.toString() && styles.equippedCard
-                      ]}
-                      disabled={!asset}
-                    >
-                      {asset ? (
-                        <>
-                          <Image source={{ uri: asset.image_url }} style={styles.previewImage} />
-                          <View style={styles.priceContainer}>
-                            <Ionicons name="logo-bitcoin" size={16} color="gold" />
-                            <Text style={styles.priceText}>{asset.price}</Text>
-                          </View>
-                          {ownedAssets.includes(asset._id.toString()) ? (
-                            <>
-                              <TouchableOpacity
-                                style={styles.equipButton}
-                                onPress={() => handleEquip(asset.asset_type, asset._id.toString())}
-                              >
-                                <Text style={styles.equipButtonText}>Equip</Text>
-                              </TouchableOpacity>
-                              {equippedAssets[asset.asset_type] && equippedAssets[asset.asset_type]._id === asset._id.toString() && (
-                                <TouchableOpacity
-                                  style={styles.unequipButton}
-                                  onPress={() => handleUnequip(asset.asset_type)}
-                                >
-                                  <Text style={styles.unequipButtonText}>Unequip</Text>
-                                </TouchableOpacity>
-                              )}
-                            </>
-                          ) : (
-                            <TouchableOpacity
-                              style={styles.buyButton}
-                              onPress={handleBuy}
-                              disabled={ownedAssets.includes(asset._id.toString())}
-                            >
-                              <Text style={styles.buyButtonText}>Buy</Text>
-                            </TouchableOpacity>
-                          )}
-                        </>
-                      ) : null}
-                    </TouchableOpacity>
+        {/* Main Content Container */}
+        <View style={styles.contentWrapper}>
+          {/* Left Half - 3D Model */}
+          <View style={styles.leftHalf}>
+            {/* Model Display */}
+            <View style={styles.modelContainer}>
+              <Canvas>
+                <ambientLight intensity={0.5} />
+                <directionalLight position={[5, 5, 5]} />
+                <Suspense fallback={null}>
+                  {renderModel({
+                    bodyUri: defaultBodyUri,
+                    headUri: defaultHeadUri,
+                    eyesUri: defaultEyesUri,
+                    noseUri: defaultNoseUri,
+                    outfitUri: selectedOutfit,
+                    scale: { x: 2.3, y: 2.3, z: 2.3 },
+                    position: { x: 0, y: -3.25, z: 0 },
+                  })}
+                  {Object.entries(equippedAssets).map(([assetType, asset]) => (
+                    renderModel({
+                      key: assetType,
+                      assetType: assetType,
+                      bodyUri: defaultBodyUri,
+                      headUri: defaultHeadUri,
+                      eyesUri: defaultEyesUri,
+                      noseUri: defaultNoseUri,
+                      outfitUri: asset.url,
+                      scale: { x: 2, y: 2, z: 2 },
+                      position: { x: 0, y: -2.6, z: 0 },
+                    })
                   ))}
-                </View>
-              )}
+                </Suspense>
+                <OrbitControls />
+              </Canvas>
             </View>
-          ))}
-        </ScrollView>
+          </View>
+
+          {/* Right Half - Shop Interface */}
+          <View style={styles.rightHalf}>
+            {/* Color Selector */}
+            {selectedOutfit && ownedAssets.includes(
+              assets.find(asset => asset.url === selectedOutfit)?._id.toString()
+            ) && (
+              <View style={styles.colorSelectorSticky}>
+                <ColorSelector />
+              </View>
+            )}
+
+            {/* Category and Items */}
+            <View style={styles.shopContent}>
+              <ScrollView style={styles.scrollContainer}>
+                <ScrollView contentContainerStyle={styles.categoryButtonsContainer}>
+                  {Object.keys(groupedAssets).map((assetType) => (
+                    <View key={assetType}>
+                      <TouchableOpacity
+                        style={[styles.categoryButton, selectedCategory === assetType && styles.selectedCategoryButton]}
+                        onPress={() => setSelectedCategory(assetType)}
+                      >
+                        <Text style={styles.categoryButtonText}>{assetType.toUpperCase()}</Text>
+                      </TouchableOpacity>
+                      {selectedCategory === assetType && (
+                        <View style={styles.cardsContainer}>
+                          {groupedAssets[assetType].map((asset, index) => (
+                            <TouchableOpacity
+                              key={index}
+                              onPress={() => handleCardPress(asset)}
+                              style={[
+                                styles.card,
+                                selectedOutfit === asset?.url && styles.selectedCard,
+                                isAssetEquipped(asset) && styles.equippedCard
+                              ]}
+                              disabled={!asset}
+                            >
+                              {asset ? (
+                                <>
+                                  <Image source={{ uri: asset.image_url }} style={styles.previewImage} />
+                                  <View style={styles.priceContainer}>
+                                    <Ionicons name="logo-bitcoin" size={16} color="gold" />
+                                    <Text style={styles.priceText}>{asset.price}</Text>
+                                  </View>
+                                  {ownedAssets.includes(asset._id.toString()) ? (
+                                    <>
+                                      {isAssetEquipped(asset) ? (
+                                        <TouchableOpacity
+                                          style={styles.unequipButton}
+                                          onPress={() => handleUnequip(asset.asset_type)}
+                                        >
+                                          <Text style={styles.unequipButtonText}>Unequip</Text>
+                                        </TouchableOpacity>
+                                      ) : (
+                                        <TouchableOpacity
+                                          style={styles.equipButton}
+                                          onPress={() => handleEquip(asset.asset_type, asset._id.toString())}
+                                        >
+                                          <Text style={styles.equipButtonText}>Equip</Text>
+                                        </TouchableOpacity>
+                                      )}
+                                    </>
+                                  ) : (
+                                    <TouchableOpacity
+                                      style={styles.buyButton}
+                                      onPress={handleBuy}
+                                      disabled={ownedAssets.includes(asset._id.toString())}
+                                    >
+                                      <Text style={styles.buyButtonText}>Buy</Text>
+                                    </TouchableOpacity>
+                                  )}
+                                </>
+                              ) : null}
+                            </TouchableOpacity>
+                          ))}
+                        </View>
+                      )}
+                    </View>
+                  ))}
+                  
+                  {/* Move ColorSelector inside ScrollView */}
+                  <View style={styles.colorSelectorWrapper}>
+                    <ColorSelector />
+                  </View>
+                </ScrollView>
+              </ScrollView>
+            </View>
+          </View>
+        </View>
       </View>
     </LinearGradient>
   );
@@ -310,7 +483,40 @@ export default function Shop() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  mainContainer: {
+    flex: 1,
+    marginTop: 70, // Height of GameNavbar
+  },
+  contentWrapper: {
+    flex: 1,
     flexDirection: 'row',
+  },
+  leftHalf: {
+    flex: 2,
+    marginRight: 20,
+  },
+  rightHalf: {
+    flex: 1,
+    backgroundColor: 'rgba(44, 62, 80, 0.95)',
+    borderRadius: 15,
+    overflow: 'hidden',
+    display: 'flex',
+    flexDirection: 'column',
+  },
+  colorSelectorSticky: {
+    backgroundColor: 'rgba(44, 62, 80, 0.98)',
+    padding: 15,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255,255,255,0.1)',
+  },
+  shopContent: {
+    flex: 1,
+    backgroundColor: 'rgba(44, 62, 80, 0.95)',
+    paddingHorizontal: 10,
+  },
+  scrollContainer: {
+    flex: 1,
   },
   leftHalf: {
     flex: 2,
@@ -318,25 +524,31 @@ const styles = StyleSheet.create({
   },
   rightHalf: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: '#2c3e50',
     borderLeftWidth: 1,
     borderLeftColor: '#ddd',
+    height: '100%',
+    position: 'relative',
   },
   categoryButtonsContainer: {
     paddingVertical: 10,
-    marginTop: 70
+    paddingBottom: 20,
   },
   cardsContainer: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    justifyContent: 'space-around',
-    padding: 10,
+    justifyContent: 'space-between',
+    paddingHorizontal: 5,
+    paddingTop: 10,
+    gap: 10,
   },
   categoryButton: {
-    paddingVertical: 15,
-    paddingHorizontal: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: '#ddd',
+    paddingVertical: 12,
+    paddingHorizontal: 15,
+    backgroundColor: 'rgba(255,255,255,0.1)',
+    marginBottom: 8,
+    borderRadius: 8,
+    marginHorizontal: 5,
   },
   selectedCategoryButton: {
     backgroundColor: '#4CAF50', // Green color for selected category
@@ -344,22 +556,19 @@ const styles = StyleSheet.create({
   categoryButtonText: {
     fontSize: 16,
     fontWeight: 'bold',
-    color: '#333',
+    color: '#fff',
   },
   card: {
-    width: '45%',
-    height: 'auto',
-    backgroundColor: '#ffffff',
-    borderRadius: 10,
-    justifyContent: 'center',
-    alignItems: 'center',
-    margin: 5,
-    padding: 10,
+    width: '47%', // Adjust from 45% to 47% for better spacing
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    padding: 12,
+    marginBottom: 10,
     shadowColor: '#000',
-    shadowOpacity: 0.2,
     shadowOffset: { width: 0, height: 2 },
-    shadowRadius: 4,
-    elevation: 3,
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
   },
   selectedCard: {
     borderColor: 'gold',
@@ -369,14 +578,19 @@ const styles = StyleSheet.create({
     backgroundColor: '#4CAF50', // Green color for equipped items
   },
   previewImage: {
-    width: 80,
-    height: 80,
+    width: '100%',
+    height: 120,
     resizeMode: 'contain',
+    marginBottom: 8,
   },
   priceContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 5,
+    justifyContent: 'center',
+    marginVertical: 8,
+    backgroundColor: 'rgba(0,0,0,0.05)',
+    padding: 5,
+    borderRadius: 15,
   },
   priceText: {
     fontSize: 16,
@@ -386,10 +600,11 @@ const styles = StyleSheet.create({
   },
   buyButton: {
     backgroundColor: '#ff9800',
-    paddingVertical: 5,
-    paddingHorizontal: 10,
-    borderRadius: 5,
-    marginTop: 5,
+    paddingVertical: 8,
+    paddingHorizontal: 15,
+    borderRadius: 8,
+    alignItems: 'center',
+    marginTop: 8,
   },
   buyButtonText: {
     fontSize: 14,
@@ -398,10 +613,11 @@ const styles = StyleSheet.create({
   },
   equipButton: {
     backgroundColor: '#4CAF50',
-    paddingVertical: 5,
-    paddingHorizontal: 10,
-    borderRadius: 5,
-    marginTop: 5,
+    paddingVertical: 8,
+    paddingHorizontal: 15,
+    borderRadius: 8,
+    alignItems: 'center',
+    marginTop: 8,
   },
   equipButtonText: {
     fontSize: 14,
@@ -410,10 +626,11 @@ const styles = StyleSheet.create({
   },
   unequipButton: {
     backgroundColor: '#f44336',
-    paddingVertical: 5,
-    paddingHorizontal: 10,
-    borderRadius: 5,
-    marginTop: 5,
+    paddingVertical: 8,
+    paddingHorizontal: 15,
+    borderRadius: 8,
+    alignItems: 'center',
+    marginTop: 8,
   },
   unequipButtonText: {
     fontSize: 14,
@@ -438,5 +655,109 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  colorSelectorWrapper: {
+    marginTop: 10,
+    marginBottom: 20,
+    paddingHorizontal: 10,
+  },
+  colorSelectorContainer: {
+    padding: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: '#ddd',
+    zIndex: 1000,
+  },
+  colorWheelContainer: {
+    height: 150,
+    marginBottom: 10,
+  },
+  colorWheel: {
+    flex: 1,
+    width: '100%',
+  },
+  colorSuggestionsContainer: {
+    marginTop: 10,
+  },
+  suggestionsTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    marginBottom: 8,
+    color: '#333',
+  },
+  colorGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-around',
+    marginTop: 5,
+  },
+  colorSuggestion: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    marginHorizontal: 5,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  selectedColorSuggestion: {
+    borderWidth: 3,
+    borderColor: '#000',
+  },
+  originalColorText: {
+    fontSize: 10,
+    color: '#666',
+    textAlign: 'center',
+  },
+  hsbControls: {
+    marginVertical: 15,
+  },
+  sbBox: {
+    width: 200,
+    height: 200,
+    borderRadius: 8,
+    overflow: 'hidden',
+    marginBottom: 15,
+  },
+  sbGradient: {
+    width: '100%',
+    height: '100%',
+    position: 'relative',
+  },
+  sbSelector: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    borderWidth: 2,
+    borderColor: 'white',
+    position: 'absolute',
+    transform: [{ translateX: -10 }, { translateY: -10 }],
+  },
+  sliderContainer: {
+    marginVertical: 10,
+  },
+  sliderLabel: {
+    fontSize: 14,
+    marginBottom: 5,
+    color: '#333',
+  },
+  slider: {
+    width: '100%',
+    height: 40,
+    marginVertical: 5,
+  },
+  hexInputContainer: {
+    marginVertical: 10,
+  },
+  hexLabel: {
+    fontSize: 14,
+    marginBottom: 5,
+    color: '#333',
+  },
+  hexInput: {
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: 4,
+    padding: 8,
+    fontSize: 14,
+    color: '#333',
   },
 });

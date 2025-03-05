@@ -185,20 +185,25 @@ export const readPurchasedItems = async () => {
 };
 
 // Equip an asset
-export const equipAsset = async (assetType, assetId) => {
+export const equipAsset = async (assetType, assetId, color = '#FFFFFF') => {
   try {
     const token = await AsyncStorage.getItem('token');
-    console.log('Sending asset type and ID to equipAsset:', assetType, assetId); // Log asset type and ID
-    const response = await axios.post(`${API_URL}/equip_asset/`, { asset_type: assetType, asset_id: assetId }, {
+    const response = await fetch(`${API_URL}/equip_asset/`, {
+      method: 'POST',
       headers: {
-        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
       },
+      body: JSON.stringify({
+        asset_type: assetType,
+        asset_id: assetId,
+        color: color
+      })
     });
-    console.log('Response from equipAsset:', response.data); // Log response
-    return response.data;
+    return await response.json();
   } catch (error) {
-    console.error('Error equipping asset:', error.response ? error.response.data : error);
-    throw error.response ? error.response.data : { detail: 'An error occurred' };
+    console.error('Error equipping asset:', error);
+    throw error;
   }
 };
 

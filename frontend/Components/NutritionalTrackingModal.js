@@ -225,7 +225,7 @@ const styles = StyleSheet.create({
   navigationButtons: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 20 },
   navButton: { backgroundColor: '#27ae60', padding: 10, borderRadius: 8, alignSelf: 'center' },
   startButton: { backgroundColor: '#27ae60', padding: 10, borderRadius: 8, alignItems: 'center', marginTop: 20 },
-  submitButton: { backgroundColor: '#27ae60', padding: 10, borderRadius: 8 },
+  submitButton: { backgroundColor: '#27ae60', padding: 10, borderRadius: 8, alignSelf: 'center', justifyContent: 'center' },
   buttonText: { color: 'white', fontWeight: 'bold' },
   error: { color: 'red', marginBottom: 10 },
   footerContainer: { flexDirection: 'row', justifyContent: 'center', marginTop: 5, marginLeft: 20, marginRight: 20 },  

@@ -61,8 +61,8 @@ const QuizCongratulationsModal = ({ visible, onClose, score, totalQuestions, coi
     try {
       await createTaskCompletion(taskCompletionData);
       await updateBattery(10); // Increment the battery value by 10
-      await addXP(rewards.xp); // Update the user's XP
-      playMenuClose();
+      await addXP(xp); // Use xp prop instead of rewards.xp
+      await playMenuClose();
       onClose();
     } catch (error) {
       console.error('Error creating task completion:', error);

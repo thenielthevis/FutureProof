@@ -12,6 +12,8 @@ from app.config import get_database
 from dotenv import load_dotenv
 from bson import ObjectId
 from fastapi.encoders import jsonable_encoder
+import asyncio
+from httpx import AsyncClient, TimeoutException
 
 # Load environment variables
 load_dotenv()
@@ -78,13 +80,19 @@ async def analyze_with_groqcloud(tasks, nutrition, prediction):
     Existing predicted diseases:
     {predicted_diseases}
 
-    Based on the user's performance today, update the likelihoods of the predicted diseases.
-    Provide structured responses in Markdown and use bulleted lists for each section without any bold text:
+    Based on the user's performance today, analyze and provide a structured response with the following format for each disease:
 
     ### Updated Predicted Diseases with likelihood in percentage
-    * Disease Name: Old Likelihood (%) → New Likelihood (%), Reason for change
+    * Disease Name: [Name] | Old Likelihood: [X]% → New Likelihood: [Y]%
+    * Scientific Reasoning: [Detailed explanation of the change]
+    * Supporting Evidence: [URL or citation to a scientific study, research paper, or medical guideline]
 
-    ### New Recommendations
+    ### Evidence-Based Recommendations
+    * Recommendation: [Clear actionable recommendation]
+    * Scientific Basis: [Brief explanation based on scientific evidence]
+    * Reference: [URL to scientific paper or medical guideline supporting this recommendation]
+
+    Please ensure all predictions and recommendations are supported by specific scientific studies or medical guidelines with accessible URLs.
     """
 
     headers = {
@@ -93,43 +101,87 @@ async def analyze_with_groqcloud(tasks, nutrition, prediction):
     }
     data = {
         "model": "llama-3.3-70b-versatile",
-        "messages": [{"role": "user", "content": prompt}]
+        "messages": [{"role": "user", "content": prompt}],
+        "temperature": 0.7,
+        "max_tokens": 2000
     }
 
-    async with httpx.AsyncClient() as client:
-        response = await client.post("https://api.groq.com/openai/v1/chat/completions", json=data, headers=headers)
+    try:
+        async with AsyncClient(timeout=60.0) as client:  # Increased timeout to 60 seconds
+            response = await client.post(
+                "https://api.groq.com/openai/v1/chat/completions",
+                json=data,
+                headers=headers
+            )
 
-    if response.status_code == 200:
-        result = response.json()
-        content = result.get("choices", [{}])[0].get("message", {}).get("content", "")
+        if response.status_code == 200:
+            result = response.json()
+            content = result.get("choices", [{}])[0].get("message", {}).get("content", "")
 
-        updated_predictions = []
-        recommendations = []
-        lines = content.split('\n')
-        section = None
+            updated_predictions = []
+            recommendations = []
+            current_prediction = {}
+            current_recommendation = {}
 
-        for line in lines:
-            if "### Updated Predicted Diseases" in line:
-                section = "predictions"
-            elif "### New Recommendations" in line:
-                section = "recommendations"
-            elif section == "predictions" and line.startswith("*"):
-                # Extract percentages correctly
-                match = re.search(r"\* (.+?): (\d+)%\s*→\s*(\d+)%,\s*(.+)", line)
-                if match:
-                    condition, old_percentage, new_percentage, reason = match.groups()
-                    updated_predictions.append({
-                        "condition": condition.strip(),
-                        "old_percentage": float(old_percentage), 
-                        "new_percentage": float(new_percentage),
-                        "reason": reason.strip()
-                    })
-            elif section == "recommendations" and line.startswith("*"):
-                recommendations.append(line[1:].strip())
+            lines = content.split('\n')
+            section = None
 
-        return updated_predictions, recommendations
-    else:
-        raise Exception(f"GroqCloud API error: {response.status_code} - {response.text}")
+            for line in lines:
+                if "### Updated Predicted Diseases" in line:
+                    section = "predictions"
+                elif "### Evidence-Based Recommendations" in line:
+                    section = "recommendations"
+                elif section == "predictions" and line.startswith("*"):
+                    if "Disease Name:" in line:
+                        if current_prediction:
+                            updated_predictions.append(current_prediction)
+                            current_prediction = {}
+                        
+                        # Updated regex pattern to match the new format
+                        match = re.search(r"\* Disease Name: (.+?) \| Old Likelihood: (\d+)% → New Likelihood: (\d+)%", line)
+                        if match:
+                            condition, old_percentage, new_percentage = match.groups()
+                            current_prediction.update({
+                                "condition": condition.strip(),
+                                "old_percentage": float(old_percentage),
+                                "new_percentage": float(new_percentage)
+                            })
+                    elif "Scientific Reasoning:" in line:
+                        current_prediction["reason"] = line.split("Scientific Reasoning:")[1].strip()
+                    elif "Supporting Evidence:" in line:
+                        current_prediction["evidence"] = line.split("Supporting Evidence:")[1].strip()
+                
+                elif section == "recommendations" and line.startswith("*"):
+                    if "Recommendation:" in line:
+                        if current_recommendation:
+                            recommendations.append(current_recommendation)
+                            current_recommendation = {}
+                        current_recommendation["recommendation"] = line.split("Recommendation:")[1].strip()
+                    elif "Scientific Basis:" in line:
+                        current_recommendation["basis"] = line.split("Scientific Basis:")[1].strip()
+                    elif "Reference:" in line:
+                        current_recommendation["reference"] = line.split("Reference:")[1].strip()
+
+            # Add the last items if they exist
+            if current_prediction:
+                updated_predictions.append(current_prediction)
+            if current_recommendation:
+                recommendations.append(current_recommendation)
+
+            print("Generated Predictions:", updated_predictions)  # Debug print
+            print("Generated Recommendations:", recommendations)  # Debug print
+
+            return updated_predictions, recommendations
+
+        else:
+            raise Exception(f"GroqCloud API error: {response.status_code} - {response.text}")
+
+    except TimeoutException as e:
+        print(f"Timeout error: {str(e)}")
+        raise Exception("The request to GroqCloud API timed out. Please try again.")
+    except Exception as e:
+        print(f"Error in analyze_with_groqcloud: {str(e)}")
+        raise
 
 async def create_daily_assessment(user_id: str):
     """Generates or updates a daily assessment."""

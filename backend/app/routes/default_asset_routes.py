@@ -11,6 +11,7 @@ router = APIRouter()
 class EquipAssetRequest(BaseModel):
     asset_type: str
     asset_id: str
+    color: str = "#FFFFFF"
 
 class UnequipAssetRequest(BaseModel):
     asset_type: str
@@ -18,7 +19,7 @@ class UnequipAssetRequest(BaseModel):
 @router.post("/equip_asset/")
 async def equip_asset_route(request: EquipAssetRequest, current_user: UserInDB = Depends(get_current_user)):
     try:
-        await equip_asset(current_user.id, request.asset_type, request.asset_id)
+        await equip_asset(current_user.id, request.asset_type, request.asset_id, request.color)
         return {"message": "Asset equipped successfully"}
     except HTTPException as e:
         raise e
