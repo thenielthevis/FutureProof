@@ -23,31 +23,38 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { ColorPicker } from 'react-native-color-picker';
 import tinycolor from 'tinycolor2';  // Add this import
 
-function Model({ bodyUri, headUri, outfitUri, eyesUri, noseUri, scale, position, color }) {
-  if (!bodyUri || !headUri || !eyesUri || !noseUri) {
-    console.error("Missing required model URIs", { bodyUri, headUri, eyesUri, noseUri, outfitUri });
-    return null;
-  }
+// Update the Model component to properly handle base model and outfit parts
+function Model({ bodyUri, headUri, outfitUri, eyesUri, noseUri, scale, position, color, isBaseModel = false }) {
+  // Load base model parts
+  const bodyModel = bodyUri ? useGLTF(bodyUri) : null;
+  const headModel = headUri ? useGLTF(headUri) : null;
+  const eyesModel = eyesUri ? useGLTF(eyesUri) : null;
+  const noseModel = noseUri ? useGLTF(noseUri) : null;
+  const outfitModel = outfitUri ? useGLTF(outfitUri) : null;
 
-  const { scene: bodyScene } = useGLTF(bodyUri, true);
-  const { scene: headScene } = useGLTF(headUri, true);
-  const { scene: eyesScene } = useGLTF(eyesUri, true);
-  const { scene: noseScene } = useGLTF(noseUri, true);
-  const outfitScene = outfitUri ? useGLTF(outfitUri, true).scene : null;
+  useEffect(() => {
+    return () => {
+      // Cleanup loaded models
+      if (bodyModel) bodyModel.scene.traverse((obj) => obj.dispose && obj.dispose());
+      if (headModel) headModel.scene.traverse((obj) => obj.dispose && obj.dispose());
+      if (eyesModel) eyesModel.scene.traverse((obj) => obj.dispose && obj.dispose());
+      if (noseModel) noseModel.scene.traverse((obj) => obj.dispose && obj.dispose());
+      if (outfitModel) outfitModel.scene.traverse((obj) => obj.dispose && obj.dispose());
+    };
+  }, [bodyUri, headUri, eyesUri, noseUri, outfitUri]);
 
-  bodyScene.scale.set(scale.x, scale.y, scale.z);
-  bodyScene.position.set(position.x, position.y, position.z);
-  headScene.scale.set(scale.x, scale.y, scale.z);
-  headScene.position.set(position.x, position.y, position.z);
-  eyesScene.scale.set(scale.x, scale.y, scale.z);
-  eyesScene.position.set(position.x, position.y, position.z);
-  noseScene.scale.set(scale.x, scale.y, scale.z);
-  noseScene.position.set(position.x, position.y, position.z);
+  // Apply transformations to models
+  const applyTransforms = (scene) => {
+    if (scene) {
+      scene.scale.set(scale.x, scale.y, scale.z);
+      scene.position.set(position.x, position.y, position.z);
+    }
+    return scene;
+  };
 
-  if (outfitScene) {
-    outfitScene.scale.set(scale.x, scale.y, scale.z);
-    outfitScene.position.set(position.x, position.y, position.z);
-    outfitScene.traverse((child) => {
+  // Apply color to outfit
+  if (outfitModel && color) {
+    outfitModel.scene.traverse((child) => {
       if (child.isMesh) {
         child.material.color.set(color);
       }
@@ -56,11 +63,11 @@ function Model({ bodyUri, headUri, outfitUri, eyesUri, noseUri, scale, position,
 
   return (
     <group>
-      <primitive object={bodyScene} />
-      <primitive object={headScene} />
-      <primitive object={eyesScene} />
-      <primitive object={noseScene} />
-      {outfitScene && <primitive object={outfitScene} />}
+      {bodyModel && <primitive object={applyTransforms(bodyModel.scene)} />}
+      {headModel && <primitive object={applyTransforms(headModel.scene)} />}
+      {eyesModel && <primitive object={applyTransforms(eyesModel.scene)} />}
+      {noseModel && <primitive object={applyTransforms(noseModel.scene)} />}
+      {outfitModel && <primitive object={applyTransforms(outfitModel.scene)} />}
     </group>
   );
 }
@@ -313,24 +320,46 @@ export default function Shop() {
     }, 10);
   };
 
-  // Modified renderModel to handle null color
-  const renderModel = (props) => (
-    <Model
-      {...props}
-      color={props.outfitUri && (
-        // Use equipped asset color if available, otherwise use selected/asset color
-        equippedAssets[props.assetType]?.color || 
+  // Update the renderModel function to properly separate model rendering
+  const renderModel = ({ assetType, ...props }) => {
+    const modelProps = {
+      ...props,
+      color: props.outfitUri ? (
+        equippedAssets[assetType]?.color || 
         assetColors[props.outfitUri] || 
         null
-      )}
-    />
-  );
+      ) : null
+    };
+
+    return <Model {...modelProps} />;
+  };
 
   // Add helper function to check if asset is equipped
   const isAssetEquipped = (asset) => {
     return Object.values(equippedAssets).some(
       equipped => equipped._id === asset._id.toString()
     );
+  };
+
+  const handleUnequipAll = async () => {
+    try {
+      // Create a copy of currently equipped assets
+      const assetsToUnequip = Object.keys(equippedAssets);
+      
+      // Unequip each asset one by one
+      for (const assetType of assetsToUnequip) {
+        await unequipAsset(assetType);
+      }
+      
+      // Clear states after all unequip operations are complete
+      setSelectedOutfit(null);
+      setEquippedAssets({});
+      
+      Alert.alert('Success', 'All items unequipped successfully!');
+    } catch (error) {
+      console.error('Error unequipping all assets:', error);
+      Alert.alert('Error', 'Failed to unequip all items.');
+    }
   };
 
   if (loading) {
@@ -359,27 +388,36 @@ export default function Shop() {
                 <ambientLight intensity={0.5} />
                 <directionalLight position={[5, 5, 5]} />
                 <Suspense fallback={null}>
-                  {renderModel({
-                    bodyUri: defaultBodyUri,
-                    headUri: defaultHeadUri,
-                    eyesUri: defaultEyesUri,
-                    noseUri: defaultNoseUri,
-                    outfitUri: selectedOutfit,
-                    scale: { x: 2.3, y: 2.3, z: 2.3 },
-                    position: { x: 0, y: -3.25, z: 0 },
-                  })}
+                  {/* Base Model */}
+                  <Model
+                    bodyUri={defaultBodyUri}
+                    headUri={defaultHeadUri}
+                    eyesUri={defaultEyesUri}
+                    noseUri={defaultNoseUri}
+                    scale={{ x: 2.3, y: 2.3, z: 2.3 }}
+                    position={{ x: 0, y: -3.25, z: 0 }}
+                    isBaseModel={true}
+                  />
+
+                  {/* Selected Outfit */}
+                  {selectedOutfit && (
+                    <Model
+                      outfitUri={selectedOutfit}
+                      scale={{ x: 2.3, y: 2.3, z: 2.3 }}
+                      position={{ x: 0, y: -3.25, z: 0 }}
+                      color={assetColors[selectedOutfit] || null}
+                    />
+                  )}
+
+                  {/* Equipped Assets */}
                   {Object.entries(equippedAssets).map(([assetType, asset]) => (
-                    renderModel({
-                      key: assetType,
-                      assetType: assetType,
-                      bodyUri: defaultBodyUri,
-                      headUri: defaultHeadUri,
-                      eyesUri: defaultEyesUri,
-                      noseUri: defaultNoseUri,
-                      outfitUri: asset.url,
-                      scale: { x: 2, y: 2, z: 2 },
-                      position: { x: 0, y: -2.6, z: 0 },
-                    })
+                    <Model
+                      key={`equipped-${assetType}`}
+                      outfitUri={asset.url}
+                      scale={{ x: 2, y: 2, z: 2 }}
+                      position={{ x: 0, y: -2.6, z: 0 }}
+                      color={asset.color}
+                    />
                   ))}
                 </Suspense>
                 <OrbitControls />
@@ -639,7 +677,14 @@ const styles = StyleSheet.create({
   },
   modelContainer: {
     width: '100%',
-    height: '100%',
+    height: '85%', // Reduce height to make room for controls
+  },
+  modelControlsContainer: {
+    width: '100%',
+    height: '15%',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingTop: 10,
   },
   backButton: {
     position: 'absolute',
@@ -759,5 +804,21 @@ const styles = StyleSheet.create({
     padding: 8,
     fontSize: 14,
     color: '#333',
+  },
+  unequipAllButton: {
+    backgroundColor: '#f44336',
+    paddingVertical: 12,
+    paddingHorizontal: 25,
+    borderRadius: 8,
+    elevation: 3,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+  },
+  unequipAllButtonText: {
+    color: 'white',
+    fontWeight: 'bold',
+    fontSize: 14,
   },
 });
