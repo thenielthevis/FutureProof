@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, TextInput, FlatList, Image, Picker, ScrollView, Modal, Alert } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, TextInput, FlatList, Image, Picker, ScrollView, Modal, Alert, Animated } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { createDailyReward, readDailyRewards, updateDailyReward, deleteDailyReward } from '../API/daily_rewards_api';
 import { readAvatars, getAvatar } from '../API/avatar_api';
@@ -26,17 +26,20 @@ const DailyRewardsCRUD = () => {
   const [editingReward, setEditingReward] = useState(null);
   const [avatars, setAvatars] = useState([]);
   const [avatarImages, setAvatarImages] = useState({});
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(true); // State for sidebar visibility
-  const [modalVisible, setModalVisible] = useState(false); // State for modal visibility
-  const [searchQuery, setSearchQuery] = useState(''); // State for search query
-  const [filteredAvatars, setFilteredAvatars] = useState([]); // State for filtered avatars
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
+  const [modalVisible, setModalVisible] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filteredAvatars, setFilteredAvatars] = useState([]);
+  const [headerAnimation] = useState(new Animated.Value(0));
+  const [deleteModalVisible, setDeleteModalVisible] = useState(false);
+  const [selectedReward, setSelectedReward] = useState(null);
 
   useEffect(() => {
     const fetchRewards = async () => {
       try {
         const rewardsData = await readDailyRewards();
         setRewards(rewardsData);
-        setFilteredAvatars(rewardsData); // Initialize filteredAvatars with all rewards
+        setFilteredAvatars(rewardsData);
       } catch (error) {
         console.error('Error fetching daily rewards:', error);
       }
@@ -53,6 +56,13 @@ const DailyRewardsCRUD = () => {
 
     fetchRewards();
     fetchAvatars();
+    
+    // Animate header on mount
+    Animated.timing(headerAnimation, {
+      toValue: 1,
+      duration: 800,
+      useNativeDriver: true,
+    }).start();
   }, []);
 
   useEffect(() => {
@@ -225,6 +235,7 @@ const DailyRewardsCRUD = () => {
       setTop('');
       setBottom('');
       setShoes('');
+      setModalVisible(false);
       Toast.show({
         type: 'success',
         text1: 'Success',
@@ -309,18 +320,18 @@ const DailyRewardsCRUD = () => {
     setTop('');
     setBottom('');
     setShoes('');
-    setModalVisible(true); // Open modal for creating
+    setModalVisible(true);
   };
 
   const handleSearch = async () => {
     try {
-      const rewardsData = await readDailyRewards(); // Fetch the original rewards list
+      const rewardsData = await readDailyRewards();
       const filtered = rewardsData.filter(reward => {
         const dayMatch = String(reward.day).toLowerCase().includes(searchQuery.toLowerCase());
         const coinsMatch = reward.coins.toString().includes(searchQuery);
         return dayMatch || coinsMatch;
       });
-      setFilteredAvatars(filtered);  // Update state with filtered rewards
+      setFilteredAvatars(filtered);
     } catch (error) {
       console.error('Error fetching daily rewards:', error);
     }
@@ -330,179 +341,252 @@ const DailyRewardsCRUD = () => {
     setSidebarCollapsed(!sidebarCollapsed);
   };
 
-
-
   return (
     <View style={styles.container}>
       <Sidebar />
-      {/* Main Content with Gradient Background */}
-      <View style={styles.content}>
-        <Text style={styles.header}>Daily Rewards Management</Text>
-
-        {/* Search and Create Reward Button */}
-        <View style={styles.searchCreateContainer}>
-          <TouchableOpacity
-            style={styles.openModalButton}
-            onPress={handleOpenModal}
-          >
-            <Text style={styles.openModalButtonText}>Create Reward</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity style={styles.exportButton} onPress={handleExportPDF}>
-            <Text style={styles.exportButtonText}>Export PDF</Text>
-          </TouchableOpacity>
-
-          <View style={styles.searchContainer}>
-            <TextInput
-              style={styles.searchInput}
-              placeholder="Search Day or Coins"
-              value={searchQuery}
-              onChangeText={setSearchQuery}
-            />
-            <TouchableOpacity
-              style={styles.searchButton}
-              onPress={handleSearch}
-            >
-              <Text style={styles.searchButtonText}>Search</Text>
+      <View style={styles.mainContent}>
+        <Animated.View 
+          style={[
+            styles.pageHeader,
+            {
+              opacity: headerAnimation,
+              transform: [{ translateY: headerAnimation.interpolate({
+                inputRange: [0, 1],
+                outputRange: [-50, 0]
+              })}]
+            }
+          ]}
+        >
+          <Text style={styles.pageTitle}>Daily Rewards Management</Text>
+          <View style={styles.headerActions}>
+            <TouchableOpacity style={styles.actionButton} onPress={handleOpenModal}>
+              <FontAwesome5 name="plus" size={14} color="white" />
+              <Text style={styles.actionButtonText}>Create Reward</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.actionButton} onPress={handleExportPDF}>
+              <FontAwesome5 name="file-pdf" size={14} color="white" />
+              <Text style={styles.actionButtonText}>Export PDF</Text>
             </TouchableOpacity>
           </View>
+        </Animated.View>
+
+        <View style={styles.searchBar}>
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Search by day or coins..."
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+          />
+          <TouchableOpacity style={styles.searchButton} onPress={handleSearch}>
+            <FontAwesome name="search" size={16} color="white" />
+          </TouchableOpacity>
         </View>
 
-        {/* Reward List */}
-        <ScrollView contentContainerStyle={styles.tableContainer}>
-          <View style={styles.tableHeader}>
-            <Text style={styles.tableHeaderText}>Day</Text>
-            <Text style={styles.tableHeaderText}>Coins</Text>
-            <Text style={styles.tableHeaderText}>Avatar</Text>
-            <Text style={styles.tableHeaderText}>Top ID</Text>
-            <Text style={styles.tableHeaderText}>Bottom ID</Text>
-            <Text style={styles.tableHeaderText}>Shoes ID</Text>
-            <Text style={styles.tableHeaderText}>Actions</Text>
-          </View>
-          {rewards.map((item) => (
-            <View style={styles.tableRow} key={item._id}>
-              <Text style={styles.tableCell}>{item.day}</Text>
-              <View style={styles.tableCell}>
-                <FontAwesome5 name="coins" size={14} color="gold" />
-                <Text> {item.coins}</Text>
-              </View>
-              <View style={styles.tableCell}>
-                {item.avatar && avatarImages[item.avatar] ? (
-                  <Image source={{ uri: avatarImages[item.avatar] }} style={styles.avatarImage} />
-                ) : (
-                  <Text>No Avatar</Text>
-                )}
-              </View>
-              <Text style={styles.tableCell}>{item.top}</Text>
-              <Text style={styles.tableCell}>{item.bottom}</Text>
-              <Text style={styles.tableCell}>{item.shoes}</Text>
-              <View style={styles.tableCell}>
-                <TouchableOpacity style={styles.buttonEdit} onPress={() => handleEditReward(item)}>
-                  <Text style={styles.buttonText}>Edit</Text>
-                </TouchableOpacity>
-                <TouchableOpacity style={styles.buttonDelete} onPress={() => handleDeleteReward(item._id)}>
-                  <Text style={styles.buttonText}>Delete</Text>
-                </TouchableOpacity>
-              </View>
+        <ScrollView style={styles.tableWrapper}>
+          <View style={styles.tableContainer}>
+            <View style={styles.tableHeader}>
+              <Text style={[styles.tableHeaderText, {flex: 1}]}>Day</Text>
+              <Text style={[styles.tableHeaderText, {flex: 1}]}>Coins</Text>
+              <Text style={[styles.tableHeaderText, {flex: 1}]}>Avatar</Text>
+              <Text style={[styles.tableHeaderText, {flex: 1}]}>Top ID</Text>
+              <Text style={[styles.tableHeaderText, {flex: 1}]}>Bottom ID</Text>
+              <Text style={[styles.tableHeaderText, {flex: 1}]}>Shoes ID</Text>
+              <Text style={[styles.tableHeaderText, {flex: 1}]}>Actions</Text>
             </View>
-          ))}
+            
+            {rewards.map((item) => (
+              <View style={styles.tableRow} key={item._id}>
+                <Text style={[styles.tableCell, {flex: 1}]}>{item.day}</Text>
+                <View style={[styles.tableCell, {flex: 1, flexDirection: 'row', alignItems: 'center'}]}>
+                  <FontAwesome5 name="coins" size={14} color="gold" style={{marginRight: 5}} />
+                  <Text>{item.coins}</Text>
+                </View>
+                <View style={[styles.tableCell, {flex: 1}]}>
+                  {item.avatar && avatarImages[item.avatar] ? (
+                    <Image source={{ uri: avatarImages[item.avatar] }} style={styles.avatarImage} />
+                  ) : (
+                    <Text>No Avatar</Text>
+                  )}
+                </View>
+                <Text style={[styles.tableCell, {flex: 1}]}>{item.top}</Text>
+                <Text style={[styles.tableCell, {flex: 1}]}>{item.bottom}</Text>
+                <Text style={[styles.tableCell, {flex: 1}]}>{item.shoes}</Text>
+                <View style={[styles.tableCell, styles.actionCell, {flex: 1}]}>
+                  <TouchableOpacity 
+                    style={[styles.actionBtn, styles.editBtn]} 
+                    onPress={() => handleEditReward(item)}
+                  >
+                    <FontAwesome name="pencil" size={14} color="white" />
+                  </TouchableOpacity>
+                  <TouchableOpacity 
+                    style={[styles.actionBtn, styles.deleteBtn]} 
+                    onPress={() => {
+                      setSelectedReward(item._id);
+                      setDeleteModalVisible(true);
+                    }}
+                  >
+                    <FontAwesome name="trash" size={14} color="white" />
+                  </TouchableOpacity>
+                </View>
+              </View>
+            ))}
+            
+            {filteredAvatars.length === 0 && (
+              <View style={styles.emptyState}>
+                <FontAwesome5 name="coins" size={48} color="#ccc" />
+                <Text style={styles.emptyStateText}>No rewards found</Text>
+                <Text style={styles.emptyStateSubText}>Try a different search or create a new reward</Text>
+              </View>
+            )}
+          </View>
         </ScrollView>
 
-        {/* Modal for Create/Update Reward */}
         <Modal
-          animationType="slide"
+          animationType="fade"
           transparent={true}
           visible={modalVisible}
           onRequestClose={() => setModalVisible(false)}
         >
           <View style={styles.modalOverlay}>
             <View style={styles.modalContent}>
-              <LinearGradient
-                colors={['#1A3B32', '#1A3B32']}
-                style={styles.modalHeader}
-              >
-                <Text style={styles.modalHeaderText}>{editingReward ? 'Update Reward' : 'Create Reward'}</Text>
+              <View style={styles.modalHeader}>
+                <Text style={styles.modalHeaderText}>
+                  {editingReward ? 'Update Reward' : 'Create New Reward'}
+                </Text>
                 <TouchableOpacity style={styles.closeButton} onPress={() => setModalVisible(false)}>
-                  <Text style={styles.closeButtonText}>X</Text>
+                  <FontAwesome name="times" size={20} color="#666" />
                 </TouchableOpacity>
-              </LinearGradient>
-
-              {/* Day Input */}
-              <View style={styles.inputGroup}>
-                <Text style={styles.label}>Day</Text>
-                <TextInput
-                  style={styles.input}
-                  placeholder="Enter day number"
-                  value={day}
-                  onChangeText={setDay}
-                />
               </View>
 
-              {/* Coins Input */}
-              <View style={styles.inputGroup}>
-                <Text style={styles.label}>Coins</Text>
-                <TextInput
-                  style={styles.input}
-                  placeholder="Enter coin amount"
-                  value={coins}
-                  onChangeText={setCoins}
-                />
-              </View>
+              <ScrollView style={styles.modalBody}>
+                <View style={styles.inputGroup}>
+                  <Text style={styles.inputLabel}>Day</Text>
+                  <TextInput
+                    style={styles.input}
+                    placeholder="Enter day number"
+                    value={day}
+                    onChangeText={setDay}
+                  />
+                </View>
 
-              {/* Avatar Picker */}
-              <View style={styles.inputGroup}>
-                <Text style={styles.label}>Avatar</Text>
-                <Picker
-                  selectedValue={avatar}
-                  style={styles.picker}
-                  onValueChange={(itemValue) => setAvatar(itemValue)}
+                <View style={styles.inputGroup}>
+                  <Text style={styles.inputLabel}>Coins</Text>
+                  <TextInput
+                    style={styles.input}
+                    placeholder="Enter coin amount"
+                    value={coins}
+                    onChangeText={setCoins}
+                  />
+                </View>
+
+                <View style={styles.inputGroup}>
+                  <Text style={styles.inputLabel}>Avatar</Text>
+                  <Picker
+                    selectedValue={avatar}
+                    style={styles.picker}
+                    onValueChange={(itemValue) => setAvatar(itemValue)}
+                  >
+                    <Picker.Item label="Select Avatar" value="" />
+                    {avatars.map((avatar) => (
+                      <Picker.Item key={avatar._id} label={avatar.name} value={avatar._id} />
+                    ))}
+                  </Picker>
+                </View>
+
+                <View style={styles.inputGroup}>
+                  <Text style={styles.inputLabel}>Top ID</Text>
+                  <TextInput
+                    style={styles.input}
+                    placeholder="Enter top clothing ID"
+                    value={top}
+                    onChangeText={setTop}
+                  />
+                </View>
+
+                <View style={styles.inputGroup}>
+                  <Text style={styles.inputLabel}>Bottom ID</Text>
+                  <TextInput
+                    style={styles.input}
+                    placeholder="Enter bottom clothing ID"
+                    value={bottom}
+                    onChangeText={setBottom}
+                  />
+                </View>
+
+                <View style={styles.inputGroup}>
+                  <Text style={styles.inputLabel}>Shoes ID</Text>
+                  <TextInput
+                    style={styles.input}
+                    placeholder="Enter shoes ID"
+                    value={shoes}
+                    onChangeText={setShoes}
+                  />
+                </View>
+              </ScrollView>
+
+              <View style={styles.modalFooter}>
+                <TouchableOpacity 
+                  style={styles.cancelButton} 
+                  onPress={() => setModalVisible(false)}
                 >
-                  <Picker.Item label="Select Avatar" value="" />
-                  {avatars.map((avatar) => (
-                    <Picker.Item key={avatar._id} label={avatar.name} value={avatar._id} />
-                  ))}
-                </Picker>
+                  <Text style={styles.cancelButtonText}>Cancel</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.submitButton}
+                  onPress={editingReward ? handleUpdateReward : handleCreateReward}
+                >
+                  <Text style={styles.submitButtonText}>
+                    {editingReward ? 'Update Reward' : 'Create Reward'}
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </Modal>
+
+        <Modal
+          visible={deleteModalVisible}
+          transparent
+          animationType="slide"
+        >
+          <View style={styles.deleteModal_overlay}>
+            <View style={styles.deleteModal_content}>
+              <View style={styles.deleteModal_header}>
+                <Text style={styles.deleteModal_headerText}>Confirm Delete</Text>
               </View>
 
-              {/* Top ID Input */}
-              <View style={styles.inputGroup}>
-                <Text style={styles.label}>Top ID</Text>
-                <TextInput
-                  style={styles.input}
-                  placeholder="Enter top clothing ID"
-                  value={top}
-                  onChangeText={setTop}
-                />
+              <View style={styles.deleteModal_body}>
+                <Text style={styles.deleteModal_text}>
+                  Are you sure you want to delete this daily reward?
+                </Text>
               </View>
 
-              {/* Bottom ID Input */}
-              <View style={styles.inputGroup}>
-                <Text style={styles.label}>Bottom ID</Text>
-                <TextInput
-                  style={styles.input}
-                  placeholder="Enter bottom clothing ID"
-                  value={bottom}
-                  onChangeText={setBottom}
-                />
-              </View>
+              <View style={styles.deleteModal_footer}>
+                <TouchableOpacity 
+                  onPress={() => setDeleteModalVisible(false)} 
+                  style={styles.deleteModal_cancelButton}
+                >
+                  <Text style={styles.deleteModal_cancelButtonText}>Cancel</Text>
+                </TouchableOpacity>
 
-              {/* Shoes ID Input */}
-              <View style={styles.inputGroup}>
-                <Text style={styles.label}>Shoes ID</Text>
-                <TextInput
-                  style={styles.input}
-                  placeholder="Enter shoes ID"
-                  value={shoes}
-                  onChangeText={setShoes}
-                />
+                <TouchableOpacity 
+                  onPress={() => {
+                    if (selectedReward) {
+                      handleDeleteReward(selectedReward);
+                      setDeleteModalVisible(false);
+                    } else {
+                      Toast.show({
+                        type: 'error',
+                        text1: 'Error',
+                        text2: 'No reward selected for deletion',
+                      });
+                    }
+                  }} 
+                  style={styles.deleteModal_deleteButton}
+                >
+                  <Text style={styles.deleteModal_deleteButtonText}>Delete</Text>
+                </TouchableOpacity>
               </View>
-
-              <TouchableOpacity
-                style={styles.buttonPrimary}
-                onPress={editingReward ? handleUpdateReward : handleCreateReward}
-              >
-                <Text style={styles.buttonText}>{editingReward ? 'Update Reward' : 'Create Reward'}</Text>
-              </TouchableOpacity>
             </View>
           </View>
         </Modal>
@@ -515,138 +599,237 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     flexDirection: 'row',
-    backgroundColor: '#F5F5F5',
+    backgroundColor: '#f8f9fc',
   },
+  // Modern Sidebar styles
   sidebar: {
-    width: '20%',
-    backgroundColor: '#1A3B32',
-    padding: 20,
+    width: 240,
+    height: '100%',
+    paddingVertical: 20,
+    paddingHorizontal: 0,
   },
   sidebarCollapsed: {
-    width: '5%',
+    width: 60,
   },
-  sidebarItem: {
-    marginBottom: 20,
+  sidebarTop: {
+    alignItems: 'center',
+    marginBottom: 25,
+  },
+  sidebarHeader: {
     flexDirection: 'row',
     alignItems: 'center',
+    paddingHorizontal: 20,
+    position: 'relative',
+    width: '100%',
+  },
+  sidebarBrand: {
+    color: 'white',
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  collapseButton: {
+    position: 'absolute',
+    right: 5,
+  },
+  sidebarLogoCollapsed: {
+    marginTop: 10,
+    marginBottom: 20,
+  },
+  sidebarContent: {
+    flex: 1,
+  },
+  menuGroup: {
+    marginBottom: 22,
+  },
+  menuLabel: {
+    color: 'rgba(255, 255, 255, 0.6)',
+    fontSize: 11,
+    paddingHorizontal: 20,
+    marginBottom: 8,
+    fontWeight: '600',
+    letterSpacing: 0.5,
+  },
+  sidebarItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 9,
+    paddingHorizontal: 20,
+    marginBottom: 1,
+  },
+  sidebarIconOnly: {
+    alignItems: 'center',
+    paddingVertical: 12,
+    width: 60,
+    marginBottom: 1,
+  },
+  activeMenuItem: {
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    borderLeftWidth: 3,
+    borderLeftColor: '#10B981',
   },
   sidebarText: {
-    color: '#F5F5F5',
-    fontSize: 18,
+    color: 'white',
+    fontSize: 13,
     marginLeft: 10,
   },
-  content: {
-    flex: 1,
-    padding: 20,
-  },
-  header: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    marginBottom: 20,
-  },
-  form: {
-    marginBottom: 20,
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 5,
-    padding: 10,
-    marginBottom: 10,
-    backgroundColor: '#fff',
-  },
-  picker: {
-    height: 50,
-    width: '100%',
-    marginBottom: 10,
-    backgroundColor: '#fff',
-  },
-  buttonPrimary: {
-    backgroundColor: '#3b88c3',
-    padding: 10,
-    borderRadius: 5,
+  collapsedMenuItems: {
     alignItems: 'center',
-    marginBottom: 10,
-    width: '100%',
   },
-  buttonText: {
-    color: '#fff',
+  
+  // Main content styles
+  mainContent: {
+    flex: 1,
+    backgroundColor: '#f8f9fc',
+    paddingHorizontal: 25,
+    paddingTop: 20,
+    paddingBottom: 10,
+  },
+  pageHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  pageTitle: {
+    fontSize: 24,
     fontWeight: 'bold',
+    color: '#111827',
   },
-  rewardItem: {
-    backgroundColor: '#fff',
-    padding: 15,
-    borderRadius: 5,
-    marginBottom: 10,
+  headerActions: {
+    flexDirection: 'row',
+  },
+  actionButton: {
+    backgroundColor: '#10B981',
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 6,
+    marginLeft: 10,
+    shadowColor: '#10B981',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 3,
+    elevation: 2,
+  },
+  actionButtonText: {
+    color: 'white',
+    fontWeight: '600',
+    marginLeft: 8,
+  },
+  searchBar: {
+    flexDirection: 'row',
+    marginBottom: 20,
+  },
+  searchInput: {
+    flex: 1,
+    backgroundColor: 'white',
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    borderRadius: 6,
+    padding: 12,
+    paddingLeft: 16,
+    fontSize: 14,
+  },
+  searchButton: {
+    backgroundColor: '#10B981',
+    width: 48,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 6,
+    marginLeft: 8,
+  },
+  
+  // Table styles
+  tableWrapper: {
+    flex: 1,
+  },
+  tableContainer: {
+    backgroundColor: 'white',
+    borderRadius: 10,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
-    shadowRadius: 5,
-    elevation: 2,
-  },
-  rewardText: {
-    fontSize: 14,
-    marginBottom: 5,
-  },
-  avatarImage: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    marginBottom: 10,
-  },
-  rewardActions: {
-    flexDirection: 'row',
-    marginTop: 10,
-  },
-  buttonEdit: {
-    backgroundColor: '#3498db',
-    padding: 5,
-    borderRadius: 5,
-    marginRight: 5,
-    width: 100,
-  },
-  buttonDelete: {
-    backgroundColor: '#e74c3c',
-    padding: 5,
-    borderRadius: 5,
-    width: 100,
-  },
-  tableContainer: {
-    width: '100%',
-    backgroundColor: '#fff',
-    borderRadius: 10,
+    shadowRadius: 8,
+    elevation: 4,
     overflow: 'hidden',
     marginBottom: 20,
   },
   tableHeader: {
     flexDirection: 'row',
-    backgroundColor: '#2E7D32',
-    padding: 15,
+    backgroundColor: '#F3F4F6',
+    paddingVertical: 15,
+    paddingHorizontal: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E5E7EB',
   },
   tableHeaderText: {
-    flex: 1,
-    fontWeight: 'bold',
-    textAlign: 'center',
-    color: '#fff',
+    fontWeight: '600',
+    color: '#4B5563',
+    fontSize: 14,
   },
   tableRow: {
     flexDirection: 'row',
-    padding: 15,
     borderBottomWidth: 1,
-    borderBottomColor: '#eee',
-    backgroundColor: '#fff',
+    borderBottomColor: '#E5E7EB',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    alignItems: 'center',
   },
   tableCell: {
-    flex: 1,
+    fontSize: 14,
+    color: '#374151',
     textAlign: 'center',
     justifyContent: 'center',
-    marginLeft: 50,
+    alignItems: 'center',
+  },
+  descriptionCell: {
+    fontSize: 14,
+    color: '#6B7280',
+  },
+  actionCell: {
+    flexDirection: 'row',
+    justifyContent: 'center',
   },
   avatarImage: {
     width: 50,
     height: 50,
     borderRadius: 25,
+    resizeMode: 'cover',
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
   },
+  actionBtn: {
+    width: 34,
+    height: 34,
+    borderRadius: 6,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 8,
+  },
+  editBtn: {
+    backgroundColor: '#3B82F6',
+  },
+  deleteBtn: {
+    backgroundColor: '#EF4444',
+  },
+  emptyState: {
+    alignItems: 'center',
+    paddingVertical: 40,
+  },
+  emptyStateText: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#6B7280',
+    marginTop: 10,
+  },
+  emptyStateSubText: {
+    fontSize: 14,
+    color: '#9CA3AF',
+    marginTop: 5,
+  },
+  
+  // Modal styles
   modalOverlay: {
     flex: 1,
     justifyContent: 'center',
@@ -654,116 +837,163 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
   },
   modalContent: {
-    width: '50%',
-    backgroundColor: '#1A3B32',
-    padding: 20,
+    width: '90%',
+    maxWidth: 500,
+    backgroundColor: 'white',
     borderRadius: 10,
-    alignItems: 'center',
+    overflow: 'hidden',
   },
   modalHeader: {
-    width: '100%',
-    backgroundColor: '#2E7D32',
-    padding: 10,
-    borderTopLeftRadius: 10,
-    borderTopRightRadius: 10,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 20,
+    backgroundColor: '#F3F4F6',
+    paddingVertical: 15,
+    paddingHorizontal: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E5E7EB',
   },
   modalHeaderText: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#fff',
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#111827',
   },
   closeButton: {
-    padding: 10,
-    backgroundColor: '#fff',
-    borderRadius: 20,
+    padding: 5,
   },
-  closeButtonText: {
-    fontSize: 18,
-    color: '#333',
+  modalBody: {
+    paddingVertical: 20,
+    paddingHorizontal: 20,
   },
-  openModalButton: {
-    backgroundColor: '#3498db',
-    padding: 15,
-    borderRadius: 5,
-    alignItems: 'center',
-
-  },
-  openModalButtonText: {
-    color: '#fff',
-    fontWeight: 'bold',
-    alignItems: 'center',
-  },
-  searchCreateContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-  searchInput: {
-    flex: 1,
-    borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 5,
-    padding: 15,
-    marginRight: 10,
-    backgroundColor: '#fff',
-    width: '100%',
-  },
-  searchContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    width: '50%',
-  },
-  searchButton: {
-    backgroundColor: '#3498db',
-    padding: 15,
-    borderRadius: 5,
-    alignItems: 'center',
-  },
-  searchButtonText: {
-    color: '#fff',
-    fontWeight: 'bold',
-    fontSize: 16,
-  },
-  exportButton: {
-    backgroundColor: '#3498db',
-    padding: 15,
-    borderRadius: 5,
-    alignItems: 'center',
-    marginLeft: 1,
-  },
-  exportButtonText: {
-    color: '#fff',
-    fontWeight: 'bold',
-    fontSize: 16,
-  },
-
   inputGroup: {
     marginBottom: 15,
-    width: '100%',
   },
-  label: {
-    color: '#fff',
+  inputLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#374151',
     marginBottom: 5,
-    fontSize: 16,
-    fontWeight: '500',
   },
-  // Update input and picker to remove individual margins
   input: {
+    backgroundColor: 'white',
     borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 5,
-    padding: 10,
-    backgroundColor: '#fff',
+    borderColor: '#E5E7EB',
+    borderRadius: 6,
+    padding: 12,
+    fontSize: 14,
   },
   picker: {
     height: 50,
     width: '100%',
-    backgroundColor: '#fff',
+    backgroundColor: 'white',
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    borderRadius: 6,
+  },
+  modalFooter: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    alignItems: 'center',
+    backgroundColor: '#F3F4F6',
+    paddingVertical: 15,
+    paddingHorizontal: 20,
+    borderTopWidth: 1,
+    borderTopColor: '#E5E7EB',
+  },
+  cancelButton: {
+    backgroundColor: '#E5E7EB',
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 6,
+    marginRight: 10,
+  },
+  cancelButtonText: {
+    color: '#374151',
+    fontWeight: '600',
+  },
+  submitButton: {
+    backgroundColor: '#10B981',
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 6,
+  },
+  submitButtonText: {
+    color: 'white',
+    fontWeight: '600',
+  },
+  // Delete Modal Styles
+  deleteModal_overlay: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    padding: 20,
+  },
+  deleteModal_content: {
+    width: '90%',
+    maxWidth: 400,
+    backgroundColor: 'white',
+    borderRadius: 10,
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 16,
+    elevation: 10,
+  },
+  deleteModal_header: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E5E7EB',
+  },
+  deleteModal_headerText: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#B91C1C', // Dark Red for danger
+  },
+  deleteModal_body: {
+    padding: 20,
+    alignItems: 'center',
+  },
+  deleteModal_text: {
+    fontSize: 16,
+    color: '#374151',
+    textAlign: 'center',
+  },
+  deleteModal_footer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    padding: 20,
+    borderTopWidth: 1,
+    borderTopColor: '#E5E7EB',
+  },
+  deleteModal_cancelButton: {
+    backgroundColor: '#E5E7EB',
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 6,
+    flex: 1,
+    marginRight: 10,
+    alignItems: 'center',
+  },
+  deleteModal_cancelButtonText: {
+    color: '#374151',
+    fontWeight: '600',
+  },
+  deleteModal_deleteButton: {
+    backgroundColor: '#DC2626',
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 6,
+    flex: 1,
+    alignItems: 'center',
+  },
+  deleteModal_deleteButtonText: {
+    color: 'white',
+    fontWeight: '600',
   },
 });
 

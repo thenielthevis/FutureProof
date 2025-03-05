@@ -173,14 +173,32 @@ export const updateAvatar = async (avatarId, avatarData) => {
 export const deleteAvatar = async (avatarId) => {
   try {
     const token = await AsyncStorage.getItem('token');
-    const response = await axios.delete(`${API_URL}/delete/avatar/${avatarId}`, {
+    if (!token) {
+      throw new Error('Authentication required');
+    }
+
+    // Log the request for debugging
+    console.log(`Attempting to delete avatar with ID: ${avatarId}`);
+
+    const response = await fetch(`${API_URL}/delete/avatar/${avatarId}`, {
+      method: 'DELETE',
       headers: {
-        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
       },
     });
-    return response.data;
+
+    // Log response status for debugging
+    console.log(`Delete response status: ${response.status}`);
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.detail || 'Failed to delete avatar');
+    }
+
+    return await response.json();
   } catch (error) {
-    console.error('Error deleting avatar:', error.response ? error.response.data : error);
-    throw error.response ? error.response.data : { detail: 'An error occurred' };
+    console.error('Error in deleteAvatar:', error);
+    throw error;
   }
 };

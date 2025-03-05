@@ -128,46 +128,40 @@ export const createPhysicalActivity = async (activityData, file) => {
 
 /**
  * Update an existing physical activity
- * @param {string} itemId - The ID of the physical activity to update
+ * @param {string} activityId - The ID of the physical activity to update
  * @param {Object} activityData - The updated data for the physical activity
  * @param {File} file - The new file to upload (optional)
  * @returns {Promise<Object>} The updated physical activity
  */
-export const updatePhysicalActivity = async (itemId, activityData, file) => {
+export const updatePhysicalActivity = async (activityId, activityData, file) => {
   try {
-    if (!itemId) {
-      throw new Error('Activity ID is required for update');
-    }
-
     const token = await AsyncStorage.getItem('token');
-    if (!token) {
-      throw new Error('Authentication required');
-    }
+    if (!token) throw new Error('Authentication required');
+
+    console.log('Updating activity with ID:', activityId); // Debug log
 
     const formData = new FormData();
     
-    if (activityData.activity_name) formData.append('activity_name', activityData.activity_name);
-    if (activityData.activity_type) formData.append('activity_type', activityData.activity_type);
-    if (activityData.description) formData.append('description', activityData.description);
+    // Ensure we don't send _id in the form data
+    const { _id, ...dataWithoutId } = activityData;
     
-    // Handle instructions array - send as JSON string
-    if (Array.isArray(activityData.instructions) && activityData.instructions.length > 0) {
-      formData.append("instructions", JSON.stringify(activityData.instructions));
-    }
-    
-    if (activityData.repetition) formData.append('repetition', activityData.repetition.toString());
-    if (activityData.timer) formData.append('timer', activityData.timer.toString());
-    
-    // Keep existing file handling
-    if (file && file.uri) {
-      const response = await fetch(file.uri);
-      const blob = await response.blob();
-      formData.append('file', blob, file.name || `video_${Date.now()}.mp4`);
+    // Add all fields except the file to formData
+    Object.entries(dataWithoutId).forEach(([key, value]) => {
+      if (value !== null && value !== undefined) {
+        if (Array.isArray(value)) {
+          formData.append(key, JSON.stringify(value));
+        } else {
+          formData.append(key, value.toString());
+        }
+      }
+    });
+
+    // Add file if it exists
+    if (file) {
+      formData.append('file', file);
     }
 
-    console.log('Sending formData:', formData); // Debug log
-
-    const response = await fetch(`${API_URL}/physical_activities/${itemId}`, {
+    const response = await fetch(`${API_URL}/physical_activities/${activityId}`, {
       method: 'PUT',
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -177,12 +171,15 @@ export const updatePhysicalActivity = async (itemId, activityData, file) => {
 
     if (!response.ok) {
       const errorData = await response.json();
-      throw new Error(errorData.detail || 'Failed to update physical activity');
+      throw new Error(errorData.detail || 'Failed to update activity');
     }
 
-    return await response.json();
+    const updatedActivity = await response.json();
+    console.log('Successfully updated activity:', updatedActivity); // Debug log
+    return updatedActivity;
+
   } catch (error) {
-    console.error('Error in updatePhysicalActivity:', error);
+    console.error('Error in updateActivity:', error);
     throw error;
   }
 };

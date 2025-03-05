@@ -27,17 +27,26 @@ async def get_achievement_by_id_route(id: str):
         raise HTTPException(status_code=404, detail="Achievement not found")
     return achievement
 
-@router.put("/update/achievements/{id}", response_model=Achievement)
-async def update_achievement_route(id: str, achievement: Achievement):
-    print(f"Received ID for update: {id}")  # Debugging
-    updated_achievement = await update_achievement(id, achievement.dict())
-    if not updated_achievement:
-        raise HTTPException(status_code=404, detail="Achievement not found")
-    return updated_achievement
+@router.put("/achievements/{id}", response_model=Achievement)  # Changed from /update/achievements/{id}
+async def update_achievement_route(id: str, achievement_data: dict):
+    try:
+        print(f"Received ID for update: {id}")  # Debug log
+        print(f"Update data: {achievement_data}")  # Debug log
+        updated_achievement = await update_achievement(id, achievement_data)
+        if not updated_achievement:
+            raise HTTPException(status_code=404, detail="Achievement not found")
+        return updated_achievement
+    except Exception as e:
+        print(f"Error in update route: {str(e)}")  # Debug log
+        raise HTTPException(status_code=500, detail=str(e))
 
-@router.delete("/delete/achievements/{id}", response_model=dict)
+@router.delete("/achievements/{id}", response_model=dict)  # Changed from /delete/achievements/{id}
 async def delete_achievement_route(id: str):
-    success = await delete_achievement(id)
-    if not success:
-        raise HTTPException(status_code=404, detail="Achievement not found")
-    return {"message": "Achievement deleted"}
+    try:
+        success = await delete_achievement(id)
+        if not success:
+            raise HTTPException(status_code=404, detail="Achievement not found")
+        return {"message": "Achievement deleted"}
+    except Exception as e:
+        print(f"Error in delete route: {str(e)}")  # Debug log
+        raise HTTPException(status_code=500, detail=str(e))

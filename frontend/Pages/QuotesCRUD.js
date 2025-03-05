@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
-  View, Text, TouchableOpacity, StyleSheet, TextInput, ScrollView, Modal, Alert, Platform
+  View, Text, TouchableOpacity, StyleSheet, TextInput, ScrollView, Modal, Alert, Platform, Animated
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { createQuote, readQuotes, updateQuote, deleteQuote } from '../API/quotes_api';
@@ -23,6 +23,9 @@ const QuotesCRUD = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [filteredQuotes, setFilteredQuotes] = useState([]);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [headerAnimation] = useState(new Animated.Value(0));
+  const [deleteModalVisible, setDeleteModalVisible] = useState(false);
+  const [selectedQuote, setSelectedQuote] = useState(null);
 
   useEffect(() => {
     const fetchQuotes = async () => {
@@ -35,6 +38,13 @@ const QuotesCRUD = () => {
       }
     };
     fetchQuotes();
+
+    // Animate header on mount
+    Animated.timing(headerAnimation, {
+      toValue: 1,
+      duration: 800,
+      useNativeDriver: true,
+    }).start();
   }, []);
 
   const handleExportPDF = async () => {
@@ -128,7 +138,6 @@ const QuotesCRUD = () => {
       return null;
     }
   };
-
 
   const handleCreateQuote = async () => {
     try {
@@ -230,97 +239,190 @@ const QuotesCRUD = () => {
   return (
     <View style={styles.container}>
       <Sidebar />
-      <View style={styles.content}>
-        <Text style={styles.header}>Quotes Management</Text>
-        <View style={styles.searchCreateContainer}>
-          <TouchableOpacity style={styles.openModalButton} onPress={handleOpenModal}>
-            <Text style={styles.openModalButtonText}>Create Quote</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.exportButton} onPress={handleExportPDF}>
-            <Text style={styles.exportButtonText}>Export PDF</Text>
-          </TouchableOpacity>
-          <View style={styles.searchContainer}>
-            <TextInput
-              style={styles.searchInput}
-              placeholder="Search Quotes"
-              value={searchQuery}
-              onChangeText={setSearchQuery}
-            />
-            <TouchableOpacity style={styles.searchButton} onPress={handleSearch}>
-              <Text style={styles.searchButtonText}>Search</Text>
+      <View style={styles.mainContent}>
+        <Animated.View 
+          style={[
+            styles.pageHeader,
+            {
+              opacity: headerAnimation,
+              transform: [{ translateY: headerAnimation.interpolate({
+                inputRange: [0, 1],
+                outputRange: [-50, 0]
+              })}]
+            }
+          ]}
+        >
+          <Text style={styles.pageTitle}>Quotes Management</Text>
+          <View style={styles.headerActions}>
+            <TouchableOpacity style={styles.actionButton} onPress={handleOpenModal}>
+              <FontAwesome5 name="plus" size={14} color="white" />
+              <Text style={styles.actionButtonText}>Create Quote</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.actionButton} onPress={handleExportPDF}>
+              <FontAwesome5 name="file-pdf" size={14} color="white" />
+              <Text style={styles.actionButtonText}>Export PDF</Text>
             </TouchableOpacity>
           </View>
+        </Animated.View>
+
+        <View style={styles.searchBar}>
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Search quotes by text or author..."
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+          />
+          <TouchableOpacity style={styles.searchButton} onPress={handleSearch}>
+            <FontAwesome name="search" size={16} color="white" />
+          </TouchableOpacity>
         </View>
 
-        <ScrollView contentContainerStyle={styles.quoteGrid}>
+        <ScrollView style={styles.tableWrapper}>
           <View style={styles.tableContainer}>
             <View style={styles.tableHeader}>
-              <Text style={styles.tableHeaderText}>Text</Text>
-              <Text style={styles.tableHeaderText}>Author</Text>
-              <Text style={styles.tableHeaderText}>Actions</Text>
+              <Text style={[styles.tableHeaderText, {flex: 2}]}>Text</Text>
+              <Text style={[styles.tableHeaderText, {flex: 1}]}>Author</Text>
+              <Text style={[styles.tableHeaderText, {flex: 1}]}>Actions</Text>
             </View>
+            
             {filteredQuotes.map((item) => (
               <View style={styles.tableRow} key={item._id}>
-                <Text style={styles.tableCell}>{item.text}</Text>
-                <Text style={styles.tableCell}>{item.author}</Text>
-                <View style={styles.tableCell}>
-                  <TouchableOpacity style={styles.buttonEdit} onPress={() => handleEditQuote(item)}>
-                    <Text style={styles.buttonText}>Edit</Text>
+                <Text style={[styles.tableCell, {flex: 2}]}>{item.text}</Text>
+                <Text style={[styles.tableCell, {flex: 1}]}>{item.author}</Text>
+                <View style={[styles.tableCell, styles.actionCell, {flex: 1}]}>
+                  <TouchableOpacity 
+                    style={[styles.actionBtn, styles.editBtn]} 
+                    onPress={() => handleEditQuote(item)}
+                  >
+                    <FontAwesome name="pencil" size={14} color="white" />
                   </TouchableOpacity>
-                  <TouchableOpacity style={styles.buttonDelete} onPress={() => handleDeleteQuote(item._id)}>
-                    <Text style={styles.buttonText}>Delete</Text>
+                  <TouchableOpacity 
+                    style={[styles.actionBtn, styles.deleteBtn]} 
+                    onPress={() => {
+                      setSelectedQuote(item._id);
+                      setDeleteModalVisible(true);
+                    }}
+                  >
+                    <FontAwesome name="trash" size={14} color="white" />
                   </TouchableOpacity>
                 </View>
               </View>
             ))}
+            
+            {filteredQuotes.length === 0 && (
+              <View style={styles.emptyState}>
+                <FontAwesome5 name="quote-right" size={48} color="#ccc" />
+                <Text style={styles.emptyStateText}>No quotes found</Text>
+                <Text style={styles.emptyStateSubText}>Try a different search or create a new quote</Text>
+              </View>
+            )}
           </View>
         </ScrollView>
 
         <Modal
-          animationType="slide"
+          animationType="fade"
           transparent={true}
           visible={modalVisible}
           onRequestClose={() => setModalVisible(false)}
         >
           <View style={styles.modalOverlay}>
             <View style={styles.modalContent}>
-              <LinearGradient colors={['#1A3B32', '#1A3B32']} style={styles.modalHeader}>
+              <View style={styles.modalHeader}>
                 <Text style={styles.modalHeaderText}>
-                  {editingQuote ? 'Update Quote' : 'Create Quote'}
+                  {editingQuote ? 'Update Quote' : 'Create New Quote'}
                 </Text>
                 <TouchableOpacity style={styles.closeButton} onPress={() => setModalVisible(false)}>
-                  <Text style={styles.closeButtonText}>X</Text>
+                  <FontAwesome name="times" size={20} color="#666" />
                 </TouchableOpacity>
-              </LinearGradient>
-
-              <View style={styles.inputGroup}>
-                <Text style={styles.label}>Text</Text>
-                <TextInput
-                  style={styles.input}
-                  placeholder="Enter quote text"
-                  value={text}
-                  onChangeText={setText}
-                />
               </View>
 
-              <View style={styles.inputGroup}>
-                <Text style={styles.label}>Author</Text>
-                <TextInput
-                  style={styles.input}
-                  placeholder="Enter author name"
-                  value={author}
-                  onChangeText={setAuthor}
-                />
+              <ScrollView style={styles.modalBody}>
+                <View style={styles.inputGroup}>
+                  <Text style={styles.inputLabel}>Text</Text>
+                  <TextInput
+                    style={[styles.input, styles.textArea]}
+                    placeholder="Enter quote text"
+                    value={text}
+                    onChangeText={setText}
+                    multiline={true}
+                    numberOfLines={3}
+                  />
+                </View>
+
+                <View style={styles.inputGroup}>
+                  <Text style={styles.inputLabel}>Author</Text>
+                  <TextInput
+                    style={styles.input}
+                    placeholder="Enter author name"
+                    value={author}
+                    onChangeText={setAuthor}
+                  />
+                </View>
+              </ScrollView>
+
+              <View style={styles.modalFooter}>
+                <TouchableOpacity 
+                  style={styles.cancelButton} 
+                  onPress={() => setModalVisible(false)}
+                >
+                  <Text style={styles.cancelButtonText}>Cancel</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.submitButton}
+                  onPress={editingQuote ? handleUpdateQuote : handleCreateQuote}
+                >
+                  <Text style={styles.submitButtonText}>
+                    {editingQuote ? 'Update Quote' : 'Create Quote'}
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </Modal>
+
+        <Modal
+          visible={deleteModalVisible}
+          transparent
+          animationType="slide"
+        >
+          <View style={styles.deleteModal_overlay}>
+            <View style={styles.deleteModal_content}>
+              <View style={styles.deleteModal_header}>
+                <Text style={styles.deleteModal_headerText}>Confirm Delete</Text>
               </View>
 
-              <TouchableOpacity
-                style={styles.buttonPrimary}
-                onPress={editingQuote ? handleUpdateQuote : handleCreateQuote}
-              >
-                <Text style={styles.buttonText}>
-                  {editingQuote ? 'Update Quote' : 'Create Quote'}
+              <View style={styles.deleteModal_body}>
+                <Text style={styles.deleteModal_text}>
+                  Are you sure you want to delete this quote?
                 </Text>
-              </TouchableOpacity>
+              </View>
+
+              <View style={styles.deleteModal_footer}>
+                <TouchableOpacity 
+                  onPress={() => setDeleteModalVisible(false)} 
+                  style={styles.deleteModal_cancelButton}
+                >
+                  <Text style={styles.deleteModal_cancelButtonText}>Cancel</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity 
+                  onPress={() => {
+                    if (selectedQuote) {
+                      handleDeleteQuote(selectedQuote);
+                      setDeleteModalVisible(false);
+                    } else {
+                      Toast.show({
+                        type: 'error',
+                        text1: 'Error',
+                        text2: 'No quote selected for deletion',
+                      });
+                    }
+                  }} 
+                  style={styles.deleteModal_deleteButton}
+                >
+                  <Text style={styles.deleteModal_deleteButtonText}>Delete</Text>
+                </TouchableOpacity>
+              </View>
             </View>
           </View>
         </Modal>
@@ -329,218 +431,321 @@ const QuotesCRUD = () => {
   );
 };
 
+const additionalStyles = {
+  // Delete Modal Styles
+  deleteModal_overlay: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    padding: 20,
+  },
+  deleteModal_content: {
+    width: '90%',
+    maxWidth: 400,
+    backgroundColor: 'white',
+    borderRadius: 10,
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 16,
+    elevation: 10,
+  },
+  deleteModal_header: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E5E7EB',
+  },
+  deleteModal_headerText: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#B91C1C',
+  },
+  deleteModal_body: {
+    padding: 20,
+    alignItems: 'center',
+  },
+  deleteModal_text: {
+    fontSize: 16,
+    color: '#374151',
+    textAlign: 'center',
+  },
+  deleteModal_footer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    padding: 20,
+    borderTopWidth: 1,
+    borderTopColor: '#E5E7EB',
+  },
+  deleteModal_cancelButton: {
+    backgroundColor: '#E5E7EB',
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 6,
+    flex: 1,
+    marginRight: 10,
+    alignItems: 'center',
+  },
+  deleteModal_cancelButtonText: {
+    color: '#374151',
+    fontWeight: '600',
+  },
+  deleteModal_deleteButton: {
+    backgroundColor: '#DC2626',
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 6,
+    flex: 1,
+    alignItems: 'center',
+  },
+  deleteModal_deleteButtonText: {
+    color: 'white',
+    fontWeight: '600',
+  },
+};
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     flexDirection: 'row',
-    backgroundColor: '#F5F5F5',
+    backgroundColor: '#f8f9fc',
   },
-  sidebar: {
-    width: '20%',
-    backgroundColor: '#1A3B32',
-    padding: 20,
-  },
-  sidebarCollapsed: {
-    width: '5%',
-  },
-  sidebarItem: {
-    marginBottom: 20,
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  sidebarText: {
-    color: '#F5F5F5',
-    fontSize: 18,
-    marginLeft: 10,
-  },
-  content: {
+  // Main content styles
+  mainContent: {
     flex: 1,
-    padding: 20,
+    backgroundColor: '#f8f9fc',
+    paddingHorizontal: 25,
+    paddingTop: 20,
+    paddingBottom: 10,
   },
-  header: {
-    fontSize: 20,
-    fontWeight: 'bold',
+  pageHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     marginBottom: 20,
   },
-  input: {
-    borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 5,
-    padding: 10,
-    marginBottom: 10,
-    backgroundColor: '#fff',
-    width: '100%',
-  },
-  button: {
-    backgroundColor: '#2E7D32',
-    padding: 10,
-    borderRadius: 5,
-    alignItems: 'center',
-    marginBottom: 10,
-    width: '100%',
-  },
-  buttonPrimary: {
-    backgroundColor: '#3b88c3',
-    padding: 10,
-    borderRadius: 5,
-    alignItems: 'center',
-    marginBottom: 10,
-    width: '100%',
-  },
-  buttonText: {
-    color: '#fff',
+  pageTitle: {
+    fontSize: 24,
     fontWeight: 'bold',
+    color: '#111827',
   },
-  quoteGrid: {
+  headerActions: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
+  },
+  actionButton: {
+    backgroundColor: '#10B981',
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 6,
+    marginLeft: 10,
+    shadowColor: '#10B981',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 3,
+    elevation: 2,
+  },
+  actionButtonText: {
+    color: 'white',
+    fontWeight: '600',
+    marginLeft: 8,
+  },
+  searchBar: {
+    flexDirection: 'row',
+    marginBottom: 20,
+  },
+  searchInput: {
+    flex: 1,
+    backgroundColor: 'white',
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    borderRadius: 6,
+    padding: 12,
+    paddingLeft: 16,
+    fontSize: 14,
+  },
+  searchButton: {
+    backgroundColor: '#10B981',
+    width: 48,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 6,
+    marginLeft: 8,
+  },
+  
+  // Table styles
+  tableWrapper: {
+    flex: 1,
   },
   tableContainer: {
-    width: '100%',
-    backgroundColor: '#fff',
+    backgroundColor: 'white',
     borderRadius: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 4,
     overflow: 'hidden',
     marginBottom: 20,
   },
   tableHeader: {
     flexDirection: 'row',
-    backgroundColor: '#2E7D32',
-    padding: 15,
+    backgroundColor: '#F3F4F6',
+    paddingVertical: 15,
+    paddingHorizontal: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E5E7EB',
   },
   tableHeaderText: {
-    flex: 1,
-    fontWeight: 'bold',
-    textAlign: 'center',
-    color: '#fff',
+    fontWeight: '600',
+    color: '#4B5563',
+    fontSize: 14,
   },
   tableRow: {
     flexDirection: 'row',
-    padding: 15,
     borderBottomWidth: 1,
-    borderBottomColor: '#eee',
-    backgroundColor: '#fff',
+    borderBottomColor: '#E5E7EB',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    alignItems: 'center',
   },
   tableCell: {
-    flex: 1,
-    textAlign: 'center',
+    fontSize: 14,
+    color: '#374151',
+  },
+  actionCell: {
+    flexDirection: 'row',
+    justifyContent: 'flex-start',
+  },
+  actionBtn: {
+    width: 34,
+    height: 34,
+    borderRadius: 6,
+    alignItems: 'center',
     justifyContent: 'center',
-    marginLeft: 25,
+    marginRight: 8,
   },
-  buttonEdit: {
-    backgroundColor: '#3498db',
-    padding: 8,
-    borderRadius: 5,
-    marginRight: 5,
-    marginBottom: 5,
-    width: '70%',
+  editBtn: {
+    backgroundColor: '#3B82F6',
+  },
+  deleteBtn: {
+    backgroundColor: '#EF4444',
+  },
+  
+  // Empty state
+  emptyState: {
     alignItems: 'center',
+    justifyContent: 'center',
+    padding: 40,
   },
-  buttonDelete: {
-    backgroundColor: '#e74c3c',
-    padding: 8,
-    borderRadius: 5,
-    marginBottom: 5,
-    width: '70%',
-    alignItems: 'center',
+  emptyStateText: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#4B5563',
+    marginTop: 16,
   },
-  searchCreateContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 20,
+  emptyStateSubText: {
+    fontSize: 14,
+    color: '#6B7280',
+    marginTop: 8,
   },
-  openModalButton: {
-    backgroundColor: '#3498db',
-    padding: 15,
-    borderRadius: 5,
-    alignItems: 'center',
-    width: 120,
-  },
-  openModalButtonText: {
-    color: '#fff',
-    fontWeight: 'bold',
-  },
-  exportButton: {
-    backgroundColor: '#3498db',
-    padding: 15,
-    borderRadius: 5,
-    alignItems: 'center',
-  },
-  exportButtonText: {
-    color: '#fff',
-    fontWeight: 'bold',
-    fontSize: 16,
-  },
-  searchContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    width: '50%',
-  },
-  searchInput: {
-    flex: 1,
-    borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 5,
-    padding: 15,
-    marginRight: 10,
-    backgroundColor: '#fff',
-  },
-  searchButton: {
-    backgroundColor: '#3498db',
-    padding: 15,
-    borderRadius: 5,
-    alignItems: 'center',
-  },
-  searchButtonText: {
-    color: '#fff',
-    fontWeight: 'bold',
-    fontSize: 16,
-  },
+  
+  // Modal styles
   modalOverlay: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    padding: 20,
   },
   modalContent: {
-    width: '80%',
-    backgroundColor: '#fff',
-    padding: 20,
+    width: '100%',
+    maxWidth: 500,
+    backgroundColor: 'white',
     borderRadius: 10,
-    alignItems: 'center',
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 16,
+    elevation: 10,
   },
   modalHeader: {
-    width: '100%',
-    backgroundColor: '#2E7D32',
-    padding: 10,
-    borderTopLeftRadius: 10,
-    borderTopRightRadius: 10,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    padding: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E5E7EB',
   },
   modalHeaderText: {
-    color: '#fff',
-    fontWeight: 'bold',
     fontSize: 18,
+    fontWeight: '600',
+    color: '#111827',
   },
   closeButton: {
     padding: 5,
   },
-  closeButtonText: {
-    color: '#fff',
-    fontWeight: 'bold',
-    fontSize: 18,
+  modalBody: {
+    padding: 20,
+    maxHeight: 400,
+  },
+  modalFooter: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    padding: 20,
+    borderTopWidth: 1,
+    borderTopColor: '#E5E7EB',
   },
   inputGroup: {
-    width: '100%',
-    marginBottom: 15,
+    marginBottom: 20,
   },
-  label: {
-    fontWeight: 'bold',
-    marginBottom: 5,
+  inputLabel: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#374151',
+    marginBottom: 8,
   },
+  input: {
+    borderWidth: 1,
+    borderColor: '#D1D5DB',
+    borderRadius: 6,
+    padding: 12,
+    fontSize: 14,
+    backgroundColor: '#F9FAFB',
+    color: '#111827',
+  },
+  textArea: {
+    height: 100,
+    textAlignVertical: 'top',
+  },
+  cancelButton: {
+    backgroundColor: '#E5E7EB',
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 6,
+    marginRight: 10,
+  },
+  cancelButtonText: {
+    color: '#374151',
+    fontWeight: '600',
+  },
+  submitButton: {
+    backgroundColor: '#10B981',
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 6,
+  },
+  submitButtonText: {
+    color: 'white',
+    fontWeight: '600',
+  },
+  ...additionalStyles
 });
 
 export default QuotesCRUD;

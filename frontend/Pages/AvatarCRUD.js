@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import {
-  View, Text, TouchableOpacity, StyleSheet, TextInput, Image, ScrollView, Modal, Alert, Platform, Button
+  View, Text, TouchableOpacity, StyleSheet, TextInput, Image, ScrollView, Modal, Alert, Platform, Animated
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { createAvatar, readAvatars, updateAvatar, deleteAvatar } from '../API/avatar_api';
 import * as ImagePicker from 'expo-image-picker';
 import * as FileSystem from 'expo-file-system';
 import { LinearGradient } from 'expo-linear-gradient';
-import { FontAwesome, FontAwesome5 } from '@expo/vector-icons';
+import { FontAwesome, FontAwesome5, Ionicons, MaterialIcons } from '@expo/vector-icons';
 import * as Print from 'expo-print';
 import { shareAsync } from 'expo-sharing';
 import jsPDF from 'jspdf';
@@ -26,6 +26,9 @@ const AvatarCRUD = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [filteredAvatars, setFilteredAvatars] = useState([]);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [headerAnimation] = useState(new Animated.Value(0));
+  const [deleteModalVisible, setDeleteModalVisible] = useState(false);
+  const [selectedAvatar, setSelectedAvatar] = useState(null);
 
   useEffect(() => {
     const fetchAvatars = async () => {
@@ -38,6 +41,13 @@ const AvatarCRUD = () => {
       }
     };
     fetchAvatars();
+    
+    // Animate header on mount
+    Animated.timing(headerAnimation, {
+      toValue: 1,
+      duration: 800,
+      useNativeDriver: true,
+    }).start();
   }, []);
 
   // Convert a local image to a Base64 string (or return remote URL)
@@ -267,21 +277,30 @@ const AvatarCRUD = () => {
   };
 
   const handleDeleteAvatar = async (avatarId) => {
-    if (!avatarId) {
-      console.error('Invalid avatar ID for deleting');
-      Toast.show({
-        type: 'error',
-        text1: 'Error',
-        text2: 'Invalid avatar ID. Please try again.',
-      });
-      return;
-    }
-
     try {
-      await deleteAvatar(avatarId); // Call the API to delete the avatar
-      const updatedAvatars = avatars.filter(avatar => avatar._id !== avatarId); // Remove the avatar from the local state
-      setAvatars(updatedAvatars);
-      setFilteredAvatars(updatedAvatars);
+      if (!avatarId) {
+        Toast.show({
+          type: 'error',
+          text1: 'Error',
+          text2: 'Invalid avatar ID',
+        });
+        return;
+      }
+
+      // Show loading indicator
+      Toast.show({
+        type: 'info',
+        text1: 'Deleting...',
+        text2: 'Please wait',
+      });
+
+      // Delete the avatar
+      await deleteAvatar(avatarId);
+
+      // Update the local state only after successful deletion
+      setAvatars(prevAvatars => prevAvatars.filter(avatar => avatar._id !== avatarId));
+      setFilteredAvatars(prevFiltered => prevFiltered.filter(avatar => avatar._id !== avatarId));
+
       Toast.show({
         type: 'success',
         text1: 'Success',
@@ -292,7 +311,7 @@ const AvatarCRUD = () => {
       Toast.show({
         type: 'error',
         text1: 'Error',
-        text2: 'Failed to delete avatar. Please try again.',
+        text2: error.message || 'Failed to delete avatar',
       });
     }
   };
@@ -325,120 +344,219 @@ const AvatarCRUD = () => {
     setSidebarCollapsed(!sidebarCollapsed);
   };
 
+  const renderDeleteButton = (item) => (
+    <TouchableOpacity 
+      style={[styles.actionBtn, styles.deleteBtn]} 
+      onPress={() => {
+        setSelectedAvatar(item._id);
+        setDeleteModalVisible(true);
+      }}
+    >
+      <FontAwesome name="trash" size={14} color="white" />
+    </TouchableOpacity>
+  );
+
   return (
     <View style={styles.container}>
       <Sidebar />
-      {/* Main Content */}
-      <View style={styles.content}>
-        <Text style={styles.header}>Avatars Management</Text>
-        <View style={styles.searchCreateContainer}>
-          <TouchableOpacity style={styles.openModalButton} onPress={handleOpenModal}>
-            <Text style={styles.openModalButtonText}>Create Avatar</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.exportButton} onPress={handleExportPDF}>
-            <Text style={styles.exportButtonText}>Export PDF</Text>
-          </TouchableOpacity>
-          <View style={styles.searchContainer}>
-            <TextInput
-              style={styles.searchInput}
-              placeholder="Search Avatars"
-              value={searchQuery}
-              onChangeText={setSearchQuery}
-            />
-            <TouchableOpacity style={styles.searchButton} onPress={handleSearch}>
-              <Text style={styles.searchButtonText}>Search</Text>
+      <View style={styles.mainContent}>
+        <Animated.View 
+          style={[
+            styles.pageHeader,
+            {
+              opacity: headerAnimation,
+              transform: [{ translateY: headerAnimation.interpolate({
+                inputRange: [0, 1],
+                outputRange: [-50, 0]
+              })}]
+            }
+          ]}
+        >
+          <Text style={styles.pageTitle}>Avatars Management</Text>
+          <View style={styles.headerActions}>
+            <TouchableOpacity style={styles.actionButton} onPress={handleOpenModal}>
+              <FontAwesome5 name="plus" size={14} color="white" />
+              <Text style={styles.actionButtonText}>Create Avatar</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.actionButton} onPress={handleExportPDF}>
+              <FontAwesome5 name="file-pdf" size={14} color="white" />
+              <Text style={styles.actionButtonText}>Export PDF</Text>
             </TouchableOpacity>
           </View>
+        </Animated.View>
+
+        <View style={styles.searchBar}>
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Search avatars by name or description..."
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+          />
+          <TouchableOpacity style={styles.searchButton} onPress={handleSearch}>
+            <FontAwesome name="search" size={16} color="white" />
+          </TouchableOpacity>
         </View>
 
-        {/* Avatar List */}
-        <ScrollView contentContainerStyle={styles.avatarGrid}>
+        <ScrollView style={styles.tableWrapper}>
           <View style={styles.tableContainer}>
             <View style={styles.tableHeader}>
-              <Text style={styles.tableHeaderText}>Image</Text>
-              <Text style={styles.tableHeaderText}>Name</Text>
-              <Text style={styles.tableHeaderText}>Description</Text>
-              <Text style={styles.tableHeaderText}>Actions</Text>
+              <Text style={[styles.tableHeaderText, {flex: 1}]}>Image</Text>
+              <Text style={[styles.tableHeaderText, {flex: 1}]}>Name</Text>
+              <Text style={[styles.tableHeaderText, {flex: 2}]}>Description</Text>
+              <Text style={[styles.tableHeaderText, {flex: 1}]}>Actions</Text>
             </View>
+            
             {filteredAvatars.map((item) => (
               <View style={styles.tableRow} key={item._id}>
-                <Image source={{ uri: item.url }} style={styles.avatarImage} />
-                <Text style={styles.tableCell}>{item.name}</Text>
-                <Text style={styles.tableCell}>{item.description}</Text>
-                <View style={styles.tableCell}>
-                  <TouchableOpacity style={styles.buttonEdit} onPress={() => handleEditAvatar(item)}>
-                    <Text style={styles.buttonText}>Edit</Text>
+                <View style={[styles.tableCell, {flex: 1}]}>
+                  <Image source={{ uri: item.url }} style={styles.avatarImage} />
+                </View>
+                <Text style={[styles.tableCell, {flex: 1}]}>{item.name}</Text>
+                <Text style={[styles.tableCell, {flex: 2}, styles.descriptionCell]} numberOfLines={2}>
+                  {item.description}
+                </Text>
+                <View style={[styles.tableCell, styles.actionCell, {flex: 1}]}>
+                  <TouchableOpacity 
+                    style={[styles.actionBtn, styles.editBtn]} 
+                    onPress={() => handleEditAvatar(item)}
+                  >
+                    <FontAwesome name="pencil" size={14} color="white" />
                   </TouchableOpacity>
-                  <TouchableOpacity style={styles.buttonDelete} onPress={() => handleDeleteAvatar(item._id)}>
-                    <Text style={styles.buttonText}>Delete</Text>
-                  </TouchableOpacity>
+                  {renderDeleteButton(item)}
                 </View>
               </View>
             ))}
+            
+            {filteredAvatars.length === 0 && (
+              <View style={styles.emptyState}>
+                <FontAwesome5 name="user-circle" size={48} color="#ccc" />
+                <Text style={styles.emptyStateText}>No avatars found</Text>
+                <Text style={styles.emptyStateSubText}>Try a different search or create a new avatar</Text>
+              </View>
+            )}
           </View>
         </ScrollView>
 
-        {/* Modal for Create/Update Avatar */}
         <Modal
-          animationType="slide"
+          animationType="fade"
           transparent={true}
           visible={modalVisible}
           onRequestClose={() => setModalVisible(false)}
         >
           <View style={styles.modalOverlay}>
             <View style={styles.modalContent}>
-              <LinearGradient colors={['#1A3B32', '#1A3B32']} style={styles.modalHeader}>
+              <View style={styles.modalHeader}>
                 <Text style={styles.modalHeaderText}>
-                  {editingAvatar ? 'Update Avatar' : 'Create Avatar'}
+                  {editingAvatar ? 'Update Avatar' : 'Create New Avatar'}
                 </Text>
                 <TouchableOpacity style={styles.closeButton} onPress={() => setModalVisible(false)}>
-                  <Text style={styles.closeButtonText}>X</Text>
+                  <FontAwesome name="times" size={20} color="#666" />
                 </TouchableOpacity>
-              </LinearGradient>
-
-              {/* Name Input */}
-              <View style={styles.inputGroup}>
-                <Text style={styles.label}>Name</Text>
-                <TextInput
-                  style={styles.input}
-                  placeholder="Enter avatar name"
-                  value={name}
-                  onChangeText={setName}
-                />
               </View>
 
-              {/* Description Input */}
-              <View style={styles.inputGroup}>
-                <Text style={styles.label}>Description</Text>
-                <TextInput
-                  style={styles.input}
-                  placeholder="Enter avatar description"
-                  value={description}
-                  onChangeText={setDescription}
-                />
-              </View>
+              <ScrollView style={styles.modalBody}>
+                <View style={styles.inputGroup}>
+                  <Text style={styles.inputLabel}>Name</Text>
+                  <TextInput
+                    style={styles.input}
+                    placeholder="Enter avatar name"
+                    value={name}
+                    onChangeText={setName}
+                  />
+                </View>
 
-              {/* Image Picker */}
-              <View style={styles.inputGroup}>
-                <Text style={styles.label}>Avatar Image</Text>
-                <TouchableOpacity style={styles.button} onPress={handlePickImage}>
-                  <Text style={styles.buttonText}>Pick an Image</Text>
+                <View style={styles.inputGroup}>
+                  <Text style={styles.inputLabel}>Description</Text>
+                  <TextInput
+                    style={[styles.input, styles.textArea]}
+                    placeholder="Enter avatar description"
+                    value={description}
+                    onChangeText={setDescription}
+                    multiline={true}
+                    numberOfLines={4}
+                  />
+                </View>
+
+                <View style={styles.inputGroup}>
+                  <Text style={styles.inputLabel}>Avatar Image</Text>
+                  <TouchableOpacity style={styles.fileButton} onPress={handlePickImage}>
+                    <FontAwesome5 name="image" size={16} color="white" />
+                    <Text style={styles.fileButtonText}>Select Image</Text>
+                  </TouchableOpacity>
+                  {file && (
+                    <View style={styles.previewContainer}>
+                      <Image source={{ uri: file.uri }} style={styles.imagePreviewModal} />
+                      <TouchableOpacity style={styles.removePreviewBtn} onPress={() => setFile(null)}>
+                        <FontAwesome name="times-circle" size={20} color="#ff4d4d" />
+                      </TouchableOpacity>
+                    </View>
+                  )}
+                </View>
+              </ScrollView>
+
+              <View style={styles.modalFooter}>
+                <TouchableOpacity 
+                  style={styles.cancelButton} 
+                  onPress={() => setModalVisible(false)}
+                >
+                  <Text style={styles.cancelButtonText}>Cancel</Text>
                 </TouchableOpacity>
-                {file ? (
-                  <Image source={{ uri: file.uri }} style={styles.imagePreview} />
-                ) : (
-                  <Text style={styles.noImageText}>No image selected</Text>
-                )}
+                <TouchableOpacity
+                  style={styles.submitButton}
+                  onPress={editingAvatar ? handleUpdateAvatar : handleCreateAvatar}
+                >
+                  <Text style={styles.submitButtonText}>
+                    {editingAvatar ? 'Update Avatar' : 'Create Avatar'}
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </Modal>
+
+        <Modal
+          visible={deleteModalVisible}
+          transparent
+          animationType="slide"
+        >
+          <View style={styles.deleteModal_overlay}>
+            <View style={styles.deleteModal_content}>
+              <View style={styles.deleteModal_header}>
+                <Text style={styles.deleteModal_headerText}>Confirm Delete</Text>
               </View>
 
-              <TouchableOpacity
-                style={styles.buttonPrimary}
-                onPress={editingAvatar ? handleUpdateAvatar : handleCreateAvatar}
-              >
-                <Text style={styles.buttonText}>
-                  {editingAvatar ? 'Update Avatar' : 'Create Avatar'}
+              <View style={styles.deleteModal_body}>
+                <Text style={styles.deleteModal_text}>
+                  Are you sure you want to delete this avatar?
                 </Text>
-              </TouchableOpacity>
+              </View>
+
+              <View style={styles.deleteModal_footer}>
+                <TouchableOpacity 
+                  onPress={() => setDeleteModalVisible(false)} 
+                  style={styles.deleteModal_cancelButton}
+                >
+                  <Text style={styles.deleteModal_cancelButtonText}>Cancel</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity 
+                  onPress={() => {
+                    if (selectedAvatar) {
+                      handleDeleteAvatar(selectedAvatar);
+                      setDeleteModalVisible(false);
+                    } else {
+                      Toast.show({
+                        type: 'error',
+                        text1: 'Error',
+                        text2: 'No avatar selected for deletion',
+                      });
+                    }
+                  }} 
+                  style={styles.deleteModal_deleteButton}
+                >
+                  <Text style={styles.deleteModal_deleteButtonText}>Delete</Text>
+                </TouchableOpacity>
+              </View>
             </View>
           </View>
         </Modal>
@@ -451,266 +569,433 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     flexDirection: 'row',
-    backgroundColor: '#F5F5F5',
+    backgroundColor: '#f8f9fc',
   },
+  // Modern Sidebar styles
   sidebar: {
-    width: '20%',
-    backgroundColor: '#1A3B32',
-    padding: 20,
+    width: 240,
+    height: '100%',
+    paddingVertical: 20,
+    paddingHorizontal: 0,
   },
   sidebarCollapsed: {
-    width: '5%',
+    width: 60,
+  },
+  sidebarTop: {
+    alignItems: 'center',
+    marginBottom: 25,
+  },
+  sidebarHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    position: 'relative',
+    width: '100%',
+  },
+  sidebarBrand: {
+    color: 'white',
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  collapseButton: {
+    position: 'absolute',
+    right: 5,
+  },
+  sidebarLogoCollapsed: {
+    marginTop: 10,
+    marginBottom: 20,
+  },
+  sidebarContent: {
+    flex: 1,
+  },
+  menuGroup: {
+    marginBottom: 22,
+  },
+  menuLabel: {
+    color: 'rgba(255, 255, 255, 0.6)',
+    fontSize: 11,
+    paddingHorizontal: 20,
+    marginBottom: 8,
+    fontWeight: '600',
+    letterSpacing: 0.5,
   },
   sidebarItem: {
-    marginBottom: 20,
     flexDirection: 'row',
     alignItems: 'center',
+    paddingVertical: 9,
+    paddingHorizontal: 20,
+    marginBottom: 1,
+  },
+  sidebarIconOnly: {
+    alignItems: 'center',
+    paddingVertical: 12,
+    width: 60,
+    marginBottom: 1,
+  },
+  activeMenuItem: {
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    borderLeftWidth: 3,
+    borderLeftColor: '#10B981',
   },
   sidebarText: {
-    color: '#F5F5F5',
-    fontSize: 18,
+    color: 'white',
+    fontSize: 13,
     marginLeft: 10,
   },
-  content: {
-    flex: 1,
-    padding: 20,
+  collapsedMenuItems: {
+    alignItems: 'center',
   },
-  header: {
-    fontSize: 20,
-    fontWeight: 'bold',
+  
+  // Main content styles
+  mainContent: {
+    flex: 1,
+    backgroundColor: '#f8f9fc',
+    paddingHorizontal: 25,
+    paddingTop: 20,
+    paddingBottom: 10,
+  },
+  pageHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     marginBottom: 20,
   },
-  input: {
-    borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 5,
-    padding: 10,
-    marginBottom: 10,
-    backgroundColor: '#fff',
-    width: '100%',
-  },
-  button: {
-    backgroundColor: '#2E7D32',
-    padding: 10,
-    borderRadius: 5,
-    alignItems: 'center',
-    marginBottom: 10,
-    width: '100%',
-  },
-  buttonPrimary: {
-    backgroundColor: '#3b88c3',
-    padding: 10,
-    borderRadius: 5,
-    alignItems: 'center',
-    marginBottom: 10,
-    width: '100%',
-  },
-  buttonText: {
-    color: '#fff',
+  pageTitle: {
+    fontSize: 24,
     fontWeight: 'bold',
+    color: '#111827',
   },
-  imagePreview: {
-    width: 100,
-    height: 100,
-    marginBottom: 10,
-    borderRadius: 5,
-  },
-  avatarGrid: {
+  headerActions: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
+  },
+  actionButton: {
+    backgroundColor: '#10B981',
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 6,
+    marginLeft: 10,
+    shadowColor: '#10B981',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 3,
+    elevation: 2,
+  },
+  actionButtonText: {
+    color: 'white',
+    fontWeight: '600',
+    marginLeft: 8,
+  },
+  searchBar: {
+    flexDirection: 'row',
+    marginBottom: 20,
+  },
+  searchInput: {
+    flex: 1,
+    backgroundColor: 'white',
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    borderRadius: 6,
+    padding: 12,
+    paddingLeft: 16,
+    fontSize: 14,
+  },
+  searchButton: {
+    backgroundColor: '#10B981',
+    width: 48,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 6,
+    marginLeft: 8,
+  },
+  
+  // Table styles
+  tableWrapper: {
+    flex: 1,
   },
   tableContainer: {
-    width: '100%',
-    backgroundColor: '#fff',
+    backgroundColor: 'white',
     borderRadius: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 4,
     overflow: 'hidden',
     marginBottom: 20,
   },
   tableHeader: {
     flexDirection: 'row',
-    backgroundColor: '#2E7D32',
-    padding: 15,
+    backgroundColor: '#F3F4F6',
+    paddingVertical: 15,
+    paddingHorizontal: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E5E7EB',
   },
   tableHeaderText: {
-    flex: 1,
-    fontWeight: 'bold',
-    textAlign: 'center',
-    color: '#fff',
+    fontWeight: '600',
+    color: '#4B5563',
+    fontSize: 14,
   },
   tableRow: {
     flexDirection: 'row',
-    padding: 15,
     borderBottomWidth: 1,
-    borderBottomColor: '#eee',
-    backgroundColor: '#fff',
-    marginLeft: 120,
+    borderBottomColor: '#E5E7EB',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    alignItems: 'center',
   },
   tableCell: {
-    flex: 1,
-    textAlign: 'center',
-    justifyContent: 'center',
-    marginLeft: 150,
+    fontSize: 14,
+    color: '#374151',
+  },
+  descriptionCell: {
+    fontSize: 14,
+    color: '#6B7280',
+  },
+  actionCell: {
+    flexDirection: 'row',
+    justifyContent: 'flex-start',
   },
   avatarImage: {
     width: 50,
     height: 50,
-    borderRadius: 5,
-    alignSelf: 'center',
-  },
-  buttonEdit: {
-    backgroundColor: '#3498db',
-    padding: 8,
-    borderRadius: 5,
-    marginRight: 5,
-    marginBottom: 5,
-    width: '45%',
-    alignItems: 'center',
-  },
-  buttonDelete: {
-    backgroundColor: '#e74c3c',
-    padding: 8,
-    borderRadius: 5,
-    marginBottom: 5,
-    width: '45%',
-    alignItems: 'center',
-  },
-  searchCreateContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-  openModalButton: {
-    backgroundColor: '#3498db',
-    padding: 15,
-    borderRadius: 5,
-    alignItems: 'center',
-    width: 120,
-  },
-  openModalButtonText: {
-    color: '#fff',
-    fontWeight: 'bold',
-  },
-  exportButton: {
-    backgroundColor: '#3498db',
-    padding: 15,
-    borderRadius: 5,
-    alignItems: 'center',
-    marginLeft: 1,
-  },
-  exportButtonText: {
-    color: '#fff',
-    fontWeight: 'bold',
-    fontSize: 16,
-  },
-  searchContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    width: '50%',
-  },
-  searchInput: {
-    flex: 1,
+    borderRadius: 25,
+    resizeMode: 'cover',
     borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 5,
-    padding: 15,
-    marginRight: 10,
-    backgroundColor: '#fff',
+    borderColor: '#E5E7EB',
   },
-  searchButton: {
-    backgroundColor: '#3498db',
-    padding: 15,
-    borderRadius: 5,
+  actionBtn: {
+    width: 34,
+    height: 34,
+    borderRadius: 6,
     alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 8,
   },
-  searchButtonText: {
-    color: '#fff',
-    fontWeight: 'bold',
-    fontSize: 16,
+  editBtn: {
+    backgroundColor: '#3B82F6',
   },
+  deleteBtn: {
+    backgroundColor: '#EF4444',
+  },
+  
+  // Empty state
+  emptyState: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 40,
+  },
+  emptyStateText: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#4B5563',
+    marginTop: 16,
+  },
+  emptyStateSubText: {
+    fontSize: 14,
+    color: '#6B7280',
+    marginTop: 8,
+  },
+  
+  // Modal styles
   modalOverlay: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    padding: 20,
   },
   modalContent: {
-    width: '50%',
-    backgroundColor: '#1A3B32',
-    padding: 20,
+    width: '100%',
+    maxWidth: 500,
+    backgroundColor: 'white',
     borderRadius: 10,
-    alignItems: 'center',
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 16,
+    elevation: 10,
   },
   modalHeader: {
-    width: '100%',
-    backgroundColor: '#2E7D32',
-    padding: 10,
-    borderTopLeftRadius: 10,
-    borderTopRightRadius: 10,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 20,
+    padding: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E5E7EB',
   },
   modalHeaderText: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#fff',
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#111827',
   },
   closeButton: {
-    padding: 10,
-    backgroundColor: '#fff',
-    borderRadius: 20,
+    padding: 5,
   },
-  closeButtonText: {
-    fontSize: 18,
-    color: '#333',
+  modalBody: {
+    padding: 20,
+    maxHeight: 400,
   },
-  sidebarCollapsed: {
-    width: 80,
-  },
-  sidebarContent: {
-    width: '100%',
-    alignItems: 'flex-start',
+  modalFooter: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    padding: 20,
+    borderTopWidth: 1,
+    borderTopColor: '#E5E7EB',
   },
   inputGroup: {
-    marginBottom: 15,
-    width: '100%',
+    marginBottom: 20,
   },
-  label: {
-    color: '#fff',
+  inputLabel: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#374151',
     marginBottom: 8,
-    fontSize: 16,
-    fontWeight: '600',
   },
   input: {
     borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 5,
+    borderColor: '#D1D5DB',
+    borderRadius: 6,
     padding: 12,
-    backgroundColor: '#fff',
-    fontSize: 16,
-  },
-  noImageText: {
-    color: '#fff',
     fontSize: 14,
+    backgroundColor: '#F9FAFB',
+    color: '#111827',
+  },
+  textArea: {
+    height: 100,
+    textAlignVertical: 'top',
+  },
+  fileButton: {
+    backgroundColor: '#10B981',
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 6,
     marginTop: 8,
+  },
+  fileButtonText: {
+    color: 'white',
+    fontWeight: '600',
+    marginLeft: 8,
+  },
+  previewContainer: {
+    position: 'relative',
+    marginTop: 10,
+  },
+  imagePreviewModal: {
+    width: '100%',
+    height: 200,
+    borderRadius: 6,
+    resizeMode: 'cover',
+  },
+  removePreviewBtn: {
+    position: 'absolute',
+    top: 5,
+    right: 5,
+    backgroundColor: 'white',
+    borderRadius: 50,
+    padding: 2,
+  },
+  cancelButton: {
+    backgroundColor: '#E5E7EB',
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 6,
+    marginRight: 10,
+  },
+  cancelButtonText: {
+    color: '#    374151',
+    fontWeight: '600',
+  },
+  submitButton: {
+    backgroundColor: '#10B981',
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 6,
+  },
+  submitButtonText: {
+    color: 'white',
+    fontWeight: '600',
+  },
+  // Delete Modal Styles
+  deleteModal_overlay: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    padding: 20,
+  },
+  deleteModal_content: {
+    width: '90%',
+    maxWidth: 400,
+    backgroundColor: 'white',
+    borderRadius: 10,
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 16,
+    elevation: 10,
+  },
+  deleteModal_header: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E5E7EB',
+  },
+  deleteModal_headerText: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#B91C1C', // Dark Red for danger
+  },
+  deleteModal_body: {
+    padding: 20,
+    alignItems: 'center',
+  },
+  deleteModal_text: {
+    fontSize: 16,
+    color: '#374151',
     textAlign: 'center',
   },
-  imagePreview: {
-    width: 120,
-    height: 120,
-    marginVertical: 10,
-    borderRadius: 8,
-    alignSelf: 'center',
+  deleteModal_footer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    padding: 20,
+    borderTopWidth: 1,
+    borderTopColor: '#E5E7EB',
   },
-  button: {
-    backgroundColor: '#2E7D32',
-    padding: 12,
+  deleteModal_cancelButton: {
+    backgroundColor: '#E5E7EB',
+    paddingVertical: 10,
+    paddingHorizontal: 16,
     borderRadius: 6,
+    flex: 1,
+    marginRight: 10,
     alignItems: 'center',
-    marginVertical: 8,
+  },
+  deleteModal_cancelButtonText: {
+    color: '#374151',
+    fontWeight: '600',
+  },
+  deleteModal_deleteButton: {
+    backgroundColor: '#DC2626',
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 6,
+    flex: 1,
+    alignItems: 'center',
+  },
+  deleteModal_deleteButtonText: {
+    color: 'white',
+    fontWeight: '600',
   },
 });
+
 export default AvatarCRUD;
+

@@ -1,5 +1,5 @@
 import React, { useRef, Suspense, useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Dimensions, Animated, Image, Modal, Platform, TouchableWithoutFeedback } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Dimensions, Animated, Image, Modal, Platform, TouchableWithoutFeedback, Linking } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { MaterialIcons } from 'react-native-vector-icons';
 import { Canvas } from '@react-three/fiber';
@@ -69,6 +69,39 @@ const Home = ({ navigation }) => {
 
   const modelScale = { x: 3, y: 3, z: 3 };
   const modelPosition = { x: 0, y: 0.5, z: 0 };
+
+  // Add these state variables inside your Home component
+  const [cardScales] = useState([
+    new Animated.Value(1),
+    new Animated.Value(1),
+    new Animated.Value(1),
+    new Animated.Value(1)
+  ]);
+
+  // Add this state near your other state declarations in the Home component
+  const [activeCardIndex, setActiveCardIndex] = useState(null);
+
+  // Modify the animateCard function
+  const animateCard = (index) => {
+    setActiveCardIndex(index); // Set active card
+    Animated.sequence([
+      Animated.spring(cardScales[index], {
+        toValue: 1.1,
+        useNativeDriver: true,
+        friction: 3,
+        tension: 40
+      }),
+      Animated.spring(cardScales[index], {
+        toValue: 1,
+        useNativeDriver: true,
+        friction: 3,
+        tension: 40
+      })
+    ]).start(() => {
+      // Reset active card after animation
+      setTimeout(() => setActiveCardIndex(null), 300);
+    });
+  };
 
   // Navbar component
   const Navbar = ({ navigation }) => {
@@ -415,9 +448,192 @@ const Home = ({ navigation }) => {
         <View style={styles.section} ref={contactRef}>
           <Contacts />
         </View>
+
+
+
+
+        {/* Team Section */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>
+            
+            The Minds behind FutureProof</Text>
+          <View style={styles.teamContainer}>
+            <Animated.View style={[styles.teamMemberCard, activeCardIndex === 0 && styles.activeTeamCard, { transform: [{ scale: cardScales[0] }] }]}>
+              <TouchableOpacity onPress={() => animateCard(0)}>
+              <View style={styles.imageWrapper}>
+  <Image 
+    source={require('../assets/member/team1.jpg')} 
+    style={styles.teamMemberImage} 
+  />
+  <TouchableOpacity style={styles.overlay} activeOpacity={0.8}>
+    <Text style={styles.overlayText}>Backend Development</Text>
+  </TouchableOpacity>
+
+                </View>
+                <Text style={[styles.teamMemberName, activeCardIndex === 0 && styles.activeText]}>
+                  Rene Cian Baloloy
+                </Text>
+                <Text style={[styles.teamMemberRole, activeCardIndex === 0 && styles.activeText]}>
+                  Backend Developer
+                </Text>
+                <View style={styles.socialLinks}>
+              
+     
+                </View>
+              </TouchableOpacity>
+            </Animated.View>
+
+            <Animated.View style={[styles.teamMemberCard, activeCardIndex === 1 && styles.activeTeamCard, { transform: [{ scale: cardScales[1] }] }]}>
+              <TouchableOpacity onPress={() => animateCard(1)}>
+                <View style={styles.imageWrapper}>
+                  <Image 
+                    source={require('../assets/member/team2.jpg')} 
+                    style={styles.teamMemberImage} 
+                  />
+                 <TouchableOpacity style={styles.overlay} activeOpacity={0.8}>
+                    <Text style={styles.overlayText}>UI/UX Design</Text>
+                    </TouchableOpacity>
+                  </View>
+   
+                <Text style={[styles.teamMemberName, activeCardIndex === 1 && styles.activeText]}>
+                  Rean Joy Cicat
+                </Text>
+                <Text style={[styles.teamMemberRole, activeCardIndex === 1 && styles.activeText]}>
+                  UI/UX Designer
+                </Text>
+                <View style={styles.socialLinks}>
+             
+                </View>
+              </TouchableOpacity>
+            </Animated.View>
+
+            <Animated.View style={[styles.teamMemberCard, activeCardIndex === 2 && styles.activeTeamCard, { transform: [{ scale: cardScales[2] }] }]}>
+              <TouchableOpacity onPress={() => animateCard(2)}>
+                <View style={styles.imageWrapper}>
+                  <Image 
+                    source={require('../assets/member/team3.png')} 
+                    style={styles.teamMemberImage} 
+                  />
+             <TouchableOpacity style={styles.overlay} activeOpacity={0.8}>
+                    <Text style={styles.overlayText}>Frontend Development</Text>
+                    </TouchableOpacity>
+                </View>
+                <Text style={[styles.teamMemberName, activeCardIndex === 2 && styles.activeText]}>
+                  Mark Al Bartolome
+                </Text>
+                <Text style={[styles.teamMemberRole, activeCardIndex === 2 && styles.activeText]}>
+                  Frontend Developer
+                </Text>
+                <View style={styles.socialLinks}>
+                
+                </View>
+              </TouchableOpacity>
+            </Animated.View>
+
+            <Animated.View style={[styles.teamMemberCard, activeCardIndex === 3 && styles.activeTeamCard, { transform: [{ scale: cardScales[3] }] }]}>
+              <TouchableOpacity onPress={() => animateCard(3)}>
+                <View style={styles.imageWrapper}>
+                  <Image 
+                    source={require('../assets/member/team4.jpg')} 
+                    style={styles.teamMemberImage} 
+                  />
+                <TouchableOpacity style={styles.overlay} activeOpacity={0.8}>
+                    <Text style={styles.overlayText}>Full Stack Development</Text>
+                    </TouchableOpacity>
+                </View>
+                <Text style={[styles.teamMemberName, activeCardIndex === 3 && styles.activeText]}>
+                  Daniel Davis
+                </Text>
+                <Text style={[styles.teamMemberRole, activeCardIndex === 3 && styles.activeText]}>
+                  Full Stack Developer
+                </Text>
+                <View style={styles.socialLinks}>
+                
+                </View>
+              </TouchableOpacity>
+            </Animated.View>
+          </View>
+        </View>
+       
+        {/* Footer Section */}
+<View style={styles.footer}>
+  <View style={styles.footerContent}>
+    <View style={styles.footerSection}>
+      <Image source={require('../assets/logo.png')} style={styles.footerLogo} />
+      <Text style={styles.footerTitle}>FutureProof</Text>
+      <Text style={styles.footerText}>
+        Empowering your wellness journey through gamification and AI-driven insights.
+      </Text>
+    </View>
+    <View style={styles.footerLinksContainer}>
+      <View style={styles.footerColumn}>
+        <View style={styles.footerLinkSection}>
+          <Text style={styles.footerLinkTitle}>Quick Links</Text>
+          <TouchableOpacity onPress={() => scrollToSection('about')}>
+            <Text style={styles.footerLink}>About</Text>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={() => scrollToSection('features')}>
+            <Text style={styles.footerLink}>Features</Text>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={() => scrollToSection('contact')}>
+            <Text style={styles.footerLink}>Contact</Text>
+          </TouchableOpacity>
+          <Text style={[styles.footerLinkTitle, { marginTop: 30 }]}>Technologies we Used</Text>
+          <View style={styles.techLogos}>
+            <Image source={require('../assets/tech/1.png')} style={styles.techLogo} />
+            <Image source={require('../assets/tech/2.png')} style={styles.techLogo} />
+            <Image source={require('../assets/tech/3.png')} style={styles.techLogo} />
+            <Image source={require('../assets/tech/4.png')} style={styles.techLogo} />
+            <Image source={require('../assets/tech/5.png')} style={styles.techLogo} />
+            <Image source={require('../assets/tech/6.png')} style={styles.techLogo} />
+            <Image source={require('../assets/tech/7.png')} style={styles.techLogo} />
+            <Image source={require('../assets/tech/8.png')} style={styles.techLogo} />
+          </View>
+        </View>
+      </View>
+      <View style={styles.footerLinkSection}>
+        <Text style={styles.footerLinkTitle}>Connect</Text>
+        <TouchableOpacity>
+          <Text style={styles.footerLink}>LinkedIn</Text>
+        </TouchableOpacity>
+        <TouchableOpacity>
+          <Text style={styles.footerLink}>GitHub</Text>
+        </TouchableOpacity>
+        <TouchableOpacity>
+          <Text style={styles.footerLink}>Email</Text>
+        </TouchableOpacity>
+      </View>
+    </View>
+  </View>
+  
+  {/* Move footerBottom outside of footerContent */}
+  <View style={[styles.footerBottom, { marginTop: 'auto' }]}>
+    <Text style={styles.copyright}>
+      © {new Date().getFullYear()} FutureProof. All rights reserved.
+    </Text>
+    <View style={styles.footerSocial}>
+      <TouchableOpacity style={styles.socialIcon} onPress={() => Linking.openURL('mailto:davmarrearen@gmail.com')}>
+        <Icon name="github" size={20} color="#ffffff" />
+      </TouchableOpacity>
+      <TouchableOpacity style={styles.socialIcon} onPress={() => Linking.openURL('mailto:davmarrearen@gmail.com')}>
+        <Icon name="linkedin" size={20} color="#ffffff" />
+      </TouchableOpacity>
+      <TouchableOpacity style={styles.socialIcon} onPress={() => Linking.openURL('mailto:davmarrearen@gmail.com')}>
+        <Icon name="envelope" size={20} color="#ffffff" />
+      </TouchableOpacity>
+    </View>
+  </View>
+</View>
+   
+
+
       </ScrollView>
+
+      
     </LinearGradient>
+    
   );
+  
 };
 
 const styles = StyleSheet.create({
@@ -427,10 +643,15 @@ const styles = StyleSheet.create({
   scrollViewContent: {
     flexGrow: 1,
     padding: isMobile ? 20 : 40,
-    paddingBottom: 40,
+    paddingBottom: 0,
+    paddingLeft: 0, // Remove left padding
+    paddingRight: 0, // Remove right padding
   },
   section: {
     marginBottom: 40,
+    paddingHorizontal: 20, // Add horizontal padding to sections
+    width: '100%',
+    alignSelf: 'center',
   },
   header: {
     flexDirection: isMobile ? 'column' : 'row',
@@ -940,6 +1161,254 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.2,
     shadowRadius: 4,
     elevation: 5,
+  },
+  sectionTitle: {
+    fontSize: isMobile ? 40 : 60,
+    fontWeight: 'bold',
+    color: '#ffffff',
+    textAlign: 'center',
+    marginTop: 30,
+    marginBottom: 20,
+  
+  },
+
+  teamContainer: {
+    flexDirection: isMobile ? 'column' : 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+    gap: 30,
+    paddingHorizontal: 20,
+  },
+  teamMemberCard: {
+    
+    backgroundColor: '#ffffff',
+    borderRadius: 20,
+    padding: 20,
+    alignItems: 'center',
+    width: isMobile ? '100%' : 280,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 5,
+    transform: [{ translateY: 0 }],
+    transition: 'transform 0.3s ease',
+    '&:hover': {
+      '& .overlay': {
+        opacity: 1, // Show on hover
+      }
+    }
+  },
+  imageWrapper: {
+    position: 'relative',
+    marginBottom: 20,
+    overflow: 'hidden',
+    borderRadius: 100, // Make it perfectly circular
+    width: 200, // Match the image width
+    height: 200, // Match the image height
+    borderWidth: 4, // Add thick border
+    borderColor: '#388E3C', // Green border color
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 5,
+  },
+  teamMemberImage: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 100, // Make image circular to match wrapper
+  },
+  
+  overlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(20, 36, 59, 0.7)', // Semi-transparent background
+    justifyContent: 'center',
+    alignItems: 'center',
+    opacity: 0, // Start invisible
+    transition: '0.3s ease',
+  },
+  overlayText: {
+    color: '#ffffff',
+    fontSize: 18,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    padding: 10,
+  },
+  teamMemberName: {
+    fontSize: 22,
+    fontWeight: 'bold',
+    color: '#14243b',
+    marginBottom: 5,
+    textAlign: 'center', // Add this line
+    width: '100%', // Add this line
+  },
+  teamMemberRole: {
+    fontSize: 16,
+    color: '#388E3C',
+    marginBottom: 15,
+    textAlign: 'center', // Add this line
+    width: '100%', // Add this line
+  },
+  socialLinks: {
+    flexDirection: 'row',
+    justifyContent: 'center', // Center the social buttons
+    alignItems: 'center',
+    width: '100%',
+    gap: 15,
+    marginTop: 10,
+  },
+  socialButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#f0f0f0',
+    justifyContent: 'center',
+    alignItems: 'center',
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.2,
+    shadowRadius: 2,
+  },
+  activeTeamCard: {
+    backgroundColor: '#1B5E20', // Dark green background when active
+  },
+  activeText: {
+    color: '#ffffff', // White text for active card
+  },
+
+  // Add to your StyleSheet
+  techLogosContainer: {
+    marginTop: 20,
+    width: isMobile ? '100%' : '30%', // Match footerSection width
+    alignItems: 'flex-start', // Align content to the left like footerSection
+    paddingHorizontal: 20,
+  },
+  
+  techLogos: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'flex-start', // Align to the left
+    gap: 15,
+    marginTop: 15,
+  },
+  techLogo: {
+    width: 35,
+    height: 35,
+    resizeMode: 'contain',
+    opacity: 0.8,
+  },
+  
+  footer: {
+    backgroundColor: '#14243b',
+    paddingTop: 40,
+    paddingBottom: 0, // Remove bottom padding
+    marginTop: 40,
+    borderTopLeftRadius: 110,
+    borderTopRightRadius: 110,
+    marginBottom: -40,
+    marginHorizontal: -40,
+    alignSelf: 'stretch',
+    width: '105vw',
+    display: 'flex',
+    flexDirection: 'column',
+    minHeight: 300,
+  },
+  
+  footerBottom: {
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(255, 255, 255, 0.1)',
+    paddingVertical: 20,
+    alignItems: 'center',
+    width: '100%',
+    backgroundColor: 'rgba(0, 0, 0, 0.1)', // Optional: slightly darker background
+    marginTop: 'auto', // Push to bottom
+  },
+  
+  footerContent: {
+    flexDirection: isMobile ? 'column' : 'row',
+    justifyContent: 'space-around',
+    paddingHorizontal: 20,
+    marginBottom: 30,
+  },
+  footerSection: {
+    maxWidth: isMobile ? '100%' : '30%',
+    marginBottom: isMobile ? 30 : 0,
+  },
+  footerLogo: {
+    width: 60,
+    height: 60,
+    resizeMode: 'contain',
+    marginBottom: 10,
+  },
+  footerTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#ffffff',
+    marginBottom: 10,
+  },
+  footerText: {
+    fontSize: 14,
+    color: '#ffffff',
+    opacity: 0.8,
+    lineHeight: 20,
+  },
+  footerLinksContainer: {
+    flexDirection: isMobile ? 'column' : 'row',
+    gap: 40,
+  },
+  footerLinkSection: {
+    marginBottom: isMobile ? 20 : 0,
+  },
+  footerLinkTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#ffffff',
+    marginBottom: 10,
+  },
+  footerLink: {
+    fontSize: 14,
+    color: '#ffffff',
+    opacity: 0.8,
+    marginBottom: 10,
+  },
+  footerBottom: {
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(255, 255, 255, 0.1)',
+    paddingVertical: 20,
+    alignItems: 'center',
+    width: '100%',
+    backgroundColor: 'rgba(0, 0, 0, 0.1)', // Optional: slightly darker background
+    marginTop: 'auto', // Push to bottom
+  },
+  copyright: {
+    fontSize: 14,
+    color: '#ffffff',
+    opacity: 0.8,
+    marginBottom: isMobile ? 15 : 5,
+  },
+  footerSocial: {
+    flexDirection: 'row',
+    justifyContent: 'center', // Center the icons
+    width: '100%', // Take full width
+    gap: 40, // Increase gap between social icons
+  },
+  
+  socialIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  footerColumn: {
+    flex: 1,
   },
 });
 

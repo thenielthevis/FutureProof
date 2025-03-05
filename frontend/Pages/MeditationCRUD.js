@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import {
-  View, Text, TouchableOpacity, StyleSheet, TextInput, Image, ScrollView, Modal, Alert, Platform, Button
+  View, Text, TouchableOpacity, StyleSheet, TextInput, Image, ScrollView, Modal, Alert, Platform, Button, Animated
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { createMeditationBreathingExercise, getMeditationBreathingExercises, updateMeditationBreathingExercise, deleteMeditationBreathingExercise } from '../API/meditation_api';
@@ -8,7 +8,7 @@ import * as ImagePicker from 'expo-image-picker';
 import * as FileSystem from 'expo-file-system';
 import * as DocumentPicker from 'expo-document-picker';
 import { LinearGradient } from 'expo-linear-gradient';
-import { FontAwesome, FontAwesome5 } from '@expo/vector-icons';
+import { FontAwesome, FontAwesome5, Ionicons, MaterialIcons } from '@expo/vector-icons';
 import * as Print from 'expo-print';
 import { shareAsync } from 'expo-sharing';
 import jsPDF from 'jspdf';
@@ -29,6 +29,9 @@ const MeditationCRUD = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [filteredMeditations, setFilteredMeditations] = useState([]);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [headerAnimation] = useState(new Animated.Value(0));
+  const [deleteModalVisible, setDeleteModalVisible] = useState(false);
+  const [selectedMeditation, setSelectedMeditation] = useState(null);
 
   useEffect(() => {
     const fetchMeditations = async () => {
@@ -38,9 +41,21 @@ const MeditationCRUD = () => {
         setFilteredMeditations(meditationsData);
       } catch (error) {
         console.error('Error fetching meditations:', error);
+        Toast.show({
+          type: 'error',
+          text1: 'Error',
+          text2: 'Failed to fetch meditations. Please try again.',
+        });
       }
     };
     fetchMeditations();
+    
+    // Animate header on mount
+    Animated.timing(headerAnimation, {
+      toValue: 1,
+      duration: 800,
+      useNativeDriver: true,
+    }).start();
   }, []);
 
   const convertImageToBase64 = async (uri) => {
@@ -314,6 +329,11 @@ const MeditationCRUD = () => {
       }
       setModalVisible(false);
       resetForm();
+      
+      // Refresh the meditations list
+      const refreshedMeditations = await getMeditationBreathingExercises();
+      setMeditations(refreshedMeditations);
+      setFilteredMeditations(refreshedMeditations);
     } catch (error) {
       console.error('Error in handleCreateOrUpdateMeditation:', error);
       Toast.show({
@@ -401,40 +421,56 @@ const MeditationCRUD = () => {
   return (
     <View style={styles.container}>
       <Sidebar />
-      <View style={styles.content}>
-        <Text style={styles.header}>Meditation Management</Text>
-        <View style={styles.searchCreateContainer}>
-          <TouchableOpacity style={styles.openModalButton} onPress={handleOpenModal}>
-            <Text style={styles.openModalButtonText}>Create Meditation</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.exportButton} onPress={handleExportPDF}>
-            <Text style={styles.exportButtonText}>Export PDF</Text>
-          </TouchableOpacity>
-          <View style={styles.searchContainer}>
-            <TextInput
-              style={styles.searchInput}
-              placeholder="Search Meditations"
-              value={searchQuery}
-              onChangeText={setSearchQuery}
-            />
-            <TouchableOpacity style={styles.searchButton} onPress={handleSearch}>
-              <Text style={styles.searchButtonText}>Search</Text>
+      <View style={styles.mainContent}>
+        <Animated.View 
+          style={[
+            styles.pageHeader,
+            {
+              opacity: headerAnimation,
+              transform: [{ translateY: headerAnimation.interpolate({
+                inputRange: [0, 1],
+                outputRange: [-50, 0]
+              })}]
+            }
+          ]}
+        >
+          <Text style={styles.pageTitle}>Meditation Management</Text>
+          <View style={styles.headerActions}>
+            <TouchableOpacity style={styles.actionButton} onPress={handleOpenModal}>
+              <FontAwesome5 name="plus" size={14} color="white" />
+              <Text style={styles.actionButtonText}>Create Meditation</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.actionButton} onPress={handleExportPDF}>
+              <FontAwesome5 name="file-pdf" size={14} color="white" />
+              <Text style={styles.actionButtonText}>Export PDF</Text>
             </TouchableOpacity>
           </View>
+        </Animated.View>
+
+        <View style={styles.searchBar}>
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Search meditations by name or description..."
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+          />
+          <TouchableOpacity style={styles.searchButton} onPress={handleSearch}>
+            <FontAwesome name="search" size={16} color="white" />
+          </TouchableOpacity>
         </View>
 
-        {/* Meditation List */}
-        <ScrollView horizontal>
+        <ScrollView style={styles.tableWrapper}>
           <View style={styles.tableContainer}>
             <View style={styles.tableHeader}>
-              <Text style={[styles.tableHeaderCell, { flex: 1 }]}>Video</Text>
-              <Text style={[styles.tableHeaderCell, { flex: 1 }]}>Name</Text>
-              <Text style={[styles.tableHeaderCell, { flex: 2 }]}>Description</Text>
-              <Text style={[styles.tableHeaderCell, { flex: 1 }]}>Actions</Text>
+              <Text style={[styles.tableHeaderText, {flex: 0.7}]}>Video</Text>
+              <Text style={[styles.tableHeaderText, {flex: 1}]}>Name</Text>
+              <Text style={[styles.tableHeaderText, {flex: 2}]}>Description</Text>
+              <Text style={[styles.tableHeaderText, {flex: 1}]}>Actions</Text>
             </View>
+            
             {filteredMeditations.map((item) => (
               <View style={styles.tableRow} key={item._id}>
-                <View style={[styles.tableCell, { flex: 1 }]}>
+                <View style={[styles.tableCell, {flex: 0.7}]}>
                   <Video
                     source={{ uri: item.url }}
                     style={styles.videoThumbnail}
@@ -444,34 +480,45 @@ const MeditationCRUD = () => {
                     volume={0}
                   />
                 </View>
-                <Text style={[styles.tableCell, { flex: 1 }]}>{item.name}</Text>
-                <Text style={[styles.tableCell, { flex: 2 }]} numberOfLines={2}>
+                <Text style={[styles.tableCell, {flex: 1}]}>{item.name}</Text>
+                <Text style={[styles.tableCell, {flex: 2}, styles.descriptionCell]} numberOfLines={2}>
                   {item.description}
                 </Text>
-                <View style={[styles.tableCell, { flex: 1 }]}>
+                <View style={[styles.tableCell, styles.actionCell, {flex: 1}]}>
                   <View style={styles.actionButtons}>
-                    <TouchableOpacity
-                      style={styles.editButton}
+                    <TouchableOpacity 
+                      style={[styles.actionBtn, styles.editBtn]} 
                       onPress={() => handleEditMeditation(item)}
                     >
-                      <FontAwesome name="edit" size={20} color="#fff" />
+                      <FontAwesome name="pencil" size={14} color="white" />
                     </TouchableOpacity>
-                    <TouchableOpacity
-                      style={styles.deleteButton}
-                      onPress={() => handleDeleteMeditation(item._id)}
+                    <TouchableOpacity 
+                      style={[styles.actionBtn, styles.deleteBtn]} 
+                      onPress={() => {
+                        setSelectedMeditation(item._id);
+                        setDeleteModalVisible(true);
+                      }}
                     >
-                      <FontAwesome name="trash" size={20} color="#fff" />
+                      <FontAwesome name="trash" size={14} color="white" />
                     </TouchableOpacity>
                   </View>
                 </View>
               </View>
             ))}
+            
+            {filteredMeditations.length === 0 && (
+              <View style={styles.emptyState}>
+                <FontAwesome5 name="spa" size={48} color="#ccc" />
+                <Text style={styles.emptyStateText}>No meditations found</Text>
+                <Text style={styles.emptyStateSubText}>Try a different search or create a new meditation</Text>
+              </View>
+            )}
           </View>
         </ScrollView>
 
-        {/* Modal for Create/Update Meditation */}
+        {/* Create/Update Modal */}
         <Modal
-          animationType="slide"
+          animationType="fade"
           transparent={true}
           visible={modalVisible}
           onRequestClose={() => setModalVisible(false)}
@@ -480,7 +527,7 @@ const MeditationCRUD = () => {
             <View style={styles.modalContent}>
               <View style={styles.modalHeader}>
                 <Text style={styles.modalHeaderText}>
-                  {editingMeditation ? 'Update Meditation' : 'Create Meditation'}
+                  {editingMeditation ? 'Update Meditation' : 'Create New Meditation'}
                 </Text>
                 <TouchableOpacity 
                   style={styles.closeButton} 
@@ -493,74 +540,149 @@ const MeditationCRUD = () => {
                 </TouchableOpacity>
               </View>
 
-              <ScrollView>
-                <TextInput
-                  style={styles.input}
-                  placeholder="Name"
-                  value={name}
-                  onChangeText={setName}
-                />
-                <TextInput
-                  style={styles.input}
-                  placeholder="Description"
-                  value={description}
-                  onChangeText={setDescription}
-                  multiline
-                />
-                {instructionsList.map((instruction, index) => (
-                  <View key={index} style={styles.instructionContainer}>
-                    <TextInput
-                      style={[styles.input, { flex: 1 }]}
-                      placeholder={`Instruction ${index + 1}`}
-                      value={instruction}
-                      onChangeText={(value) => handleInstructionChange(index, value)}
-                      multiline
-                    />
-                    <TouchableOpacity
-                      style={styles.removeInstructionButton}
-                      onPress={() => handleRemoveInstruction(index)}
-                    >
-                      <FontAwesome name="minus-circle" size={20} color="#e74c3c" />
-                    </TouchableOpacity>
-                  </View>
-                ))}
-                <TouchableOpacity style={styles.addInstructionButton} onPress={handleAddInstruction}>
-                  <FontAwesome name="plus-circle" size={20} color="#3498db" />
-                  <Text style={styles.addInstructionButtonText}>Add Instruction</Text>
-                </TouchableOpacity>
+              <ScrollView style={styles.modalBody}>
+                <View style={styles.inputGroup}>
+                  <Text style={styles.inputLabel}>Name</Text>
+                  <TextInput
+                    style={styles.input}
+                    placeholder="Enter meditation name"
+                    value={name}
+                    onChangeText={setName}
+                  />
+                </View>
 
                 <View style={styles.inputGroup}>
-                  <Text style={styles.label}>Meditation Video</Text>
-                  <TouchableOpacity style={styles.uploadButton} onPress={handlePickVideo}>
-                    <FontAwesome name="upload" size={20} color="#fff" />
-                    <Text style={styles.uploadButtonText}>
-                      {editingMeditation ? 'Update Video' : 'Upload Video'}
-                    </Text>
-                  </TouchableOpacity>
-                  {file ? (
-                    <Video source={{ uri: file.uri }} style={styles.videoPreview} resizeMode="contain" repeat={true} paused={false} volume={0} />
-                  ) : (
-                    <Text style={styles.noVideoText}>No video selected</Text>
-                  )}
+                  <Text style={styles.inputLabel}>Description</Text>
+                  <TextInput
+                    style={[styles.input, styles.textArea]}
+                    placeholder="Enter meditation description"
+                    value={description}
+                    onChangeText={setDescription}
+                    multiline={true}
+                    numberOfLines={4}
+                  />
                 </View>
 
-                <View style={styles.buttonContainer}>
-                  <TouchableOpacity
-                    style={styles.button}
-                    onPress={handleCreateOrUpdateMeditation}
-                  >
-                    <Text style={styles.buttonText}>
-                      {editingMeditation ? 'Update Meditation' : 'Create Meditation'}
-                    </Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    style={[styles.button, styles.cancelButton]}
-                    onPress={() => setModalVisible(false)}
-                  >
-                    <Text style={styles.buttonText}>Cancel</Text>
+                {/* Instructions Section */}
+                <View style={styles.inputGroup}>
+                  <Text style={styles.inputLabel}>Instructions</Text>
+                  {instructionsList.map((instruction, index) => (
+                    <View key={index} style={styles.instructionContainer}>
+                      <TextInput
+                        style={[styles.input, { flex: 1 }]}
+                        placeholder={`Instruction ${index + 1}`}
+                        value={instruction}
+                        onChangeText={(value) => handleInstructionChange(index, value)}
+                        multiline
+                      />
+                      <TouchableOpacity
+                        style={styles.removeInstructionButton}
+                        onPress={() => handleRemoveInstruction(index)}
+                      >
+                        <FontAwesome name="minus-circle" size={20} color="#e74c3c" />
+                      </TouchableOpacity>
+                    </View>
+                  ))}
+                  <TouchableOpacity style={styles.addInstructionButton} onPress={handleAddInstruction}>
+                    <FontAwesome name="plus-circle" size={20} color="#3498db" />
+                    <Text style={styles.addInstructionButtonText}>Add Instruction</Text>
                   </TouchableOpacity>
                 </View>
+
+                {/* Video Upload Section */}
+                <View style={styles.inputGroup}>
+                  <Text style={styles.inputLabel}>Meditation Video</Text>
+                  <TouchableOpacity style={styles.fileButton} onPress={handlePickVideo}>
+                    <FontAwesome5 name="video" size={16} color="white" />
+                    <Text style={styles.fileButtonText}>
+                      {editingMeditation ? 'Change Video' : 'Upload Video'}
+                    </Text>
+                  </TouchableOpacity>
+                  {file && (
+                    <View style={styles.previewContainer}>
+                      <Video 
+                        source={{ uri: file.uri }} 
+                        style={styles.videoPreview} 
+                        resizeMode="contain" 
+                        repeat={true}
+                        paused={false}
+                        volume={0}
+                      />
+                      <TouchableOpacity 
+                        style={styles.removePreviewBtn} 
+                        onPress={() => setFile(null)}
+                      >
+                        <FontAwesome name="times-circle" size={20} color="#ff4d4d" />
+                      </TouchableOpacity>
+                    </View>
+                  )}
+                </View>
               </ScrollView>
+
+              <View style={styles.modalFooter}>
+                <TouchableOpacity 
+                  style={styles.cancelButton} 
+                  onPress={() => setModalVisible(false)}
+                >
+                  <Text style={styles.cancelButtonText}>Cancel</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.submitButton}
+                  onPress={editingMeditation ? handleCreateOrUpdateMeditation : handleCreateOrUpdateMeditation}
+                >
+                  <Text style={styles.submitButtonText}>
+                    {editingMeditation ? 'Update Meditation' : 'Create Meditation'}
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </Modal>
+
+        {/* Delete Confirmation Modal */}
+        <Modal
+          visible={deleteModalVisible}
+          transparent
+          animationType="slide"
+        >
+          <View style={styles.deleteModal_overlay}>
+            <View style={styles.deleteModal_content}>
+              <View style={styles.deleteModal_header}>
+                <Text style={styles.deleteModal_headerText}>Confirm Delete</Text>
+              </View>
+
+              <View style={styles.deleteModal_body}>
+                <Text style={styles.deleteModal_text}>
+                  Are you sure you want to delete this meditation?
+                </Text>
+              </View>
+
+              <View style={styles.deleteModal_footer}>
+                <TouchableOpacity 
+                  onPress={() => setDeleteModalVisible(false)} 
+                  style={styles.deleteModal_cancelButton}
+                >
+                  <Text style={styles.deleteModal_cancelButtonText}>Cancel</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity 
+                  onPress={() => {
+                    if (selectedMeditation) {
+                      handleDeleteMeditation(selectedMeditation);
+                      setDeleteModalVisible(false);
+                    } else {
+                      Toast.show({
+                        type: 'error',
+                        text1: 'Error',
+                        text2: 'No meditation selected for deletion',
+                      });
+                    }
+                  }} 
+                  style={styles.deleteModal_deleteButton}
+                >
+                  <Text style={styles.deleteModal_deleteButtonText}>Delete</Text>
+                </TouchableOpacity>
+              </View>
             </View>
           </View>
         </Modal>
@@ -573,45 +695,64 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     flexDirection: 'row',
-    backgroundColor: '#F5F5F5',
+    backgroundColor: '#f8f9fc',
   },
-  sidebar: {
-    width: '20%',
-    backgroundColor: '#1A3B32',
-    padding: 20,
-  },
-  sidebarCollapsed: {
-    width: '5%',
-  },
-  sidebarItem: {
-    marginBottom: 20,
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  sidebarText: {
-    color: '#F5F5F5',
-    fontSize: 18,
-    marginLeft: 10,
-  },
-  content: {
+  mainContent: {
     flex: 1,
-    padding: 20,
+    backgroundColor: '#f8f9fc',
+    paddingHorizontal: 25,
+    paddingTop: 20,
+    paddingBottom: 10,
   },
-  header: {
-    fontSize: 24,
-    marginBottom: 20,
-  },
-  searchCreateContainer: {
+  pageHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 20,
   },
-  openModalButton: {
-    backgroundColor: '#3498db',
-    padding: 15,
-    borderRadius: 5,
+  pageTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#111827',
+  },
+  headerActions: {
+    flexDirection: 'row',
+  },
+  actionButton: {
+    backgroundColor: '#10B981',
+    flexDirection: 'row',
     alignItems: 'center',
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 6,
+    marginLeft: 10,
+    shadowColor: '#10B981',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 3,
+    elevation: 2,
+  },
+  header: {
+    fontSize: 24,
+    marginBottom: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  searchCreateContainer: {
+    flexDirection: 'row',
+    padding: 16,
+    borderTopWidth: 1,
+    borderTopColor: '#E5E7EB',
+  },
+  actionBtn: {
+    width: 34,
+    height: 34,
+    borderRadius: 6,
+    alignItems: 'center',
+    justifyContent: 'center', // Add this for better centering
   },
   openModalButtonText: {
     color: '#fff',
@@ -630,11 +771,11 @@ const styles = StyleSheet.create({
     marginRight: 10,
     backgroundColor: '#fff',
   },
-  searchButton: {
-    backgroundColor: '#3498db',
-    padding: 15,
-    borderRadius: 5,
-    alignItems: 'center',
+  emptyStateText: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#4B5563',
+    marginTop: 16,
   },
   searchButtonText: {
     color: '#fff',
@@ -699,19 +840,27 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    padding: 20,
   },
   modalContent: {
-    width: '90%',
-    backgroundColor: '#fff',
-    padding: 20,
+    width: '100%',
+    maxWidth: 800,
+    backgroundColor: 'white',
     borderRadius: 10,
-    maxHeight: '80%',
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 16,
+    elevation: 10,
   },
   modalHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 20,
+    padding: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E5E7EB',
   },
   modalHeaderText: {
     fontSize: 20,
@@ -831,10 +980,219 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   noVideoText: {
-    color: '#666',
     fontSize: 14,
+    backgroundColor: '#F9FAFB',
+    color: '#111827',
+  },
+  textArea: {
+    height: 100,
+    textAlignVertical: 'top',
+  },
+  fileButton: {
+    backgroundColor: '#10B981',
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 6,
     marginTop: 8,
+  },
+  fileButtonText: {
+    color: 'white',
+    fontWeight: '600',
+    marginLeft: 8,
+  },
+  previewContainer: {
+    position: 'relative',
+    marginTop: 10,
+  },
+  modalBody: {
+    padding: 20,
+    maxHeight: 500,
+  },
+  modalFooter: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    padding: 20,
+    borderTopWidth: 1,
+    borderTopColor: '#E5E7EB',
+  },
+  inputGroup: {
+    marginBottom: 20,
+  },
+  inputLabel: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#374151',
+    marginBottom: 8,
+  },
+  input: {
+    borderWidth: 1,
+    borderColor: '#D1D5DB',
+    borderRadius: 6,
+    padding: 12,
+    fontSize: 14,
+    backgroundColor: '#F9FAFB',
+    color: '#111827',
+  },
+  textArea: {
+    height: 100,
+    textAlignVertical: 'top',
+  },
+  submitButton: {
+    backgroundColor: '#10B981',
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 6,
+  },
+  submitButtonText: {
+    color: 'white',
+    fontWeight: '600',
+  },
+  cancelButton: {
+    backgroundColor: '#E5E7EB',
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 6,
+    marginRight: 10,
+  },
+  cancelButtonText: {
+    color: '#374151',
+    fontWeight: '600',
+  },
+  tableWrapper: {
+    flex: 1,
+  },
+  tableContainer: {
+    backgroundColor: 'white',
+    borderRadius: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 4,
+    overflow: 'hidden',
+    marginBottom: 20,
+  },
+  tableHeader: {
+    flexDirection: 'row',
+    backgroundColor: '#F3F4F6',
+    paddingVertical: 15,
+    paddingHorizontal: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E5E7EB',
+  },
+  tableHeaderText: {
+    fontWeight: '600',
+    color: '#4B5563',
+    fontSize: 14,
+  },
+  actionButtonText: {
+    color: 'white',
+    fontWeight: '600',
+    marginLeft: 8,
+  },
+  searchBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  searchButton: {
+    backgroundColor: '#10B981',
+    width: 48,
+    height: 48,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 6,
+    marginLeft: 8,
+  },
+  actionButtons: {
+    flexDirection: 'row',
+    gap: 8,
+    justifyContent: 'flex-start',
+  },
+  actionBtn: {
+    width: 34,
+    height: 34,
+    borderRadius: 6,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginHorizontal: 4,
+  },
+  editBtn: {
+    backgroundColor: '#3498db',
+  },
+  deleteBtn: {
+    backgroundColor: '#e74c3c',
+  },
+  actionCell: {
+    flexDirection: 'row',
+    justifyContent: 'flex-start',
+    alignItems: 'center',
+  },
+  deleteModal_overlay: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    padding: 20,
+  },
+  deleteModal_content: {
+    width: '100%',
+    maxWidth: 400,
+    backgroundColor: 'white',
+    borderRadius: 10,
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 16,
+    elevation: 10,
+  },
+  deleteModal_header: {
+    padding: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E5E7EB',
+  },
+  deleteModal_headerText: {
+    fontSize: 20,
+    fontWeight: 'bold',
     textAlign: 'center',
+  },
+  deleteModal_body: {
+    padding: 20,
+  },
+  deleteModal_text: {
+    fontSize: 16,
+    textAlign: 'center',
+    color: '#374151',
+  },
+  deleteModal_footer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    padding: 20,
+    borderTopWidth: 1,
+    borderTopColor: '#E5E7EB',
+  },
+  deleteModal_cancelButton: {
+    backgroundColor: '#E5E7EB',
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 6,
+  },
+  deleteModal_cancelButtonText: {
+    color: '#374151',
+    fontWeight: '600',
+  },
+  deleteModal_deleteButton: {
+    backgroundColor: '#e74c3c',
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 6,
+  },
+  deleteModal_deleteButtonText: {
+    color: 'white',
+    fontWeight: '600',
   },
 });
 

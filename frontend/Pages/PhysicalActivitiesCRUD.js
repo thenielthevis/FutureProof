@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import {
-  View, Text, TouchableOpacity, StyleSheet, TextInput, Image, ScrollView, Modal, Alert, Platform, Button, Picker,
+  View, Text, TouchableOpacity, StyleSheet, TextInput, Image, ScrollView, Modal, Alert, Platform, Button, Picker, Animated
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { createPhysicalActivity, getPhysicalActivities, getPhysicalActivityById, updatePhysicalActivity, deletePhysicalActivity } from '../API/physical_activities_api';
 import * as ImagePicker from 'expo-image-picker';
 import { LinearGradient } from 'expo-linear-gradient';
-import { FontAwesome, FontAwesome5 } from '@expo/vector-icons';
+import { FontAwesome, FontAwesome5, Ionicons, MaterialIcons } from '@expo/vector-icons';
 import Toast from 'react-native-toast-message';
 import * as Print from 'expo-print';
 import { shareAsync } from 'expo-sharing';
@@ -35,6 +35,9 @@ const PhysicalActivitiesCRUD = () => {
   const [filteredActivities, setFilteredActivities] = useState([]);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [instructionsList, setInstructionsList] = useState(['']); // Initialize with one empty instruction
+  const [headerAnimation] = useState(new Animated.Value(0));
+  const [deleteModalVisible, setDeleteModalVisible] = useState(false);
+  const [selectedActivity, setSelectedActivity] = useState(null);
 
   // Fetch all activities on component mount
   useEffect(() => {
@@ -53,6 +56,13 @@ const PhysicalActivitiesCRUD = () => {
       }
     };
     fetchActivities();
+    
+    // Animate header on mount
+    Animated.timing(headerAnimation, {
+      toValue: 1,
+      duration: 800,
+      useNativeDriver: true,
+    }).start();
   }, []);
 
   // Handle image picker
@@ -222,25 +232,33 @@ const PhysicalActivitiesCRUD = () => {
         fileToUpload = new File([blob], file.name || 'video.mp4', { type: file.type || 'video/mp4' });
       }
 
-      if (editingActivity && editingActivity._id) {
-        console.log('Updating activity:', editingActivity._id, activityData);
+      console.log('Current editingActivity:', editingActivity); // Debug log
+
+      if (editingActivity?._id) {
+        console.log('Updating existing activity:', editingActivity._id);
         const updatedActivity = await updatePhysicalActivity(editingActivity._id, activityData, fileToUpload);
+        
         setActivities(prevActivities => 
-          prevActivities.map(activity =>
+          prevActivities.map(activity => 
             activity._id === editingActivity._id ? updatedActivity : activity
           )
         );
+        
         setFilteredActivities(prevFiltered => 
-          prevFiltered.map(activity =>
+          prevFiltered.map(activity => 
             activity._id === editingActivity._id ? updatedActivity : activity
           )
         );
+
         Toast.show({
           type: 'success',
           text1: 'Success',
           text2: 'Activity updated successfully!',
+          visibilityTime: 3000,
+          position: 'top',
         });
       } else {
+        console.log('Creating new activity');
         const newActivity = await createPhysicalActivity(activityData, fileToUpload);
         setActivities(prevActivities => [...prevActivities, newActivity]);
         setFilteredActivities(prevFiltered => [...prevFiltered, newActivity]);
@@ -250,8 +268,15 @@ const PhysicalActivitiesCRUD = () => {
           text2: 'Activity created successfully!',
         });
       }
+
       setModalVisible(false);
       resetForm();
+      
+      // Refresh the activities list after create/update
+      const refreshedActivities = await getPhysicalActivities();
+      setActivities(refreshedActivities);
+      setFilteredActivities(refreshedActivities);
+      
     } catch (error) {
       console.error('Error in handleCreateOrUpdateActivity:', error);
       Toast.show({
@@ -267,13 +292,18 @@ const PhysicalActivitiesCRUD = () => {
   const handleDeleteActivity = async (activityId) => {
     try {
       await deletePhysicalActivity(activityId);
-      const updatedActivities = activities.filter(activity => activity._id !== activityId);
-      setActivities(updatedActivities);
-      setFilteredActivities(updatedActivities);
+      setActivities(prevActivities => 
+        prevActivities.filter(activity => activity._id !== activityId)
+      );
+      setFilteredActivities(prevFiltered => 
+        prevFiltered.filter(activity => activity._id !== activityId)
+      );
       Toast.show({
         type: 'success',
         text1: 'Success',
         text2: 'Activity deleted successfully!',
+        visibilityTime: 3000,
+        position: 'top',
       });
     } catch (error) {
       console.error('Error deleting activity:', error);
@@ -281,38 +311,36 @@ const PhysicalActivitiesCRUD = () => {
         type: 'error',
         text1: 'Error',
         text2: 'Failed to delete activity. Please try again.',
+        visibilityTime: 3000,
+        position: 'top',
       });
     }
   };
 
   // Handle edit activity
   const handleEditActivity = (activity) => {
+    console.log('Editing activity:', activity); // Debug log
     setEditingActivity(activity);
-    setActivityName(activity.activity_name);
-    setActivityType(activity.activity_type);
-    setDescription(activity.description);
-    setUrl(activity.url);
-    setPublicId(activity.public_id);
-    // Display instructions as separate lines
+    setActivityName(activity.activity_name || '');
+    setActivityType(activity.activity_type || '');
+    setDescription(activity.description || '');
     setInstructionsList(Array.isArray(activity.instructions) ? activity.instructions : ['']);
     setRepetition(activity.repetition?.toString() || '');
     setTimer(activity.timer?.toString() || '');
-    setFile({ uri: activity.url });
+    setFile(activity.url ? { uri: activity.url } : null);
     setModalVisible(true);
   };
 
   // Reset form fields
   const resetForm = () => {
+    setEditingActivity(null);
     setActivityName('');
     setActivityType('');
     setDescription('');
-    setUrl('');
-    setPublicId('');
     setInstructionsList(['']);
     setRepetition('');
     setTimer('');
     setFile(null);
-    setEditingActivity(null);
   };
 
   // Handle search
@@ -444,38 +472,53 @@ const PhysicalActivitiesCRUD = () => {
   return (
     <View style={styles.container}>
       <Sidebar />
-      {/* Main Content */}
-      <View style={styles.content}>
-        <Text style={styles.header}>Physical Activities Management</Text>
-        <View style={styles.searchCreateContainer}>
-          <TouchableOpacity style={styles.openModalButton} onPress={() => setModalVisible(true)}>
-            <Text style={styles.openModalButtonText}>Create Activity</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.exportButton} onPress={handleExportPDF}>
-            <Text style={styles.exportButtonText}>Export PDF</Text>
-          </TouchableOpacity>
-          <View style={styles.searchContainer}>
-            <TextInput
-              style={styles.searchInput}
-              placeholder="Search Activities"
-              value={searchQuery}
-              onChangeText={setSearchQuery}
-            />
-            <TouchableOpacity style={styles.searchButton} onPress={handleSearch}>
-              <Text style={styles.searchButtonText}>Search</Text>
+      <View style={styles.mainContent}>
+        <Animated.View 
+          style={[
+            styles.pageHeader,
+            {
+              opacity: headerAnimation,
+              transform: [{ translateY: headerAnimation.interpolate({
+                inputRange: [0, 1],
+                outputRange: [-50, 0]
+              })}]
+            }
+          ]}
+        >
+          <Text style={styles.pageTitle}>Physical Activities Management</Text>
+          <View style={styles.headerActions}>
+            <TouchableOpacity style={styles.actionButton} onPress={() => setModalVisible(true)}>
+              <FontAwesome5 name="plus" size={14} color="white" />
+              <Text style={styles.actionButtonText}>Create Activity</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.actionButton} onPress={handleExportPDF}>
+              <FontAwesome5 name="file-pdf" size={14} color="white" />
+              <Text style={styles.actionButtonText}>Export PDF</Text>
             </TouchableOpacity>
           </View>
+        </Animated.View>
+
+        <View style={styles.searchBar}>
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Search activities by name or description..."
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+          />
+          <TouchableOpacity style={styles.searchButton} onPress={handleSearch}>
+            <FontAwesome name="search" size={16} color="white" />
+          </TouchableOpacity>
         </View>
 
         {/* Activity List */}
-        <ScrollView horizontal>
+        <ScrollView style={styles.tableWrapper}>
           <View style={styles.tableContainer}>
             <View style={styles.tableHeader}>
-              <Text style={[styles.tableHeaderCell, { flex: 1 }]}>Activity Name</Text>
-              <Text style={[styles.tableHeaderCell, { flex: 1 }]}>Type</Text>
-              <Text style={[styles.tableHeaderCell, { flex: 2 }]}>Description</Text>
-              <Text style={[styles.tableHeaderCell, { flex: 1 }]}>Video</Text>
-              <Text style={[styles.tableHeaderCell, { flex: 1 }]}>Actions</Text>
+              <Text style={[styles.tableHeaderText, {flex: 1}]}>Activity Name</Text>
+              <Text style={[styles.tableHeaderText, {flex: 1}]}>Type</Text>
+              <Text style={[styles.tableHeaderText, {flex: 2}]}>Description</Text>
+              <Text style={[styles.tableHeaderText, {flex: 1}]}>Video</Text>
+              <Text style={[styles.tableHeaderText, {flex: 1}]}>Actions</Text>
             </View>
             
             {filteredActivities.map((item) => (
@@ -495,19 +538,22 @@ const PhysicalActivitiesCRUD = () => {
                     volume={0}
                   />
                 </View>
-                <View style={[styles.tableCell, { flex: 1 }]}>
+                <View style={[styles.tableCell, styles.actionCell, { flex: 1 }]}>
                   <View style={styles.actionButtons}>
-                    <TouchableOpacity
-                      style={styles.editButton}
+                    <TouchableOpacity 
+                      style={[styles.actionBtn, styles.editBtn]} 
                       onPress={() => handleEditActivity(item)}
                     >
-                      <FontAwesome name="edit" size={20} color="#fff" />
+                      <FontAwesome name="pencil" size={14} color="white" />
                     </TouchableOpacity>
-                    <TouchableOpacity
-                      style={styles.deleteButton}
-                      onPress={() => handleDeleteActivity(item._id)}
+                    <TouchableOpacity 
+                      style={[styles.actionBtn, styles.deleteBtn]} 
+                      onPress={() => {
+                        setSelectedActivity(item._id);
+                        setDeleteModalVisible(true);
+                      }}
                     >
-                      <FontAwesome name="trash" size={20} color="#fff" />
+                      <FontAwesome name="trash" size={14} color="white" />
                     </TouchableOpacity>
                   </View>
                 </View>
@@ -518,7 +564,7 @@ const PhysicalActivitiesCRUD = () => {
 
         {/* Modal for Create/Update Activity */}
         <Modal
-          animationType="slide"
+          animationType="fade"
           transparent={true}
           visible={modalVisible}
           onRequestClose={() => {
@@ -543,104 +589,181 @@ const PhysicalActivitiesCRUD = () => {
                 </TouchableOpacity>
               </View>
 
-              <ScrollView>
-                <TextInput
-                  style={styles.input}
-                  placeholder="Activity Name"
-                  value={activityName}
-                  onChangeText={setActivityName}
-                />
-                <View style={styles.pickerContainer}>
-                  <Picker
-                    selectedValue={activityType}
-                    onValueChange={(itemValue) => setActivityType(itemValue)}
-                    style={styles.picker}
-                  >
-                    <Picker.Item label="Select Activity Type" value="" />
-                    <Picker.Item label="Workout" value="Workout" />
-                    <Picker.Item label="Zumba" value="Zumba" />
-                  </Picker>
+              <ScrollView style={styles.modalBody}>
+                <View style={styles.inputGroup}>
+                  <Text style={styles.inputLabel}>Activity Name</Text>
+                  <TextInput
+                    style={styles.input}
+                    placeholder="Enter activity name"
+                    value={activityName}
+                    onChangeText={setActivityName}
+                  />
                 </View>
-                <TextInput
-                  style={styles.input}
-                  placeholder="Description"
-                  value={description}
-                  onChangeText={setDescription}
-                  multiline
-                />
-                {instructionsList.map((instruction, index) => (
-                  <View key={index} style={styles.instructionContainer}>
-                    <TextInput
-                      style={[styles.input, { flex: 1 }]}
-                      placeholder={`Instruction ${index + 1}`}
-                      value={instruction}
-                      onChangeText={(value) => handleInstructionChange(index, value)}
-                      multiline
-                    />
-                    <TouchableOpacity
-                      style={styles.removeInstructionButton}
-                      onPress={() => handleRemoveInstruction(index)}
+
+                <View style={styles.inputGroup}>
+                  <Text style={styles.inputLabel}>Activity Type</Text>
+                  <View style={styles.pickerContainer}>
+                    <Picker
+                      selectedValue={activityType}
+                      onValueChange={(itemValue) => setActivityType(itemValue)}
+                      style={styles.picker}
                     >
-                      <FontAwesome name="minus-circle" size={20} color="#e74c3c" />
-                    </TouchableOpacity>
+                      <Picker.Item label="Select Activity Type" value="" />
+                      <Picker.Item label="Workout" value="Workout" />
+                      <Picker.Item label="Zumba" value="Zumba" />
+                    </Picker>
                   </View>
-                ))}
-                <TouchableOpacity style={styles.addInstructionButton} onPress={handleAddInstruction}>
-                  <FontAwesome name="plus-circle" size={20} color="#3498db" />
-                  <Text style={styles.addInstructionButtonText}>Add Instruction</Text>
-                </TouchableOpacity>
-                <TextInput
-                  style={styles.input}
-                  placeholder="Repetition (Optional)"
-                  value={repetition}
-                  onChangeText={setRepetition}
-                  keyboardType="numeric"
-                />
-                <TextInput
-                  style={styles.input}
-                  placeholder="Timer (Optional)"
-                  value={timer}
-                  onChangeText={setTimer}
-                  keyboardType="numeric"
-                />
-                
-                {/* Preview current video if editing */}
-                {editingActivity && (
-                  <View style={styles.previewContainer}>
-                    <Text style={styles.previewLabel}>Current Video:</Text>
-                    <Video
-                      source={{ uri: editingActivity.url }}
-                      style={styles.videoPreview}
-                      resizeMode="contain"
-                      repeat={true}
-                      paused={false}
-                      volume={0}
-                    />
-                  </View>
-                )}
+                </View>
 
-                {/* File upload button */}
-                <TouchableOpacity style={styles.uploadButton} onPress={handlePickVideo}>
-                  <FontAwesome name="upload" size={20} color="#fff" />
-                  <Text style={styles.uploadButtonText}>
-                    {editingActivity ? 'Update Video' : 'Upload Video'}
-                  </Text>
-                </TouchableOpacity>
+                <View style={styles.inputGroup}>
+                  <Text style={styles.inputLabel}>Description</Text>
+                  <TextInput
+                    style={[styles.input, styles.textArea]}
+                    placeholder="Enter activity description"
+                    value={description}
+                    onChangeText={setDescription}
+                    multiline={true}
+                    numberOfLines={4}
+                  />
+                </View>
 
-                {/* Show selected file name if any */}
-                {file && (
-                  <Text style={styles.selectedFile}>
-                    Selected: {file.name || file.uri.split('/').pop()}
-                  </Text>
-                )}
+                {/* Instructions Section */}
+                <View style={styles.inputGroup}>
+                  <Text style={styles.inputLabel}>Instructions</Text>
+                  {instructionsList.map((instruction, index) => (
+                    <View key={index} style={styles.instructionContainer}>
+                      <TextInput
+                        style={[styles.input, { flex: 1 }]}
+                        placeholder={`Instruction ${index + 1}`}
+                        value={instruction}
+                        onChangeText={(value) => handleInstructionChange(index, value)}
+                        multiline
+                      />
+                      <TouchableOpacity
+                        style={styles.removeInstructionButton}
+                        onPress={() => handleRemoveInstruction(index)}
+                      >
+                        <FontAwesome name="minus-circle" size={20} color="#e74c3c" />
+                      </TouchableOpacity>
+                    </View>
+                  ))}
+                  <TouchableOpacity style={styles.addInstructionButton} onPress={handleAddInstruction}>
+                    <FontAwesome name="plus-circle" size={20} color="#3498db" />
+                    <Text style={styles.addInstructionButtonText}>Add Instruction</Text>
+                  </TouchableOpacity>
+                </View>
+
+                {/* Optional Fields */}
+                <View style={styles.inputGroup}>
+                  <Text style={styles.inputLabel}>Optional Details</Text>
+                  <TextInput
+                    style={styles.input}
+                    placeholder="Repetition (Optional)"
+                    value={repetition}
+                    onChangeText={setRepetition}
+                    keyboardType="numeric"
+                  />
+                  <TextInput
+                    style={styles.input}
+                    placeholder="Timer (Optional)"
+                    value={timer}
+                    onChangeText={setTimer}
+                    keyboardType="numeric"
+                  />
+                </View>
+
+                {/* Video Upload Section */}
+                <View style={styles.inputGroup}>
+                  <Text style={styles.inputLabel}>Activity Video</Text>
+                  <TouchableOpacity style={styles.fileButton} onPress={handlePickVideo}>
+                    <FontAwesome5 name="video" size={16} color="white" />
+                    <Text style={styles.fileButtonText}>
+                      {editingActivity ? 'Change Video' : 'Upload Video'}
+                    </Text>
+                  </TouchableOpacity>
+                  {file && (
+                    <View style={styles.previewContainer}>
+                      <Video 
+                        source={{ uri: file.uri }} 
+                        style={styles.videoPreview} 
+                        resizeMode="contain" 
+                        repeat={true}
+                        paused={false}
+                        volume={0}
+                      />
+                      <TouchableOpacity 
+                        style={styles.removePreviewBtn} 
+                        onPress={() => setFile(null)}
+                      >
+                        <FontAwesome name="times-circle" size={20} color="#ff4d4d" />
+                      </TouchableOpacity>
+                    </View>
+                  )}
+                </View>
               </ScrollView>
 
-              <View style={styles.buttonContainer}>
-                <TouchableOpacity style={styles.button} onPress={handleCreateOrUpdateActivity}>
-                  <Text style={styles.buttonText}>{editingActivity ? 'Update' : 'Create'}</Text>
+              <View style={styles.modalFooter}>
+                <TouchableOpacity 
+                  style={styles.cancelButton} 
+                  onPress={() => setModalVisible(false)}
+                >
+                  <Text style={styles.cancelButtonText}>Cancel</Text>
                 </TouchableOpacity>
-                <TouchableOpacity style={[styles.button, styles.cancelButton]} onPress={() => setModalVisible(false)}>
-                  <Text style={styles.buttonText}>Cancel</Text>
+                <TouchableOpacity
+                  style={styles.submitButton}
+                  onPress={handleCreateOrUpdateActivity}
+                >
+                  <Text style={styles.submitButtonText}>
+                    {editingActivity ? 'Update Activity' : 'Create Activity'}
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </Modal>
+
+        {/* Delete Confirmation Modal */}
+        <Modal
+          visible={deleteModalVisible}
+          transparent
+          animationType="slide"
+        >
+          <View style={styles.deleteModal_overlay}>
+            <View style={styles.deleteModal_content}>
+              <View style={styles.deleteModal_header}>
+                <Text style={styles.deleteModal_headerText}>Confirm Delete</Text>
+              </View>
+
+              <View style={styles.deleteModal_body}>
+                <Text style={styles.deleteModal_text}>
+                  Are you sure you want to delete this activity?
+                </Text>
+              </View>
+
+              <View style={styles.deleteModal_footer}>
+                <TouchableOpacity 
+                  onPress={() => setDeleteModalVisible(false)} 
+                  style={styles.deleteModal_cancelButton}
+                >
+                  <Text style={styles.deleteModal_cancelButtonText}>Cancel</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity 
+                  onPress={() => {
+                    if (selectedActivity) {
+                      handleDeleteActivity(selectedActivity);
+                      setDeleteModalVisible(false);
+                    } else {
+                      Toast.show({
+                        type: 'error',
+                        text1: 'Error',
+                        text2: 'No activity selected for deletion',
+                      });
+                    }
+                  }} 
+                  style={styles.deleteModal_deleteButton}
+                >
+                  <Text style={styles.deleteModal_deleteButtonText}>Delete</Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -656,98 +779,96 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     flexDirection: 'row',
-    backgroundColor: '#F5F5F5',
+    backgroundColor: '#f8f9fc',
   },
-  sidebar: {
-    width: '20%',
-    backgroundColor: '#1A3B32',
-    padding: 20,
-  },
-  sidebarCollapsed: {
-    width: '5%',
-  },
-  sidebarItem: {
-    marginBottom: 20,
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  sidebarText: {
-    color: '#F5F5F5',
-    fontSize: 18,
-    marginLeft: 10,
-  },
-  content: {
+  mainContent: {
     flex: 1,
-    padding: 20,
+    backgroundColor: '#f8f9fc',
+    paddingHorizontal: 25,
+    paddingTop: 20,
+    paddingBottom: 10,
   },
-  header: {
-    fontSize: 24,
-    marginBottom: 20,
-  },
-  searchCreateContainer: {
+  pageHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 20,
   },
-  openModalButton: {
-    backgroundColor: '#3498db',
-    padding: 15,
-    borderRadius: 5,
-    alignItems: 'center',
-  },
-  openModalButtonText: {
-    color: '#fff',
+  pageTitle: {
+    fontSize: 24,
     fontWeight: 'bold',
+    color: '#111827',
   },
-  searchContainer: {
+  headerActions: {
+    flexDirection: 'row',
+  },
+  actionButton: {
+    backgroundColor: '#10B981',
     flexDirection: 'row',
     alignItems: 'center',
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 6,
+    marginLeft: 10,
+    shadowColor: '#10B981',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 3,
+    elevation: 2,
+  },
+  actionButtonText: {
+    color: 'white',
+    fontWeight: '600',
+    marginLeft: 8,
+  },
+  searchBar: {
+    flexDirection: 'row',
+    marginBottom: 20,
   },
   searchInput: {
     flex: 1,
+    backgroundColor: 'white',
     borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 5,
-    padding: 15,
-    marginRight: 10,
-    backgroundColor: '#fff',
+    borderColor: '#E5E7EB',
+    borderRadius: 6,
+    padding: 12,
+    paddingLeft: 16,
+    fontSize: 14,
   },
   searchButton: {
-    backgroundColor: '#3498db',
-    padding: 15,
-    borderRadius: 5,
+    backgroundColor: '#10B981',
+    width: 48,
     alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 6,
+    marginLeft: 8,
   },
-  searchButtonText: {
-    color: '#fff',
-    fontWeight: 'bold',
+  tableWrapper: {
+    flex: 1,
   },
   tableContainer: {
-    flex: 1,
-    backgroundColor: '#fff',
-    borderRadius: 8,
-    padding: 16,
-    marginTop: 16,
+    backgroundColor: 'white',
+    borderRadius: 10,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-    width: '100%'
+    shadowRadius: 8,
+    elevation: 4,
+    overflow: 'hidden',
+    marginBottom: 20,
   },
   tableHeader: {
     flexDirection: 'row',
-    borderBottomWidth: 2,
-    borderBottomColor: '#eee',
-    paddingBottom: 12,
-    marginBottom: 12,
+    backgroundColor: '#F3F4F6',
+    paddingVertical: 15,
+    paddingHorizontal: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E5E7EB',
   },
-  tableHeaderCell: {
-    fontWeight: 'bold',
-    fontSize: 16,
-    color: '#333',
-    padding: 8,
+  tableHeaderText: {
+    fontWeight: '600',
+    color: '#4B5563',
+    fontSize: 14,
   },
   tableRow: {
     flexDirection: 'row',
@@ -761,72 +882,140 @@ const styles = StyleSheet.create({
   },
   videoThumbnail: {
     width: 100,
-    height: 65,
+    height: 100,
     borderRadius: 4,
   },
   actionButtons: {
     flexDirection: 'row',
     gap: 8,
+    justifyContent: 'flex-start',
   },
-  editButton: {
+  actionBtn: {
+    width: 34,
+    height: 34,
+    borderRadius: 6,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginHorizontal: 4,
+  },
+  editBtn: {
     backgroundColor: '#3498db',
-    padding: 8,
-    borderRadius: 4,
   },
-  deleteButton: {
+  deleteBtn: {
     backgroundColor: '#e74c3c',
-    padding: 8,
-    borderRadius: 4,
+  },
+  actionCell: {
+    flexDirection: 'row',
+    justifyContent: 'flex-start',
+    alignItems: 'center',
   },
   modalOverlay: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    padding: 20,
   },
   modalContent: {
-    width: '90%',
-    backgroundColor: '#fff',
-    padding: 20,
+    width: '100%',
+    maxWidth: 800,
+    backgroundColor: 'white',
     borderRadius: 10,
-    maxHeight: '80%',
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 16,
+    elevation: 10,
   },
   modalHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 20,
+    padding: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E5E7EB',
   },
   modalHeaderText: {
     fontSize: 20,
-    fontWeight: 'bold',
+    fontWeight: '600',
+    color: '#111827',
   },
-  closeButton: {
-    padding: 5,
+  modalBody: {
+    padding: 20,
+    maxHeight: 500,
+  },
+  modalFooter: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    padding: 20,
+    borderTopWidth: 1,
+    borderTopColor: '#E5E7EB',
+  },
+  inputGroup: {
+    marginBottom: 20,
+  },
+  inputLabel: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#374151',
+    marginBottom: 8,
   },
   input: {
-    height: 40,
-    borderColor: 'gray',
     borderWidth: 1,
-    marginBottom: 10,
-    padding: 10,
-    borderRadius: 5,
+    borderColor: '#D1D5DB',
+    borderRadius: 6,
+    padding: 12,
+    fontSize: 14,
+    backgroundColor: '#F9FAFB',
+    color: '#111827',
   },
-  buttonContainer: {
+  textArea: {
+    height: 100,
+    textAlignVertical: 'top',
+  },
+  fileButton: {
+    backgroundColor: '#10B981',
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 6,
+    marginTop: 8,
+  },
+  fileButtonText: {
+    color: 'white',
+    fontWeight: '600',
+    marginLeft: 8,
+  },
+  previewContainer: {
+    position: 'relative',
     marginTop: 10,
   },
-  button: {
-    backgroundColor: '#3498db',
-    padding: 10,
-    borderRadius: 5,
-    alignItems: 'center',
-    flex: 1,
-    marginHorizontal: 5,
+  imagePreviewModal: {
+    width: '100%',
+    height: 200,
+    borderRadius: 6,
+    resizeMode: 'cover',
+  },
+  removePreviewBtn: {
+    position: 'absolute',
+    top: 5,
+    right: 5,
+    backgroundColor: 'white',
+    borderRadius: 50,
+    padding: 2,
   },
   cancelButton: {
-    backgroundColor: '#e74c3c',
+    backgroundColor: '#E5E7EB',
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 6,
+    marginRight: 10,
+  },
+  cancelButtonText: {
+    color: '#374151',
+    fontWeight: '600',
   },
   imagePreview: {
     width: 100,
@@ -846,18 +1035,9 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     fontSize: 16,
   },
-  previewContainer: {
-    marginVertical: 10,
-    alignItems: 'center',
-  },
-  previewLabel: {
-    fontSize: 16,
-    marginBottom: 20,
-    color: '#666',
-  },
   videoPreview: {
     width: 100,
-    height: 80,
+    height: 100,
     borderRadius: 8,
     backgroundColor: '#f0f0f0',
   },
@@ -913,6 +1093,90 @@ const styles = StyleSheet.create({
     marginLeft: 10,
     color: '#3498db',
     fontWeight: 'bold',
+  },
+  submitButton: {
+    backgroundColor: '#10B981',
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 6,
+  },
+  submitButtonText: {
+    color: 'white',
+    fontWeight: '600',
+  },
+  // Delete Modal Styles
+  deleteModal_overlay: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    padding: 20,
+  },
+  deleteModal_content: {
+    width: '90%',
+    maxWidth: 400,
+    backgroundColor: 'white',
+    borderRadius: 10,
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 16,
+    elevation: 10,
+  },
+  deleteModal_header: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E5E7EB',
+  },
+  deleteModal_headerText: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#B91C1C',
+  },
+  deleteModal_body: {
+    padding: 20,
+    alignItems: 'center',
+  },
+  deleteModal_text: {
+    fontSize: 16,
+    color: '#374151',
+    textAlign: 'center',
+  },
+  deleteModal_footer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    padding: 20,
+    borderTopWidth: 1,
+    borderTopColor: '#E5E7EB',
+  },
+  deleteModal_cancelButton: {
+    backgroundColor: '#E5E7EB',
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 6,
+    flex: 1,
+    marginRight: 10,
+    alignItems: 'center',
+  },
+  deleteModal_cancelButtonText: {
+    color: '#374151',
+    fontWeight: '600',
+  },
+  deleteModal_deleteButton: {
+    backgroundColor: '#DC2626',
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 6,
+    flex: 1,
+    alignItems: 'center',
+  },
+  deleteModal_deleteButtonText: {
+    color: 'white',
+    fontWeight: '600',
   },
 });
 
