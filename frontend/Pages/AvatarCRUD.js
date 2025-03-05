@@ -173,9 +173,9 @@ const AvatarCRUD = () => {
 
   const handlePickImage = async () => {
     const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaType.Images, 
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
       allowsEditing: true,
-      aspect: [4, 3],
+      aspect: [4, 3],   
       quality: 1,
       base64: false,
     });
@@ -231,6 +231,16 @@ const AvatarCRUD = () => {
   };
 
   const handleUpdateAvatar = async () => {
+    if (!editingAvatar || !editingAvatar._id) {
+      console.error('Invalid avatar ID for updating');
+      Toast.show({
+        type: 'error',
+        text1: 'Error',
+        text2: 'Invalid avatar ID. Please try again.',
+      });
+      return;
+    }
+
     try {
       const updatedAvatar = await updateAvatar(editingAvatar._id, { name, description, file });
       const updatedAvatars = avatars.map(avatar => (avatar._id === editingAvatar._id ? updatedAvatar : avatar));
@@ -257,6 +267,16 @@ const AvatarCRUD = () => {
   };
 
   const handleDeleteAvatar = async (avatarId) => {
+    if (!avatarId) {
+      console.error('Invalid avatar ID for deleting');
+      Toast.show({
+        type: 'error',
+        text1: 'Error',
+        text2: 'Invalid avatar ID. Please try again.',
+      });
+      return;
+    }
+
     try {
       await deleteAvatar(avatarId); // Call the API to delete the avatar
       const updatedAvatars = avatars.filter(avatar => avatar._id !== avatarId); // Remove the avatar from the local state

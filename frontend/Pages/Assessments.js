@@ -443,8 +443,7 @@ const Assessments = () => {
 
   const handleSearch = () => {
     const filtered = assessments.filter(assessment =>
-      assessment.user.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      assessment.content.toLowerCase().includes(searchQuery.toLowerCase())
+      assessment.username.toLowerCase().includes(searchQuery.toLowerCase())
     );
     setFilteredAssessments(filtered);
   };

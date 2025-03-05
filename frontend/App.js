@@ -23,15 +23,15 @@ import Assessments from './Pages/Assessments';
 import Shop from './Components/Shop';
 import DailyRewards from './Components/DailyRewards';
 import TaskModal from './Components/TaskModal';
-import asset from './Pages/asset';
-import quotes from './Pages/quotes';
+import AssetsCRUD from './Pages/AssetsCRUD';
+import QuotesCRUD from './Pages/QuotesCRUD';
 import { UserStatusProvider } from './Context/UserStatusContext';
 import { UserLevelProvider } from './Context/UserLevelContext'; // Import the UserLevelProvider
-import physicalactivities from './Pages/physicalactivities';
-import meditation from './Pages/meditation';
+import PhysicalActivitiesCRUD from './Pages/PhysicalActivitiesCRUD';
+import MeditationCRUD from './Pages/MeditationCRUD';
 import UserDashboard from './Components/userDashboard';
 import BMIGame from './Components/BMIGame';
-import users from './Pages/users';
+import UsersManagement from './Pages/UsersManagement';
 
 const Stack = createStackNavigator();
 const { width, height } = Dimensions.get('window');
@@ -73,13 +73,13 @@ export default function App() {
                   <Stack.Screen name="Shop" component={Shop} />
                   <Stack.Screen name="DailyRewards" component={DailyRewards} />
                   <Stack.Screen name="TaskModal" component={TaskModal} />
-                  <Stack.Screen name="asset" component={asset} />
-                  <Stack.Screen name="quotes" component={quotes} />
-                  <Stack.Screen name="physicalactivities" component={physicalactivities} />
-                  <Stack.Screen name="meditation" component={meditation} />
+                  <Stack.Screen name="AssetsCRUD" component={AssetsCRUD} />
+                  <Stack.Screen name="QuotesCRUD" component={QuotesCRUD} />
+                  <Stack.Screen name="PhysicalActivitiesCRUD" component={PhysicalActivitiesCRUD} />
+                  <Stack.Screen name="MeditationCRUD" component={MeditationCRUD} />
                   <Stack.Screen name="UserDashboard" component={UserDashboard} />
                   <Stack.Screen name="BMIGame" component={BMIGame} />
-                  <Stack.Screen name="users" component={users} />
+                  <Stack.Screen name="UsersManagement" component={UsersManagement} />
                 </Stack.Navigator>
               </NavigationContainer>
             </ScrollView>

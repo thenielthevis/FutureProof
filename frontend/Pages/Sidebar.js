@@ -51,19 +51,19 @@ const Sidebar = () => {
           <TouchableOpacity style={styles.sidebarIconOnly} onPress={() => navigation.navigate('AchievementsCRUD')}>
             <FontAwesome5 name="trophy" size={18} color="white" />
           </TouchableOpacity>
-          <TouchableOpacity style={styles.sidebarIconOnly} onPress={() => navigation.navigate('quotes')}>
+          <TouchableOpacity style={styles.sidebarIconOnly} onPress={() => navigation.navigate('QuotesCRUD')}>
             <FontAwesome name="quote-left" size={18} color="white" />
           </TouchableOpacity>
-          <TouchableOpacity style={styles.sidebarIconOnly} onPress={() => navigation.navigate('asset')}>
+          <TouchableOpacity style={styles.sidebarIconOnly} onPress={() => navigation.navigate('AssetsCRUD')}>
             <FontAwesome name="archive" size={18} color="white" />
           </TouchableOpacity>
-          <TouchableOpacity style={styles.sidebarIconOnly} onPress={() => navigation.navigate('physicalactivities')}>
+          <TouchableOpacity style={styles.sidebarIconOnly} onPress={() => navigation.navigate('PhysicalActivitiesCRUD')}>
             <FontAwesome5 name="running" size={18} color="white" />
           </TouchableOpacity>
-          <TouchableOpacity style={styles.sidebarIconOnly} onPress={() => navigation.navigate('meditation')}>
+          <TouchableOpacity style={styles.sidebarIconOnly} onPress={() => navigation.navigate('MeditationCRUD')}>
             <FontAwesome5 name="spa" size={18} color="white" />
           </TouchableOpacity>
-          <TouchableOpacity style={styles.sidebarIconOnly} onPress={() => navigation.navigate('users')}>
+          <TouchableOpacity style={styles.sidebarIconOnly} onPress={() => navigation.navigate('UsersManagement')}>
             <FontAwesome name="users" size={18} color="white" />
           </TouchableOpacity>
         </View>
@@ -99,11 +99,11 @@ const Sidebar = () => {
               <FontAwesome5 name="trophy" size={16} color="white" />
               <Text style={styles.sidebarText}>Achievements</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.sidebarItem} onPress={() => navigation.navigate('quotes')}>
+            <TouchableOpacity style={styles.sidebarItem} onPress={() => navigation.navigate('QuotesCRUD')}>
               <FontAwesome name="quote-left" size={16} color="white" />
               <Text style={styles.sidebarText}>Quotes</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.sidebarItem} onPress={() => navigation.navigate('asset')}>
+            <TouchableOpacity style={styles.sidebarItem} onPress={() => navigation.navigate('AssetsCRUD')}>
               <FontAwesome name="archive" size={16} color="white" />
               <Text style={styles.sidebarText}>Assets</Text>
             </TouchableOpacity>
@@ -111,11 +111,11 @@ const Sidebar = () => {
           
           <View style={styles.menuGroup}>
             <Text style={styles.menuLabel}>ACTIVITIES</Text>
-            <TouchableOpacity style={styles.sidebarItem} onPress={() => navigation.navigate('physicalactivities')}>
+            <TouchableOpacity style={styles.sidebarItem} onPress={() => navigation.navigate('PhysicalActivitiesCRUD')}>
               <FontAwesome5 name="running" size={16} color="white" />
               <Text style={styles.sidebarText}>Physical Activities</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.sidebarItem} onPress={() => navigation.navigate('meditation')}>
+            <TouchableOpacity style={styles.sidebarItem} onPress={() => navigation.navigate('MeditationCRUD')}>
               <FontAwesome5 name="spa" size={16} color="white" />
               <Text style={styles.sidebarText}>Meditation</Text>
             </TouchableOpacity>
@@ -123,7 +123,7 @@ const Sidebar = () => {
 
           <View style={styles.menuGroup}>
             <Text style={styles.menuLabel}>USERS</Text>
-            <TouchableOpacity style={styles.sidebarItem} onPress={() => navigation.navigate('users')}>
+            <TouchableOpacity style={styles.sidebarItem} onPress={() => navigation.navigate('UsersManagement')}>
               <FontAwesome name="users" size={16} color="white" />
               <Text style={styles.sidebarText}>Manage Users</Text>
             </TouchableOpacity>

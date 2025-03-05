@@ -4,8 +4,8 @@ from fastapi import HTTPException, UploadFile, Form, File, status
 from typing import Optional, List
 from app.models.meditation_breathing_model import MeditationBreathing
 from app.config import get_database
+import json  # Add this at the top with other imports
 import logging
-
 # Set up logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -16,9 +16,14 @@ async def create_meditation_breathing(
     name: str = Form(...),
     description: Optional[str] = Form(None),
     file: UploadFile = File(...),
-    instructions: Optional[List[str]] = Form(None),
+    instructions: Optional[str] = Form(None),  # Receives JSON string
 ) -> MeditationBreathing:
     try:
+        # Parse instructions from JSON string
+        instructions_list = json.loads(instructions) if instructions else []
+
+        print(f"Parsed instructions: {instructions_list}")  # Debug log
+
         # Log received values for debugging
         logger.info(f"Creating meditation/breathing item: Name={name}, Description={description}")
 
@@ -42,7 +47,7 @@ async def create_meditation_breathing(
             description=description,
             url=result["secure_url"],
             public_id=result["public_id"],
-            instructions=instructions,
+            instructions=instructions_list,  # Use the properly parsed list
         )
 
         # Save meditation_breathing to database
@@ -87,7 +92,7 @@ async def update_meditation_breathing(
     name: Optional[str] = None,
     description: Optional[str] = None,
     file: Optional[UploadFile] = None,
-    instructions: Optional[List[str]] = None,
+    instructions: Optional[str] = Form(None),  # Receives JSON string
 ) -> MeditationBreathing:
     try:
         logger.info(f"Updating meditation/breathing item with ID: {item_id}")
@@ -103,6 +108,9 @@ async def update_meditation_breathing(
             update_data["name"] = name
         if description is not None:
             update_data["description"] = description
+        if instructions is not None:
+            instructions_list = json.loads(instructions)
+            update_data["instructions"] = instructions_list
         if file is not None:
             # Delete the old item from Cloudinary
             cloudinary.uploader.destroy(item["public_id"])
@@ -110,8 +118,6 @@ async def update_meditation_breathing(
             result = cloudinary.uploader.upload(file.file, resource_type="video")
             update_data["url"] = result["secure_url"]
             update_data["public_id"] = result["public_id"]
-        if instructions is not None:
-            update_data["instructions"] = instructions
 
         # Update the item in the database
         await db.meditation_breathing.update_one({"_id": ObjectId(item_id)}, {"$set": update_data})

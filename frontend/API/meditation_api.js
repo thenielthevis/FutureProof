@@ -53,18 +53,19 @@ export const getMeditationBreathingExerciseById = async (itemId) => {
 };
 
 // Create a new meditation/breathing exercise
-export const createMeditationBreathingExercise = async (data) => {
+export const createMeditationBreathingExercise = async (data, file) => {
   try {
     const formData = new FormData();
     formData.append("name", data.name);
     formData.append("description", data.description);
-    formData.append("file", {
-      uri: data.file.uri,
-      name: data.file.name,
-      type: data.file.type,
-    });
-    if (data.instructions) {
+
+    // Handle instructions array - send as JSON string
+    if (Array.isArray(data.instructions) && data.instructions.length > 0) {
       formData.append("instructions", JSON.stringify(data.instructions));
+    }
+
+    if (file instanceof File || file instanceof Blob) {
+      formData.append("file", file);
     }
 
     const token = await AsyncStorage.getItem("token");
@@ -88,20 +89,19 @@ export const createMeditationBreathingExercise = async (data) => {
 };
 
 // Update a meditation/breathing exercise by ID
-export const updateMeditationBreathingExercise = async (itemId, data) => {
+export const updateMeditationBreathingExercise = async (itemId, data, file) => {
   try {
     const formData = new FormData();
     if (data.name) formData.append("name", data.name);
     if (data.description) formData.append("description", data.description);
-    if (data.file) {
-      formData.append("file", {
-        uri: data.file.uri,
-        name: data.file.name,
-        type: data.file.type,
-      });
-    }
-    if (data.instructions) {
+
+    // Handle instructions array - send as JSON string
+    if (Array.isArray(data.instructions) && data.instructions.length > 0) {
       formData.append("instructions", JSON.stringify(data.instructions));
+    }
+
+    if (file) {
+      formData.append("file", file);
     }
 
     const token = await AsyncStorage.getItem("token");
