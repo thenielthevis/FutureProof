@@ -81,81 +81,209 @@ const MeditationCRUD = () => {
 
   const handleExportPDF = async () => {
     try {
+      // Convert all meditation videos/images to base64
       const meditationsWithImages = await Promise.all(
         meditations.map(async (meditation) => {
-          const imageSrc = await convertImageToBase64(meditation.url);
-          return { ...meditation, imageSrc };
+          try {
+            const imageSrc = await convertImageToBase64(meditation.url);
+            return { ...meditation, imageSrc };
+          } catch (error) {
+            console.error('Error converting image:', error);
+            return { ...meditation, imageSrc: null };
+          }
         })
       );
 
       const logo1Base64 = await convertImageToBase64("https://i.ibb.co/GQygLXT9/tuplogo.png");
       const logo2Base64 = await convertImageToBase64("https://i.ibb.co/YBStKgFC/logo-2.png");
 
-      const htmlContent = `
-        <div style="font-family: Arial, sans-serif; padding: 20px; background: #fff; max-width: 900px; margin: 0 auto;">
-          <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 2px solid #f0f0f0; padding-bottom: 10px;">
-            <img src="${logo1Base64}" alt="Logo 1" style="height: 60px; width: auto;">
-            <div style="flex: 1; text-align: center;">
-              <h1 style="font-size: 20px; margin: 0; color: red;">FUTUREPROOF: A Gamified AI Platform for Predictive Health and Preventive Wellness</h1>
-              <h2 style="font-size: 16px; margin: 0;">Meditation Report</h2>
-              <h4 style="font-size: 14px; margin: 5px 0 0;">${new Date().toLocaleDateString()}</h4>
-            </div>
-            <img src="${logo2Base64}" alt="Logo 2" style="height: 60px; width: auto;">
+      // Calculate how many meditations per page - changed from 7 to 3
+      const MEDITATIONS_PER_PAGE = 3;
+      const totalPages = Math.ceil(meditationsWithImages.length / MEDITATIONS_PER_PAGE);
+      
+      // Create header content that will appear on each page
+      const headerContent = `
+        <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 2px solid #f0f0f0; padding-bottom: 10px;">
+          <img src="${logo1Base64}" alt="Logo 1" style="height: 60px; width: auto;">
+          <div style="flex: 1; text-align: center; margin-top: 15px;">
+            <h1 style="font-size: 18px; margin: 0; ">FUTUREPROOF: A Gamified AI Platform for Predictive Health and Preventive Wellness</h1>
+            <h2 style="font-size: 16px; margin: 0; ">Embrace The Bear Within - Strong, Resilient, Future-Ready</h4>
+            <br>
+            <h2 style="font-size: 16px; margin: 0;">Meditation & Breathing Exercises Report</h2>
+            <h4 style="font-size: 14px; margin: 5px 0 0;">${new Date().toLocaleDateString()}</h4>
           </div>
-          <table style="width: 100%; border-collapse: collapse; margin-top: 20px;">
-            <thead>
-              <tr>
-                <th style="padding: 12px; border: 1px solid #ddd; text-align: left; background-color: #f8f9fa;">Image</th>
-                <th style="padding: 12px; border: 1px solid #ddd; text-align: left; background-color: #f8f9fa;">Name</th>
-                <th style="padding: 12px; border: 1px solid #ddd; text-align: left; background-color: #f8f9fa;">Description</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${meditationsWithImages.map((meditation, index) => `
-                <tr style="background-color: ${index % 2 === 0 ? "#fff" : "#f9f9f9"};">
-                  <td style="padding: 12px; border: 1px solid #ddd;">
-                    ${meditation.imageSrc ? `<img src="${meditation.imageSrc}" alt="Meditation" style="max-width: 80px; max-height: 60px;">` : 'No Image'}
-                  </td>
-                  <td style="padding: 12px; border: 1px solid #ddd;">${meditation.name || '-'}</td>
-                  <td style="padding: 12px; border: 1px solid #ddd;">${meditation.description || '-'}</td>
-                </tr>
-              `).join('')}
-            </tbody>
-          </table>
+          <img src="${logo2Base64}" alt="Logo 2" style="height: 60px; width: auto;">
         </div>
       `;
 
+      // Create first page with mission and vision
+      const firstPageContent = `
+        <div style="font-family: Arial, sans-serif; padding: 20px; background: #fff; max-width: 900px; margin: 0 auto;">
+          ${headerContent}
+          
+          <div style="margin-top: 20px;">
+            <h3>Our Mission</h3>
+            <p>FutureProof empowers individuals with AI-driven, gamified health insights for proactive well-being. By integrating genetic, lifestyle, and environmental data, we deliver personalized, preventive care solutions.</p>
+            <h3>Our Vision</h3>
+            <p>We envision a future where predictive healthcare transforms lives, making well-being accessible, engaging, and proactive through AI and gamification.</p>
+            
+            <div style="margin-top: 20px;">
+              <h3>Benefits of Meditation & Breathing Exercises</h3>
+              <p>Regular meditation and breathing practice has been shown to:</p>
+              <ul>
+                <li>Reduce stress and anxiety</li>
+                <li>Improve focus and concentration</li>
+                <li>Enhance emotional well-being</li>
+                <li>Lower blood pressure</li>
+                <li>Improve sleep quality</li>
+                <li>Boost immune system function</li>
+              </ul>
+              <p>Our guided meditation exercises help users develop mindfulness and create a foundation for better health outcomes.</p>
+            </div>
+          </div>
+        </div>
+      `;
+
+      // Generate pages for meditations with pagination
+      let meditationPages = [];
+      
+      for (let i = 0; i < totalPages; i++) {
+        const startIdx = i * MEDITATIONS_PER_PAGE;
+        const pageMeditations = meditationsWithImages.slice(startIdx, startIdx + MEDITATIONS_PER_PAGE);
+        
+        const pageContent = `
+          <div style="font-family: Arial, sans-serif; padding: 20px; background: #fff; max-width: 900px; margin: 0 auto;">
+            ${headerContent}
+            
+            <div style="margin-top: 20px;">
+              <h3>Meditation & Breathing Exercises ${i > 0 ? `(Page ${i + 1})` : ''}</h3>
+              <table style="width: 100%; border-collapse: collapse; margin-top: 20px;">
+                <thead>
+                  <tr>
+                    <th style="padding: 12px; border: 1px solid #ddd; text-align: left; background-color: #f8f9fa;">Name</th>
+                    <th style="padding: 12px; border: 1px solid #ddd; text-align: left; background-color: #f8f9fa;">Description</th>
+                    <th style="padding: 12px; border: 1px solid #ddd; text-align: left; background-color: #f8f9fa;">Instructions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${pageMeditations.map((meditation, index) => `
+                    <tr style="background-color: ${index % 2 === 0 ? "#fff" : "#f9f9f9"};">
+                      <td style="padding: 12px; border: 1px solid #ddd; width: 20%;">
+                        <div>
+                          <strong>${meditation.name || '-'}</strong>
+                        </div>
+                        <div style="width: 80px; height: 80px; background-color: #f0f0f0; border-radius: 5px; margin-top: 8px; display: flex; align-items: center; justify-content: center;">
+                          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="#10B981">
+                            <path d="M8 5v14l11-7z"/>
+                          </svg>
+                        </div>
+                      </td>
+                      <td style="padding: 12px; border: 1px solid #ddd; width: 40%;">${meditation.description || '-'}</td>
+                      <td style="padding: 12px; border: 1px solid #ddd; width: 40%;">
+                        ${Array.isArray(meditation.instructions) && meditation.instructions.length > 0 ? 
+                          `<ol style="margin: 0; padding-left: 16px;">
+                            ${meditation.instructions.map(instruction => 
+                              `<li>${instruction}</li>`
+                            ).join('')}
+                          </ol>` 
+                          : 'No instructions provided'}
+                      </td>
+                    </tr>
+                  `).join('')}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        `;
+        
+        meditationPages.push(pageContent);
+      }
+
+      // Combine all pages with page breaks
+      const allPages = [
+        firstPageContent,
+        ...meditationPages
+      ].join('<div style="page-break-after: always;"></div>');
+
       if (Platform.OS === 'web') {
-        const container = document.createElement('div');
-        container.style.position = 'absolute';
-        container.style.left = '-9999px';
-        container.innerHTML = htmlContent;
-        document.body.appendChild(container);
-
-        const waitForImages = () => {
-          const images = container.getElementsByTagName('img');
-          return Promise.all(
-            Array.from(images).map((img) => {
-              if (img.complete) {
-                return Promise.resolve();
-              }
-              return new Promise((resolve) => {
-                img.onload = img.onerror = resolve;
+        try {
+          // For web platform - use jsPDF directly with separate pages
+          const pdf = new jsPDF('p', 'pt', 'a4');
+          
+          // Function to add a page to the PDF
+          const addPageToPdf = async (htmlContent, pageNum) => {
+            const container = document.createElement('div');
+            // Set a fixed width to match A4 dimensions (595.28pt is standard A4 width)
+            container.style.width = '595.28pt';
+            container.style.position = 'absolute';
+            container.style.left = '-9999px';
+            container.innerHTML = htmlContent;
+            document.body.appendChild(container);
+            
+            try {
+              // Wait for images to load
+              await Promise.all(
+                Array.from(container.querySelectorAll('img')).map(img => {
+                  if (img.complete) return Promise.resolve();
+                  return new Promise(resolve => {
+                    img.onload = resolve;
+                    img.onerror = resolve;
+                  });
+                })
+              );
+              
+              // Use a fixed scale (1.0) to prevent zooming out
+              const canvas = await html2canvas(container, {
+                scale: 1.0, // Use natural scale
+                useCORS: true,
+                logging: false
               });
-            })
-          );
-        };
-
-        await waitForImages();
-        const canvas = await html2canvas(container);
-        const imgData = canvas.toDataURL('image/png');
-        const pdf = new jsPDF();
-        pdf.addImage(imgData, 'PNG', 0, 0);
-        pdf.save('meditations_report.pdf');
-        document.body.removeChild(container);
+              
+              // Always use the full page width
+              const pdfWidth = pdf.internal.pageSize.getWidth();
+              const pdfHeight = pdf.internal.pageSize.getHeight();
+              
+              // Add new page if it's not the first page
+              if (pageNum > 0) pdf.addPage();
+              
+              // Add image with proper sizing
+              pdf.addImage(
+                canvas.toDataURL('image/jpeg', 1.0), 
+                'JPEG', 
+                0, 0, 
+                pdfWidth, 
+                canvas.height * (pdfWidth / canvas.width)
+              );
+            } finally {
+              document.body.removeChild(container);
+            }
+          };
+          
+          // Process each page
+          const pages = [firstPageContent, ...meditationPages];
+          for (let i = 0; i < pages.length; i++) {
+            await addPageToPdf(pages[i], i);
+          }
+          
+          pdf.save('meditation-exercises-report.pdf');
+        } catch (err) {
+          console.error('Error generating PDF:', err);
+          Alert.alert('Error', 'Failed to generate PDF. Please try again.');
+        }
       } else {
-        const { uri } = await Print.printToFileAsync({ html: htmlContent });
-        await shareAsync(uri, { UTI: '.pdf', mimeType: 'application/pdf' });
+        // For mobile platforms
+        try {
+          const { uri } = await Print.printToFileAsync({ 
+            html: allPages,
+            base64: false,
+            width: 612, // Standard 8.5" x 11" page width in points
+            height: 792 // Standard 8.5" x 11" page height in points
+          });
+          await shareAsync(uri, { UTI: '.pdf', mimeType: 'application/pdf' });
+        } catch (error) {
+          console.error('Error generating PDF:', error);
+          Alert.alert('Error', 'Failed to generate PDF. Please try again.');
+        }
       }
     } catch (error) {
       console.error('Error in handleExportPDF:', error);
@@ -639,53 +767,53 @@ const MeditationCRUD = () => {
           </View>
         </Modal>
 
-        {/* Delete Confirmation Modal */}
-        <Modal
-          visible={deleteModalVisible}
-          transparent
-          animationType="slide"
+{/* Delete Confirmation Modal */}
+<Modal
+  visible={deleteModalVisible}
+  transparent
+  animationType="slide"
+>
+  <View style={styles.deleteModal_overlay}>
+    <View style={styles.deleteModal_content}>
+      <View style={styles.deleteModal_header}>
+        <Text style={styles.deleteModal_headerText}>Confirm Delete</Text>
+      </View>
+
+      <View style={styles.deleteModal_body}>
+        <Text style={styles.deleteModal_text}>
+          Are you sure you want to delete this meditation?
+        </Text>
+      </View>
+
+      <View style={styles.deleteModal_footer}>
+        <TouchableOpacity 
+          onPress={() => setDeleteModalVisible(false)} 
+          style={styles.deleteModal_cancelButton}
         >
-          <View style={styles.deleteModal_overlay}>
-            <View style={styles.deleteModal_content}>
-              <View style={styles.deleteModal_header}>
-                <Text style={styles.deleteModal_headerText}>Confirm Delete</Text>
-              </View>
+          <Text style={styles.deleteModal_cancelButtonText}>Cancel</Text>
+        </TouchableOpacity>
 
-              <View style={styles.deleteModal_body}>
-                <Text style={styles.deleteModal_text}>
-                  Are you sure you want to delete this meditation?
-                </Text>
-              </View>
-
-              <View style={styles.deleteModal_footer}>
-                <TouchableOpacity 
-                  onPress={() => setDeleteModalVisible(false)} 
-                  style={styles.deleteModal_cancelButton}
-                >
-                  <Text style={styles.deleteModal_cancelButtonText}>Cancel</Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity 
-                  onPress={() => {
-                    if (selectedMeditation) {
-                      handleDeleteMeditation(selectedMeditation);
-                      setDeleteModalVisible(false);
-                    } else {
-                      Toast.show({
-                        type: 'error',
-                        text1: 'Error',
-                        text2: 'No meditation selected for deletion',
-                      });
-                    }
-                  }} 
-                  style={styles.deleteModal_deleteButton}
-                >
-                  <Text style={styles.deleteModal_deleteButtonText}>Delete</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-          </View>
-        </Modal>
+        <TouchableOpacity 
+          onPress={() => {
+            if (selectedMeditation) {
+              handleDeleteMeditation(selectedMeditation);
+              setDeleteModalVisible(false);
+            } else {
+              Toast.show({
+                type: 'error',
+                text1: 'Error',
+                text2: 'No meditation selected for deletion',
+              });
+            }
+          }} 
+          style={styles.deleteModal_deleteButton}
+        >
+          <Text style={styles.deleteModal_deleteButtonText}>Delete</Text>
+        </TouchableOpacity>
+      </View>
+    </View>
+  </View>
+</Modal>
       </View>
     </View>
   );

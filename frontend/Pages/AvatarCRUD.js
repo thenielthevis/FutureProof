@@ -80,8 +80,13 @@ const AvatarCRUD = () => {
       const avatarsWithImages = await Promise.all(
         avatars.map(async (avatar) => {
           if (avatar.url) {
-            const imageSrc = await convertImageToBase64(avatar.url);
-            return { ...avatar, imageSrc };
+            try {
+              const imageSrc = await convertImageToBase64(avatar.url);
+              return { ...avatar, imageSrc };
+            } catch (error) {
+              console.error('Error converting image:', error);
+              return { ...avatar, imageSrc: null };
+            }
           }
           return { ...avatar, imageSrc: null }; // No image available
         })
@@ -91,84 +96,159 @@ const AvatarCRUD = () => {
       const logo1Base64 = await convertImageToBase64("https://i.ibb.co/GQygLXT9/tuplogo.png");
       const logo2Base64 = await convertImageToBase64("https://i.ibb.co/YBStKgFC/logo-2.png");
 
-      // HTML content for the PDF
-      const htmlContent = `
-        <div style="font-family: Arial, sans-serif; padding: 20px; background: #fff; max-width: 900px; margin: 0 auto;">
-          <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 2px solid #f0f0f0; padding-bottom: 10px;">
-            <img src="${logo1Base64}" alt="Logo 1" style="height: 60px; width: auto;">
-            <div style="flex: 1; text-align: center;">
-              <h1 style="font-size: 20px; margin: 0; color: red;">FUTUREPROOF: A Gamified AI Platform for Predictive Health and Preventive Wellness</h1>
-              <h2 style="font-size: 16px; margin: 0;">Avatar Report</h2>
-              <h4 style="font-size: 14px; margin: 5px 0 0;">${new Date().toLocaleDateString()}</h4>
-            </div>
-            <img src="${logo2Base64}" alt="Logo 2" style="height: 60px; width: auto;">
+      // Calculate how many avatars per page (you can adjust this number)
+      const AVATARS_PER_PAGE = 7;
+      const totalPages = Math.ceil(avatarsWithImages.length / AVATARS_PER_PAGE);
+      
+      // Create header content that will appear on each page
+      const headerContent = `
+        <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 2px solid #f0f0f0; padding-bottom: 10px;">
+          <img src="${logo1Base64}" alt="Logo 1" style="height: 60px; width: auto;">
+          <div style="flex: 1; text-align: center; margin-top: 15px;">
+            <h1 style="font-size: 18px; margin: 0; ">FUTUREPROOF: A Gamified AI Platform for Predictive Health and Preventive Wellness</h1>
+            <h2 style="font-size: 16px; margin: 0; ">Embrace The Bear Within - Strong, Resilient, Future-Ready</h4>
+            <br>
+            <h2 style="font-size: 16px; margin: 0;">Avatars Report</h2>
+            <h4 style="font-size: 14px; margin: 5px 0 0;">${new Date().toLocaleDateString()}</h4>
           </div>
-          <table style="width: 100%; border-collapse: collapse; margin-top: 20px;">
-            <thead>
-              <tr>
-                <th style="padding: 12px; border: 1px solid #ddd; text-align: left; background-color: #f8f9fa;">Image</th>
-                <th style="padding: 12px; border: 1px solid #ddd; text-align: left; background-color: #f8f9fa;">Name</th>
-                <th style="padding: 12px; border: 1px solid #ddd; text-align: left; background-color: #f8f9fa;">Description</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${avatarsWithImages.map((avatar, index) => `
-                <tr style="background-color: ${index % 2 === 0 ? "#fff" : "#f9f9f9"};">
-                  <td style="padding: 12px; border: 1px solid #ddd;">
-                    ${avatar.imageSrc ? `<img src="${avatar.imageSrc}" alt="Avatar" style="max-width: 80px; max-height: 60px;">` : 'No Image'}
-                  </td>
-                  <td style="padding: 12px; border: 1px solid #ddd;">${avatar.name || '-'}</td>
-                  <td style="padding: 12px; border: 1px solid #ddd;">${avatar.description || '-'}</td>
-                </tr>
-              `).join('')}
-            </tbody>
-          </table>
+          <img src="${logo2Base64}" alt="Logo 2" style="height: 60px; width: auto;">
         </div>
       `;
 
+      // Create first page with mission and vision
+      const firstPageContent = `
+        <div style="font-family: Arial, sans-serif; padding: 20px; background: #fff; max-width: 900px; margin: 0 auto;">
+          ${headerContent}
+          
+          <div style="margin-top: 20px;">
+            <h3>Our Mission</h3>
+            <p>FutureProof empowers individuals with AI-driven, gamified health insights for proactive well-being. By integrating genetic, lifestyle, and environmental data, we deliver personalized, preventive care solutions.</p>
+            <h3>Our Vision</h3>
+            <p>We envision a future where predictive healthcare transforms lives, making well-being accessible, engaging, and proactive through AI and gamification.</p>
+          </div>
+        </div>
+      `;
+
+      // Generate pages for avatars with pagination
+      let avatarPages = [];
+      
+      for (let i = 0; i < totalPages; i++) {
+        const startIdx = i * AVATARS_PER_PAGE;
+        const pageAvatars = avatarsWithImages.slice(startIdx, startIdx + AVATARS_PER_PAGE);
+        
+        const pageContent = `
+          <div style="font-family: Arial, sans-serif; padding: 20px; background: #fff; max-width: 900px; margin: 0 auto;">
+            ${headerContent}
+            
+            <div style="margin-top: 20px;">
+              <h3>Avatars ${i > 0 ? `(Page ${i + 1})` : ''}</h3>
+              <table style="width: 100%; border-collapse: collapse; margin-top: 20px;">
+                <thead>
+                  <tr>
+                    <th style="padding: 12px; border: 1px solid #ddd; text-align: left; background-color: #f8f9fa;">Image</th>
+                    <th style="padding: 12px; border: 1px solid #ddd; text-align: left; background-color: #f8f9fa;">Name</th>
+                    <th style="padding: 12px; border: 1px solid #ddd; text-align: left; background-color: #f8f9fa;">Description</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${pageAvatars.map((avatar, index) => `
+                    <tr style="background-color: ${index % 2 === 0 ? "#fff" : "#f9f9f9"};">
+                      <td style="padding: 12px; border: 1px solid #ddd; text-align: center;">
+                        ${avatar.imageSrc ? `<img src="${avatar.imageSrc}" alt="${avatar.name}" style="width: 80px; height: 80px; object-fit: cover; display: block; margin: 0 auto; border-radius: 40px;">` : 'No Image'}
+                      </td>
+                      <td style="padding: 12px; border: 1px solid #ddd;">${avatar.name || '-'}</td>
+                      <td style="padding: 12px; border: 1px solid #ddd;">${avatar.description || '-'}</td>
+                    </tr>
+                  `).join('')}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        `;
+        
+        avatarPages.push(pageContent);
+      }
+
+      // Combine all pages with page breaks
+      const allPages = [
+        firstPageContent,
+        ...avatarPages
+      ].join('<div style="page-break-after: always;"></div>');
+
       if (Platform.OS === 'web') {
-        // Create a hidden container to render the HTML
-        const container = document.createElement('div');
-        container.style.position = 'absolute';
-        container.style.left = '-9999px';
-        container.innerHTML = htmlContent;
-        document.body.appendChild(container);
-
-        // Wait for all images to load
-        const waitForImages = () => {
-          const images = container.getElementsByTagName('img');
-          return Promise.all(
-            Array.from(images).map((img) => {
-              if (img.complete) return Promise.resolve();
-              return new Promise((resolve, reject) => {
-                img.onload = resolve;
-                img.onerror = reject;
-              });
-            })
-          );
-        };
-
         try {
-          await waitForImages(); // Wait for images to load
-          const canvas = await html2canvas(container); // Capture the content as an image
-          const imgData = canvas.toDataURL('image/png'); // Convert canvas to image data URL
-
-          // Generate PDF
+          // For web platform - use jsPDF directly with separate pages
           const pdf = new jsPDF('p', 'pt', 'a4');
-          const pdfWidth = pdf.internal.pageSize.getWidth();
-          const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
-          pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
-          pdf.save('avatar-report.pdf'); // Save the PDF
+          
+          // Function to add a page to the PDF
+          const addPageToPdf = async (htmlContent, pageNum) => {
+            const container = document.createElement('div');
+            // Set a fixed width to match A4 dimensions (595.28pt is standard A4 width)
+            container.style.width = '595.28pt';
+            container.style.position = 'absolute';
+            container.style.left = '-9999px';
+            container.innerHTML = htmlContent;
+            document.body.appendChild(container);
+            
+            try {
+              // Wait for images to load
+              await Promise.all(
+                Array.from(container.querySelectorAll('img')).map(img => {
+                  if (img.complete) return Promise.resolve();
+                  return new Promise(resolve => {
+                    img.onload = resolve;
+                    img.onerror = resolve;
+                  });
+                })
+              );
+              
+              // Use a fixed scale (1.0) to prevent zooming out
+              const canvas = await html2canvas(container, {
+                scale: 1.0, // Use natural scale
+                useCORS: true,
+                logging: false
+              });
+              
+              // Always use the full page width
+              const pdfWidth = pdf.internal.pageSize.getWidth();
+              const pdfHeight = pdf.internal.pageSize.getHeight();
+              
+              // Add new page if it's not the first page
+              if (pageNum > 0) pdf.addPage();
+              
+              // Add image with proper sizing
+              pdf.addImage(
+                canvas.toDataURL('image/jpeg', 1.0), 
+                'JPEG', 
+                0, 0, 
+                pdfWidth, 
+                canvas.height * (pdfWidth / canvas.width)
+              );
+            } finally {
+              document.body.removeChild(container);
+            }
+          };
+          
+          // Process each page
+          const pages = [firstPageContent, ...avatarPages];
+          for (let i = 0; i < pages.length; i++) {
+            await addPageToPdf(pages[i], i);
+          }
+          
+          pdf.save('avatars-report.pdf');
         } catch (err) {
           console.error('Error generating PDF:', err);
           Alert.alert('Error', 'Failed to generate PDF. Please try again.');
-        } finally {
-          document.body.removeChild(container); // Clean up the hidden container
         }
       } else {
-        // For mobile, use expo-print
+        // For mobile platforms
         try {
-          const { uri } = await Print.printToFileAsync({ html: htmlContent });
+          const { uri } = await Print.printToFileAsync({ 
+            html: allPages,
+            base64: false,
+            width: 612, // Standard 8.5" x 11" page width in points
+            height: 792 // Standard 8.5" x 11" page height in points
+          });
           await shareAsync(uri, { UTI: '.pdf', mimeType: 'application/pdf' });
         } catch (error) {
           console.error('Error generating PDF:', error);
