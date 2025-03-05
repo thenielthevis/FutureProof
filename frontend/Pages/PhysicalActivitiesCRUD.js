@@ -359,70 +359,213 @@ const PhysicalActivitiesCRUD = () => {
 
   const handleExportPDF = async () => {
     try {
+      // Convert all activity videos/images to base64 (if needed)
+      const activitiesWithImages = await Promise.all(
+        activities.map(async (activity) => {
+          try {
+            const imageSrc = await convertImageToBase64(activity.url);
+            return { ...activity, imageSrc };
+          } catch (error) {
+            console.error('Error converting image:', error);
+            return { ...activity, imageSrc: null };
+          }
+        })
+      );
+  
       const logo1Base64 = await convertImageToBase64("https://i.ibb.co/GQygLXT9/tuplogo.png");
       const logo2Base64 = await convertImageToBase64("https://i.ibb.co/YBStKgFC/logo-2.png");
   
-      const htmlContent = `
-        <div style="font-family: Arial, sans-serif; padding: 20px; background: #fff; max-width: 900px; margin: 0 auto; text-align: center;">
-          <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 2px solid #f0f0f0; padding-bottom: 10px;">
-            <img src="${logo1Base64}" alt="Logo 1" style="height: 60px; width: auto;">
-            <div style="flex: 1; text-align: center;">
-              <h1 style="font-size: 20px; margin: 0; color: red;">FUTUREPROOF: A Gamified AI Platform for Predictive Health and Preventive Wellness</h1>
-              <h2 style="font-size: 16px; margin: 0;">Physical Activities Report</h2>
-              <h4 style="font-size: 14px; margin: 5px 0 0;">${new Date().toLocaleDateString()}</h4>
-            </div>
-            <img src="${logo2Base64}" alt="Logo 2" style="height: 60px; width: auto;">
+      // Calculate how many activities per page
+      const ACTIVITIES_PER_PAGE = 3;
+      const totalPages = Math.ceil(activitiesWithImages.length / ACTIVITIES_PER_PAGE);
+      
+      // Create header content that will appear on each page
+      const headerContent = `
+        <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 2px solid #f0f0f0; padding-bottom: 10px;">
+          <img src="${logo1Base64}" alt="Logo 1" style="height: 60px; width: auto;">
+          <div style="flex: 1; text-align: center; margin-top: 15px;">
+            <h1 style="font-size: 18px; margin: 0; ">FUTUREPROOF: A Gamified AI Platform for Predictive Health and Preventive Wellness</h1>
+            <h2 style="font-size: 16px; margin: 0; ">Embrace The Bear Within - Strong, Resilient, Future-Ready</h4>
+            <br>
+            <h2 style="font-size: 16px; margin: 0;">Physical Activities Report</h2>
+            <h4 style="font-size: 14px; margin: 5px 0 0;">${new Date().toLocaleDateString()}</h4>
           </div>
-          <table style="width: 100%; border-collapse: collapse; margin-top: 20px;">
-            <thead>
-              <tr>
-                <th style="padding: 12px; border: 1px solid #ddd; text-align: left; background-color: #f8f9fa;">Activity Name</th>
-                <th style="padding: 12px; border: 1px solid #ddd; text-align: left; background-color: #f8f9fa;">Activity Type</th>
-                <th style="padding: 12px; border: 1px solid #ddd; text-align: left; background-color: #f8f9fa;">Description</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${activities.map((activity, index) => `
-                <tr style="background-color: ${index % 2 === 0 ? "#fff" : "#f9f9f9"};">
-                  <td style="padding: 12px; border: 1px solid #ddd;">${activity.activity_name || '-'}</td>
-                  <td style="padding: 12px; border: 1px solid #ddd;">${activity.activity_type || '-'}</td>
-                  <td style="padding: 12px; border: 1px solid #ddd;">${activity.description || '-'}</td>
-                </tr>
-              `).join('')}
-            </tbody>
-          </table>
+          <img src="${logo2Base64}" alt="Logo 2" style="height: 60px; width: auto;">
         </div>
       `;
   
+      // Create first page with mission and vision
+      const firstPageContent = `
+        <div style="font-family: Arial, sans-serif; padding: 20px; background: #fff; max-width: 900px; margin: 0 auto;">
+          ${headerContent}
+          
+          <div style="margin-top: 20px;">
+            <h3>Our Mission</h3>
+            <p>FutureProof empowers individuals with AI-driven, gamified health insights for proactive well-being. By integrating genetic, lifestyle, and environmental data, we deliver personalized, preventive care solutions.</p>
+            <h3>Our Vision</h3>
+            <p>We envision a future where predictive healthcare transforms lives, making well-being accessible, engaging, and proactive through AI and gamification.</p>
+            
+            <div style="margin-top: 20px;">
+              <h3>Benefits of Physical Activities</h3>
+              <p>Regular physical activity has been shown to:</p>
+              <ul>
+                <li>Strengthen your heart and improve cardiovascular health</li>
+                <li>Maintain a healthy weight and manage weight-related concerns</li>
+                <li>Reduce risk of type 2 diabetes and metabolic syndrome</li>
+                <li>Strengthen bones and muscles, improving balance and flexibility</li>
+                <li>Improve mental health and mood, reducing anxiety and depression</li>
+                <li>Increase your chances of living longer</li>
+              </ul>
+              <p>Our guided physical activities help users develop strength, flexibility, and endurance for better long-term health outcomes.</p>
+            </div>
+          </div>
+        </div>
+      `;
+  
+      // Generate pages for activities with pagination
+      let activityPages = [];
+      
+      for (let i = 0; i < totalPages; i++) {
+        const startIdx = i * ACTIVITIES_PER_PAGE;
+        const pageActivities = activitiesWithImages.slice(startIdx, startIdx + ACTIVITIES_PER_PAGE);
+        
+        const pageContent = `
+          <div style="font-family: Arial, sans-serif; padding: 20px; background: #fff; max-width: 900px; margin: 0 auto;">
+            ${headerContent}
+            
+            <div style="margin-top: 20px;">
+              <h3>Physical Activities ${i > 0 ? `(Page ${i + 1})` : ''}</h3>
+              <table style="width: 100%; border-collapse: collapse; margin-top: 20px;">
+                <thead>
+                  <tr>
+                    <th style="padding: 12px; border: 1px solid #ddd; text-align: left; background-color: #f8f9fa;">Activity</th>
+                    <th style="padding: 12px; border: 1px solid #ddd; text-align: left; background-color: #f8f9fa;">Type</th>
+                    <th style="padding: 12px; border: 1px solid #ddd; text-align: left; background-color: #f8f9fa;">Description</th>
+                    <th style="padding: 12px; border: 1px solid #ddd; text-align: left; background-color: #f8f9fa;">Instructions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${pageActivities.map((activity, index) => `
+                    <tr style="background-color: ${index % 2 === 0 ? "#fff" : "#f9f9f9"};">
+                      <td style="padding: 12px; border: 1px solid #ddd; width: 20%;">
+                        <div>
+                          <strong>${activity.activity_name || '-'}</strong>
+                        </div>
+                        <div style="width: 80px; height: 80px; background-color: #f0f0f0; border-radius: 5px; margin-top: 8px; display: flex; align-items: center; justify-content: center;">
+                          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="#10B981">
+                            <path d="M8 5v14l11-7z"/>
+                          </svg>
+                        </div>
+                      </td>
+                      <td style="padding: 12px; border: 1px solid #ddd; width: 15%;">${activity.activity_type || '-'}</td>
+                      <td style="padding: 12px; border: 1px solid #ddd; width: 30%;">${activity.description || '-'}</td>
+                      <td style="padding: 12px; border: 1px solid #ddd; width: 35%;">
+                        ${Array.isArray(activity.instructions) && activity.instructions.length > 0 ? 
+                          `<ol style="margin: 0; padding-left: 16px;">
+                            ${activity.instructions.map(instruction => 
+                              `<li>${instruction}</li>`
+                            ).join('')}
+                          </ol>` 
+                          : 'No instructions provided'}
+                        ${activity.repetition ? `<p><strong>Repetitions:</strong> ${activity.repetition}</p>` : ''}
+                        ${activity.timer ? `<p><strong>Timer:</strong> ${activity.timer} seconds</p>` : ''}
+                      </td>
+                    </tr>
+                  `).join('')}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        `;
+        
+        activityPages.push(pageContent);
+      }
+  
+      // Combine all pages with page breaks
+      const allPages = [
+        firstPageContent,
+        ...activityPages
+      ].join('<div style="page-break-after: always;"></div>');
+  
       if (Platform.OS === 'web') {
-        const container = document.createElement('div');
-        container.style.position = 'absolute';
-        container.style.left = '-9999px';
-        container.innerHTML = htmlContent;
-        document.body.appendChild(container);
-  
-        const waitForImages = () => {
-          const images = container.getElementsByTagName('img');
-          return Promise.all(
-            Array.from(images).map((img) => {
-              if (img.complete) return Promise.resolve();
-              return new Promise((resolve) => {
-                img.onload = img.onerror = resolve;
+        try {
+          // For web platform - use jsPDF directly with separate pages
+          const pdf = new jsPDF('p', 'pt', 'a4');
+          
+          // Function to add a page to the PDF
+          const addPageToPdf = async (htmlContent, pageNum) => {
+            const container = document.createElement('div');
+            // Set a fixed width to match A4 dimensions (595.28pt is standard A4 width)
+            container.style.width = '595.28pt';
+            container.style.position = 'absolute';
+            container.style.left = '-9999px';
+            container.innerHTML = htmlContent;
+            document.body.appendChild(container);
+            
+            try {
+              // Wait for images to load
+              await Promise.all(
+                Array.from(container.querySelectorAll('img')).map(img => {
+                  if (img.complete) return Promise.resolve();
+                  return new Promise(resolve => {
+                    img.onload = resolve;
+                    img.onerror = resolve;
+                  });
+                })
+              );
+              
+              // Use a fixed scale (1.0) to prevent zooming out
+              const canvas = await html2canvas(container, {
+                scale: 1.0, // Use natural scale
+                useCORS: true,
+                logging: false
               });
-            })
-          );
-        };
-  
-        await waitForImages();
-        const canvas = await html2canvas(container);
-        const imgData = canvas.toDataURL('image/png');
-        const pdf = new jsPDF();
-        pdf.addImage(imgData, 'PNG', 0, 0);
-        pdf.save('physical_activities_report.pdf');
-        document.body.removeChild(container);
+              
+              // Always use the full page width
+              const pdfWidth = pdf.internal.pageSize.getWidth();
+              const pdfHeight = pdf.internal.pageSize.getHeight();
+              
+              // Add new page if it's not the first page
+              if (pageNum > 0) pdf.addPage();
+              
+              // Add image with proper sizing
+              pdf.addImage(
+                canvas.toDataURL('image/jpeg', 1.0), 
+                'JPEG', 
+                0, 0, 
+                pdfWidth, 
+                canvas.height * (pdfWidth / canvas.width)
+              );
+            } finally {
+              document.body.removeChild(container);
+            }
+          };
+          
+          // Process each page
+          const pages = [firstPageContent, ...activityPages];
+          for (let i = 0; i < pages.length; i++) {
+            await addPageToPdf(pages[i], i);
+          }
+          
+          pdf.save('physical-activities-report.pdf');
+        } catch (err) {
+          console.error('Error generating PDF:', err);
+          Alert.alert('Error', 'Failed to generate PDF. Please try again.');
+        }
       } else {
-        const { uri } = await Print.printToFileAsync({ html: htmlContent });
-        await shareAsync(uri, { UTI: '.pdf', mimeType: 'application/pdf' });
+        // For mobile platforms
+        try {
+          const { uri } = await Print.printToFileAsync({ 
+            html: allPages,
+            base64: false,
+            width: 612, // Standard 8.5" x 11" page width in points
+            height: 792 // Standard 8.5" x 11" page height in points
+          });
+          await shareAsync(uri, { UTI: '.pdf', mimeType: 'application/pdf' });
+        } catch (error) {
+          console.error('Error generating PDF:', error);
+          Alert.alert('Error', 'Failed to generate PDF. Please try again.');
+        }
       }
     } catch (error) {
       console.error('Error in handleExportPDF:', error);
