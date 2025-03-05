@@ -21,6 +21,7 @@ import Chart from 'chart.js/auto';
 
 const screenWidth = Dimensions.get('window').width;
 const isMobile = screenWidth < 768;
+
 const UserDashboard = ({ navigation }) => {
   const [user, setUser] = useState({});
   const [loading, setLoading] = useState(true);
@@ -385,8 +386,9 @@ const UserDashboard = ({ navigation }) => {
       const logo1Base64 = await convertImageToBase64("https://i.ibb.co/GQygLXT9/tuplogo.png");
       const logo2Base64 = await convertImageToBase64("https://i.ibb.co/YBStKgFC/logo-2.png");
   
+      // PAGE 1: Profile Section
       const profileHtml = `
-        <div style="font-family: Arial, sans-serif; padding: 20px; background: #fff; max-width: 900px; margin: 0 auto;">
+        <div style="font-family: Arial, sans-serif; padding: 20px; background: #fff; max-width: 800px; margin: 0 auto;">
           <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 2px solid #f0f0f0; padding-bottom: 10px;">
             <img src="${logo1Base64}" alt="Logo 1" style="height: 60px; width: auto;">
             <div style="flex: 1; text-align: center; margin-top: 15px;">
@@ -397,15 +399,14 @@ const UserDashboard = ({ navigation }) => {
             </div>
             <img src="${logo2Base64}" alt="Logo 2" style="height: 60px; width: auto;">
           </div>
-  
-          <div style="margin-top: 10px;">
+          <div style="margin-top: 20px;">
             <h3>Our Mission</h3>
             <p>FutureProof empowers individuals with AI-driven, gamified health insights for proactive well-being. By integrating genetic, lifestyle, and environmental data, we deliver personalized, preventive care solutions.</p>
             <h3>Our Vision</h3>
             <p>We envision a future where predictive healthcare transforms lives, making well-being accessible, engaging, and proactive through AI and gamification.</p>
           </div>
           <div style="margin-top: 20px;">
-            <h3>User Information</h3>
+            <h3>Summary</h3>
             <table style="width: 100%; border-collapse: collapse; margin-top: 20px;">
               <tr>
                 <th style="padding: 12px; border: 1px solid #ddd; text-align: left; background-color: #f8f9fa;">Username</th>
@@ -427,32 +428,10 @@ const UserDashboard = ({ navigation }) => {
                 <th style="padding: 12px; border: 1px solid #ddd; text-align: left; background-color: #f8f9fa;">Weight</th>
                 <td style="padding: 12px; border: 1px solid #ddd;">${user.weight} kg</td>
               </tr>
-            </table>
-          </div>
-        </div>
-      `;
-  
-      const predictionHtml = `
-        <div style="font-family: Arial, sans-serif; padding: 20px; background: #fff; max-width: 500px; margin: 0 auto;">
-          <div style="margin-top: 20px;">
-            <h3>Health Prediction Analysis</h3>
-            <div id="lineChartContainer" style="text-align: center; margin-bottom: 50px;">
-              <h4>Risk Analysis</h4>
-              <canvas id="lineChartCanvas" width="400" height="250"></canvas>
-            </div>
-            <div id="pieChartContainer" style="text-align: center; margin-top: 50px;">
-              <h4>Risk Distribution</h4>
-              <canvas id="pieChartCanvas" width="400" height="250"></canvas>
-            </div>
-          </div>
-        </div>
-      `;
-  
-      const dashboardHtml = `
-        <div style="font-family: Arial, sans-serif; padding: 20px; background: #fff; max-width: 900px; margin: 0 auto;">
-          <div style="margin-top: 20px;">
-            <h3>Performance Dashboard</h3>
-            <table style="width: 100%; border-collapse: collapse; margin-top: 20px;">
+              <tr>
+                <th style="padding: 12px; border: 1px solid #ddd; text-align: left; background-color: #f8f9fa;">BMI</th>
+                <td style="padding: 12px; border: 1px solid #ddd;">${bmi} (${bmiStatus})</td>
+              </tr>
               <tr>
                 <th style="padding: 12px; border: 1px solid #ddd; text-align: left; background-color: #f8f9fa;">Total Tasks Completed</th>
                 <td style="padding: 12px; border: 1px solid #ddd;">${taskCompletions.length}</td>
@@ -474,295 +453,341 @@ const UserDashboard = ({ navigation }) => {
         </div>
       `;
   
-      const htmlContent = profileHtml + '<div style="page-break-after: always;"></div>' + predictionHtml + '<div style="page-break-after: always;"></div>' + dashboardHtml;
-  
-      if (Platform.OS === 'web') {
-        const container = document.createElement('div');
-        container.style.position = 'absolute';
-        container.style.left = '-9999px';
-        container.innerHTML = htmlContent;
-        document.body.appendChild(container);
-  
-        const waitForImages = () => {
-          const images = container.getElementsByTagName('img');
-          return Promise.all(
-            Array.from(images).map((img) => {
-              if (img.complete) return Promise.resolve();
-              return new Promise((resolve) => {
-                img.onload = resolve;
-                img.onerror = resolve;
-              });
-            })
-          );
-        };
-  
-        await waitForImages();
-  
-        const renderCharts = async () => {
-          const lineChartCanvas = document.getElementById('lineChartCanvas');
-          const pieChartCanvas = document.getElementById('pieChartCanvas');
-  
-          const lineChartData = {
-            labels: prediction.predicted_diseases.map((item) => item.condition),
-            datasets: [{
-              label: 'Risk Analysis',
-              data: prediction.predicted_diseases.map((item) => parseInt(item.details.match(/\d+/)?.[0] || 0)),
-              borderColor: 'rgba(76, 175, 80, 1)',
-              backgroundColor: 'rgba(76, 175, 80, 0.2)',
-              borderWidth: 2,
-              fill: true,
-            }],
-          };
-  
-          const pieChartData = {
-            labels: prediction.predicted_diseases.map((item) => item.condition),
-            datasets: [{
-              data: prediction.predicted_diseases.map((item) => parseInt(item.details.match(/\d+/)?.[0] || 0)),
-              backgroundColor: ['#00C853', '#69F0AE', '#00E676', '#1B5E20', '#388E3C', '#43A047'],
-              borderWidth: 1,
-            }],
-          };
-  
-          const lineChartConfig = {
-            type: 'line',
-            data: lineChartData,
-            options: {
-              responsive: true,
-              maintainAspectRatio: false,
-              scales: {
-                x: { beginAtZero: true },
-                y: { beginAtZero: true },
-              },
-            },
-          };
-  
-          const pieChartConfig = {
-            type: 'pie',
-            data: pieChartData,
-            options: {
-              responsive: true,
-              maintainAspectRatio: false,
-            },
-          };
-  
-          new Chart(lineChartCanvas, lineChartConfig);
-          new Chart(pieChartCanvas, pieChartConfig);
-  
-          await new Promise(resolve => setTimeout(resolve, 1000)); // Wait for charts to render
-        };
-  
-        try {
-          await renderCharts();
-          const canvas = await html2canvas(container);
-          const imgData = canvas.toDataURL('image/png');
-  
-          const pdf = new jsPDF('p', 'pt', 'a4');
-          const pdfWidth = pdf.internal.pageSize.getWidth();
-          const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
-  
-          pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
-  
-          let currentHeight = pdfHeight;
-          while (currentHeight > pdf.internal.pageSize.getHeight()) {
-            pdf.addPage();
-            currentHeight -= pdf.internal.pageSize.getHeight();
-            pdf.addImage(imgData, 'PNG', 0, -currentHeight, pdfWidth, pdfHeight);
-          }
-  
-          pdf.save('user-dashboard-report.pdf');
-        } catch (err) {
-          console.error('Error generating PDF:', err);
-          Alert.alert('Error', 'Failed to generate PDF. Please try again.');
-        } finally {
-          document.body.removeChild(container);
-        }
-      }
-    } catch (error) {
-      console.error('Error in handleExportPDF:', error);
-      Alert.alert('Error', 'Something went wrong. Please try again.');
-    }
-  };
-  
-  const handleExportUserPDF = async (assessment) => {
-    try {
-      // Convert logo URLs to base64
-      const logo1Base64 = await convertImageToBase64("https://i.ibb.co/GQygLXT9/tuplogo.png");
-      const logo2Base64 = await convertImageToBase64("https://i.ibb.co/YBStKgFC/logo-2.png");
-
-      const htmlContent = `
-        <div style="font-family: Arial, sans-serif; padding: 20px; background: #fff; max-width: 900px; margin: 0 auto;">
+      // PAGE 2: Prediction Section
+      const predictionHtml = `
+        <div style="font-family: Arial, sans-serif; padding: 20px; background: #fff; max-width: 800px; margin: 0 auto;">
           <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 2px solid #f0f0f0; padding-bottom: 10px;">
-            <img src="${logo1Base64}" alt="Logo 1" style="height: 60px; width: auto;">
-            <div style="flex: 1; text-align: center; margin-top: 15px;">
-              <h1 style="font-size: 18px; margin: 0; ">FUTUREPROOF: A Gamified AI Platform for Predictive Health and Preventive Wellness</h1>
-              <br>
-              <h2 style="font-size: 16px; margin: 0;">Daily Assessment Report</h2>
-              <h4 style="font-size: 14px; margin: 5px 0 0;">${new Date().toLocaleDateString()}</h4>
+            <img src="${logo1Base64}" alt="Logo 1" style="height: 40px; width: auto;">
+            <div style="text-align: center;">
+              <h2 style="font-size: 16px; margin: 0;">Health Prediction Analysis</h2>
+              <h4 style="font-size: 14px; margin: 5px 0 0;">${user.username} - ${new Date().toLocaleDateString()}</h4>
+            </div>
+            <img src="${logo2Base64}" alt="Logo 2" style="height: 40px; width: auto;">
           </div>
-            <img src="${logo2Base64}" alt="Logo 2" style="height: 60px; width: auto;">
+          
+          <div style="margin-top: 20px;">
+            <h3 style="font-size: 16px;">User Health Information</h3>
+            <p style="font-size: 14px;">${prediction.user_info?.details || 'No details available'}</p>
           </div>
-          <div style="margin-top: 10px;">
-            <h3>Our Mission</h3>
-            <p>FutureProof empowers individuals with AI-driven, gamified health insights for proactive well-being. By integrating genetic, lifestyle, and environmental data, we deliver personalized, preventive care solutions.</p>
-            <h3>Our Vision</h3>
-            <p>We envision a future where predictive healthcare transforms lives, making well-being accessible, engaging, and proactive through AI and gamification.</p>
+          
+          <div style="margin-top: 20px; display: flex; flex-direction: column; align-items: center;">
+            <div style="width: 100%; margin-bottom: 20px;">
+              <h3 style="font-size: 16px; text-align: center;">Risk Analysis</h3>
+              <div id="riskAnalysisChart" style="width: 600px; height: 250px; margin: 0 auto;"></div>
+            </div>
+            
+            <div style="width: 100%;">
+              <h3 style="font-size: 16px; text-align: center;">Risk Distribution</h3>
+              <div id="riskDistributionChart" style="width: 500px; height: 250px; margin: 0 auto;"></div>
+            </div>
           </div>
-          <div style="margin-top: 10px;">
-            <h3>User Information</h3>
-            <table style="width: 100%; border-collapse: collapse; margin-top: 20px;">
-              <tr>
-                <th style="padding: 12px; border: 1px solid #ddd; text-align: left; background-color: #f8f9fa;">Username</th>
-                <td style="padding: 12px; border: 1px solid #ddd;">${assessment.username}</td>
+          
+          <div style="margin-top: 20px;">
+            <h3 style="font-size: 16px;">Risk Breakdown</h3>
+            <table style="width: 100%; border-collapse: collapse; margin-top: 10px;">
+              <tr style="background-color: #f8f9fa;">
+                <th style="padding: 8px; border: 1px solid #ddd; text-align: left;">Health Condition</th>
+                <th style="padding: 8px; border: 1px solid #ddd; text-align: left;">Risk Level</th>
               </tr>
-              <tr>
-                <th style="padding: 12px; border: 1px solid #ddd; text-align: left; background-color: #f8f9fa;">Age</th>
-                <td style="padding: 12px; border: 1px solid #ddd;">${assessment.age}</td>
-              </tr>
-              <tr>
-                <th style="padding: 12px; border: 1px solid #ddd; text-align: left; background-color: #f8f9fa;">Gender</th>
-                <td style="padding: 12px; border: 1px solid #ddd;">${assessment.gender}</td>
-              </tr>
-              <tr>
-                <th style="padding: 12px; border: 1px solid #ddd; text-align: left; background-color: #f8f9fa;">Height</th>
-                <td style="padding: 12px; border: 1px solid #ddd;">${assessment.height} cm</td>
-              </tr>
-              <tr>
-                <th style="padding: 12px; border: 1px solid #ddd; text-align: left; background-color: #f8f9fa;">Weight</th>
-                <td style="padding: 12px; border: 1px solid #ddd;">${assessment.weight} kg</td>
-              </tr>
-              <tr>
-                <th style="padding: 12px; border: 1px solid #ddd; text-align: left; background-color: #f8f9fa;">Environment</th>
-                <td style="padding: 12px; border: 1px solid #ddd;">${assessment.environment}</td>
-              </tr>
-              <tr>
-                <th style="padding: 12px; border: 1px solid #ddd; text-align: left; background-color: #f8f9fa;">Vices</th>
-                <td style="padding: 12px; border: 1px solid #ddd;">${assessment.vices.join(', ')}</td>
-              </tr>
-              <tr>
-                <th style="padding: 12px; border: 1px solid #ddd; text-align: left; background-color: #f8f9fa;">Genetic Diseases</th>
-                <td style="padding: 12px; border: 1px solid #ddd;">${assessment.genetic_diseases.join(', ')}</td>
-              </tr>
-              <tr>
-                <th style="padding: 12px; border: 1px solid #ddd; text-align: left; background-color: #f8f9fa;">Lifestyle</th>
-                <td style="padding: 12px; border: 1px solid #ddd;">${assessment.lifestyle.join(', ')}</td>
-              </tr>
-              <tr>
-                <th style="padding: 12px; border: 1px solid #ddd; text-align: left; background-color: #f8f9fa;">Food Intake</th>
-                <td style="padding: 12px; border: 1px solid #ddd;">${assessment.food_intake.join(', ')}</td>
-              </tr>
-              <tr>
-                <th style="padding: 12px; border: 1px solid #ddd; text-align: left; background-color: #f8f9fa;">Sleep Hours</th>
-                <td style="padding: 12px; border: 1px solid #ddd;">${assessment.sleep_hours}</td>
-              </tr>
-              <tr>
-                <th style="padding: 12px; border: 1px solid #ddd; text-align: left; background-color: #f8f9fa;">Activeness</th>
-                <td style="padding: 12px; border: 1px solid #ddd;">${assessment.activeness}</td>
-              </tr>
-            </table>
-          </div>
-          <div style="margin-top: 10px;">
-            <h3>Prevention Progress</h3>
-            <ul>
-              ${assessment.updated_predictions.map(prediction => `
-                <li>
-                  <b>Condition: ${prediction.condition}</b><br>
-                  <div style="display: flex; align-items: center;">
-                    <div style="width: 100px; height: 10px; background-color: #ddd; margin-right: 10px;">
-                      <div style="width: ${prediction.old_percentage}%; height: 100%; background-color: #3498db;"></div>
-                    </div>
-                    <span>${prediction.old_percentage}%</span>
-                  </div>
-                  <div style="display: flex; align-items: center; margin-top: 5px;">
-                    <div style="width: 100px; height: 10px; background-color: #ddd; margin-right: 10px;">
-                      <div style="width: ${prediction.new_percentage}%; height: 100%; background-color: #2ecc71;"></div>
-                    </div>
-                    <span>${prediction.new_percentage}%</span>
-                  </div>
-                  <p>Reason: ${prediction.reason}</p>
-                </li>
-              `).join('')}
-            </ul>
-          </div>
-          <div style="margin-top: 10px;">
-            <h3>Nutritional Analysis</h3>
-            <table style="width: 100%; border-collapse: collapse; margin-top: 20px;">
-              <thead>
+              ${prediction.predicted_diseases?.map((disease, index) => `
                 <tr>
-                  <th style="padding: 12px; border: 1px solid #ddd; text-align: left; background-color: #f8f9fa;">Question</th>
-                  <th style="padding: 12px; border: 1px solid #ddd; text-align: left; background-color: #f8f9fa;">Answer</th>
+                  <td style="padding: 8px; border: 1px solid #ddd;">${disease.condition}</td>
+                  <td style="padding: 8px; border: 1px solid #ddd;">${disease.details}</td>
                 </tr>
-              </thead>
-              <tbody>
-                ${assessment.nutritional_analysis.questions_answers.map(qa => `
-                  <tr>
-                    <td style="padding: 12px; border: 1px solid #ddd;">${qa.question}</td>
-                    <td style="padding: 12px; border: 1px solid #ddd;">${qa.answer}</td>
-                  </tr>
-                `).join('')}
-              </tbody>
+              `).join('') || '<tr><td colspan="2" style="padding: 8px; border: 1px solid #ddd;">No prediction data available</td></tr>'}
             </table>
-          </div>
-          <div style="margin-top: 10px;">
-            <h3>Recommendations</h3>
-            <ul>
-              ${assessment.recommendations.map(rec => `
-                <li>${rec}</li>
-              `).join('')}
-            </ul>
           </div>
         </div>
       `;
-
+  
+      // PAGE 3: Dashboard Section
+      const dashboardHtml = `
+        <div style="font-family: Arial, sans-serif; padding: 20px; background: #fff; max-width: 800px; margin: 0 auto;">
+          <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 2px solid #f0f0f0; padding-bottom: 10px;">
+            <img src="${logo1Base64}" alt="Logo 1" style="height: 40px; width: auto;">
+            <div style="text-align: center;">
+              <h2 style="font-size: 16px; margin: 0;">Performance Dashboard</h2>
+              <h4 style="font-size: 14px; margin: 5px 0 0;">${user.username} - ${new Date().toLocaleDateString()}</h4>
+            </div>
+            <img src="${logo2Base64}" alt="Logo 2" style="height: 40px; width: auto;">
+          </div>
+          
+          <div style="margin-top: 20px;">
+            <div style="width: 100%; margin-bottom: 20px;">
+              <h3 style="font-size: 16px; text-align: center;">Task Completion Time (Minutes)</h3>
+              <div id="taskCompletionChart" style="width: 600px; height: 250px; margin: 0 auto;"></div>
+            </div>
+            
+            <div style="margin-top: 30px;">
+              <h3 style="font-size: 16px;">Recent Task Completions</h3>
+              <table style="width: 100%; border-collapse: collapse; margin-top: 10px;">
+                <tr style="background-color: #f8f9fa;">
+                  <th style="padding: 8px; border: 1px solid #ddd; text-align: left;">Task Type</th>
+                  <th style="padding: 8px; border: 1px solid #ddd; text-align: left;">Date Completed</th>
+                  <th style="padding: 8px; border: 1px solid #ddd; text-align: left;">Time Spent (min)</th>
+                </tr>
+                ${taskCompletions.slice(0, 5).map((task, index) => `
+                  <tr>
+                    <td style="padding: 8px; border: 1px solid #ddd;">${task.task_type}</td>
+                    <td style="padding: 8px; border: 1px solid #ddd;">${new Date(task.date_completed).toLocaleDateString()}</td>
+                    <td style="padding: 8px; border: 1px solid #ddd;">${task.time_spent}</td>
+                  </tr>
+                `).join('') || '<tr><td colspan="3" style="padding: 8px; border: 1px solid #ddd;">No task completion data available</td></tr>'}
+              </table>
+            </div>
+            
+            <div style="margin-top: 30px;">
+              <h3 style="font-size: 16px;">Performance Summary</h3>
+              <table style="width: 100%; border-collapse: collapse; margin-top: 10px;">
+                <tr>
+                  <th style="padding: 8px; border: 1px solid #ddd; text-align: left; background-color: #f8f9fa;">Today's Tasks</th>
+                  <td style="padding: 8px; border: 1px solid #ddd;">${todayTaskCompletions.length}</td>
+                </tr>
+                <tr>
+                  <th style="padding: 8px; border: 1px solid #ddd; text-align: left; background-color: #f8f9fa;">Total Tasks Completed</th>
+                  <td style="padding: 8px; border: 1px solid #ddd;">${taskCompletions.length}</td>
+                </tr>
+                <tr>
+                  <th style="padding: 8px; border: 1px solid #ddd; text-align: left; background-color: #f8f9fa;">Total Time Spent</th>
+                  <td style="padding: 8px; border: 1px solid #ddd;">${totalTimeSpent} minutes</td>
+                </tr>
+                <tr>
+                  <th style="padding: 8px; border: 1px solid #ddd; text-align: left; background-color: #f8f9fa;">Total Coins</th>
+                  <td style="padding: 8px; border: 1px solid #ddd;">${totalCoins}</td>
+                </tr>
+              </table>
+            </div>
+          </div>
+        </div>
+      `;
+  
       if (Platform.OS === 'web') {
-        const container = document.createElement('div');
-        container.style.position = 'absolute';
-        container.style.left = '-9999px';
-        container.innerHTML = htmlContent;
-        document.body.appendChild(container);
-
-        const waitForImages = () => {
-          const images = container.getElementsByTagName('img');
-          return Promise.all(
-            Array.from(images).map((img) => {
+        // Create containers for each page and add to document
+        const profileContainer = document.createElement('div');
+        profileContainer.style.position = 'absolute';
+        profileContainer.style.left = '-9999px';
+        profileContainer.innerHTML = profileHtml;
+        document.body.appendChild(profileContainer);
+  
+        const predictionContainer = document.createElement('div');
+        predictionContainer.style.position = 'absolute';
+        predictionContainer.style.left = '-9999px';
+        predictionContainer.innerHTML = predictionHtml;
+        document.body.appendChild(predictionContainer);
+  
+        const dashboardContainer = document.createElement('div');
+        dashboardContainer.style.position = 'absolute';
+        dashboardContainer.style.left = '-9999px';
+        dashboardContainer.innerHTML = dashboardHtml;
+        document.body.appendChild(dashboardContainer);
+  
+        // Render prediction charts
+        if (prediction.predicted_diseases?.length > 0) {
+          const diseaseLabels = prediction.predicted_diseases.map((item) => item.condition);
+          const diseaseData = prediction.predicted_diseases.map((item) => parseInt(item.details.match(/\d+/)?.[0] || 0));
+          
+          // Risk Analysis Line Chart
+          const riskAnalysisChart = document.getElementById('riskAnalysisChart');
+          const riskCtx = document.createElement('canvas');
+          riskCtx.width = 600;
+          riskCtx.height = 250;
+          riskAnalysisChart.appendChild(riskCtx);
+          
+          new Chart(riskCtx, {
+            type: 'line',
+            data: {
+              labels: diseaseLabels,
+              datasets: [{
+                label: 'Risk Level (%)',
+                data: diseaseData,
+                borderColor: '#2e7d32',
+                backgroundColor: 'rgba(46, 125, 50, 0.2)',
+                tension: 0.3,
+                fill: true
+              }]
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              plugins: {
+                legend: {
+                  display: true,
+                  position: 'top',
+                  labels: { font: { size: 10 }}
+                }
+              },
+              scales: {
+                y: {
+                  beginAtZero: true,
+                  max: 100,
+                  ticks: { font: { size: 10 }}
+                },
+                x: {
+                  ticks: { font: { size: 10 }}
+                }
+              }
+            }
+          });
+          
+          // Risk Distribution Pie Chart
+          const riskDistributionChart = document.getElementById('riskDistributionChart');
+          const pieCtx = document.createElement('canvas');
+          pieCtx.width = 500;
+          pieCtx.height = 250;
+          riskDistributionChart.appendChild(pieCtx);
+          
+          const colors = ['#00C853', '#69F0AE', '#00E676', '#1B5E20', '#388E3C', '#43A047'];
+          
+          new Chart(pieCtx, {
+            type: 'pie',
+            data: {
+              labels: diseaseLabels,
+              datasets: [{
+                data: diseaseData,
+                backgroundColor: colors.slice(0, diseaseLabels.length),
+                borderWidth: 1
+              }]
+            },
+            options: {
+              responsive: true,
+              maintainAspectRatio: false,
+              plugins: {
+                legend: {
+                  position: 'right',
+                  labels: { font: { size: 9 }}
+                }
+              }
+            }
+          });
+        }
+        
+        // Render task completion chart
+        const taskCompletionChart = document.getElementById('taskCompletionChart');
+        const taskCtx = document.createElement('canvas');
+        taskCtx.width = 600;
+        taskCtx.height = 250;
+        taskCompletionChart.appendChild(taskCtx);
+        
+        new Chart(taskCtx, {
+          type: 'bar',
+          data: {
+            labels: taskCompletions.length > 0 ? 
+              taskCompletions.slice(0, 10).map((task, index) => `Task ${index + 1}`) : 
+              ["No Data"],
+            datasets: [{
+              label: 'Time Spent (Minutes)',
+              data: taskCompletions.length > 0 ? 
+                taskCompletions.slice(0, 10).map((task) => task.time_spent) : 
+                [0],
+              backgroundColor: 'rgba(46, 125, 50, 0.7)',
+              borderColor: '#2e7d32',
+              borderWidth: 1
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: {
+                display: true,
+                position: 'top',
+                labels: { font: { size: 10 }}
+              }
+            },
+            scales: {
+              y: {
+                beginAtZero: true,
+                ticks: { font: { size: 10 }}
+              },
+              x: {
+                ticks: { font: { size: 10 }}
+              }
+            }
+          }
+        });
+  
+        // Wait for images and charts to render
+        const waitForRendering = () => {
+          const allCanvases = [
+            ...predictionContainer.getElementsByTagName('canvas'),
+            ...dashboardContainer.getElementsByTagName('canvas')
+          ];
+          const allImages = [
+            ...profileContainer.getElementsByTagName('img'),
+            ...predictionContainer.getElementsByTagName('img'),
+            ...dashboardContainer.getElementsByTagName('img')
+          ];
+          
+          return Promise.all([
+            ...allImages.map(img => {
               if (img.complete) return Promise.resolve();
-              return new Promise((resolve, reject) => {
+              return new Promise((resolve) => {
                 img.onload = resolve;
-                img.onerror = reject;
+                img.onerror = resolve; // Resolve anyway to continue
               });
-            })
-          );
+            }),
+            // Add a short delay for charts to render
+            new Promise(resolve => setTimeout(resolve, 500))
+          ]);
         };
-
+  
         try {
-          await waitForImages();
-          const canvas = await html2canvas(container);
-          const imgData = canvas.toDataURL('image/png');
-
+          await waitForRendering();
+  
           const pdf = new jsPDF('p', 'pt', 'a4');
           const pdfWidth = pdf.internal.pageSize.getWidth();
-          const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
-          pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
-
-          // Add new pages if content exceeds one page
-          let currentHeight = pdfHeight;
-          while (currentHeight > pdf.internal.pageSize.getHeight()) {
-            pdf.addPage();
-            currentHeight -= pdf.internal.pageSize.getHeight();
-            pdf.addImage(imgData, 'PNG', 0, -currentHeight, pdfWidth, pdfHeight);
-          }
-
-        const userName = assessment.username.replace(/\s+/g, '').toLowerCase(); // Remove spaces and convert to lowercase
-        pdf.save(`${userName}-assessment-report.pdf`);
-
+          
+          // Add Page 1: Profile
+          const profileCanvas = await html2canvas(profileContainer);
+          const profileImgData = profileCanvas.toDataURL('image/png');
+          const profileHeight = (profileCanvas.height * pdfWidth) / profileCanvas.width;
+          pdf.addImage(profileImgData, 'PNG', 0, 0, pdfWidth, profileHeight);
+          
+          // Add Page 2: Prediction
+          pdf.addPage();
+          const predictionCanvas = await html2canvas(predictionContainer);
+          const predictionImgData = predictionCanvas.toDataURL('image/png');
+          const predictionHeight = (predictionCanvas.height * pdfWidth) / predictionCanvas.width;
+          pdf.addImage(predictionImgData, 'PNG', 0, 0, pdfWidth, predictionHeight);
+          
+          // Add Page 3: Dashboard
+          pdf.addPage();
+          const dashboardCanvas = await html2canvas(dashboardContainer);
+          const dashboardImgData = dashboardCanvas.toDataURL('image/png');
+          const dashboardHeight = (dashboardCanvas.height * pdfWidth) / dashboardCanvas.width;
+          pdf.addImage(dashboardImgData, 'PNG', 0, 0, pdfWidth, dashboardHeight);
+          
+          // Save the PDF
+          pdf.save('futureproof-health-report.pdf');
+  
+          // Show success message
+          Toast.show({
+            type: 'success',
+            text1: 'PDF Generated',
+            text2: 'Your report has been successfully exported',
+          });
+  
         } catch (err) {
           console.error('Error generating PDF:', err);
           Alert.alert('Error', 'Failed to generate PDF. Please try again.');
         } finally {
-          document.body.removeChild(container);
+          // Clean up
+          document.body.removeChild(profileContainer);
+          document.body.removeChild(predictionContainer);
+          document.body.removeChild(dashboardContainer);
         }
       } else {
         try {
-          const { uri } = await Print.printToFileAsync({ html: htmlContent });
+          // For mobile, use Expo Print
+          const { uri } = await Print.printToFileAsync({ 
+            html: `
+              ${profileHtml}
+              <div style="page-break-after: always;"></div>
+              ${predictionHtml}
+              <div style="page-break-after: always;"></div>
+              ${dashboardHtml}
+            ` 
+          });
           await shareAsync(uri, { UTI: '.pdf', mimeType: 'application/pdf' });
         } catch (error) {
           console.error('Error generating PDF:', error);
@@ -770,7 +795,7 @@ const UserDashboard = ({ navigation }) => {
         }
       }
     } catch (error) {
-      console.error('Error in handleExportUserPDF:', error);
+      console.error('Error in handleExportPDF:', error);
       Alert.alert('Error', 'Something went wrong. Please try again.');
     }
   };
@@ -907,13 +932,13 @@ const UserDashboard = ({ navigation }) => {
               </View>
 
               <View style={styles.statsRow}>
-  <View style={[styles.statCard, { backgroundColor: '#ffffff' }]}>
-    <View style={styles.statContent}>
-      <Text style={styles.statValue}>{bmi}</Text>
-      <Text style={styles.statLabel}>BMI</Text>
-    </View>
-    <Text style={styles.statStatus}>{bmiStatus}</Text>
-  </View>
+                <View style={[styles.statCard, { backgroundColor: '#ffffff' }]}>
+                  <View style={styles.statContent}>
+                    <Text style={styles.statValue}>{bmi}</Text>
+                    <Text style={styles.statLabel}>BMI</Text>
+                  </View>
+                  <Text style={styles.statStatus}>{bmiStatus}</Text>
+                </View>
                 
                 <View style={styles.statCard}>
                   <View style={styles.statContent}>
@@ -1173,31 +1198,30 @@ const UserDashboard = ({ navigation }) => {
                   {filteredAssessments.length > 0 ? (
                     filteredAssessments.map((assessment, index) => (
                       <View key={index} style={styles.assessmentTableRow}>
-            {/* Date Column */}
-            <Text style={styles.assessmentTableCell}>
-              {new Date(assessment.date).toLocaleDateString()}
-            </Text>
+                        {/* Date Column */}
+                        <Text style={styles.assessmentTableCell}>
+                          {new Date(assessment.date).toLocaleDateString()}
+                        </Text>
 
-            {/* Action Button Column */}
-            <View style={styles.assessmentTableActionCell}>
-              <TouchableOpacity
-                style={styles.assessmentExportButton}
-                onPress={() => handleExportUserPDF(assessment)}
-              >
-                <Ionicons name="download-outline" size={16} color="white" />
-                <Text style={styles.assessmentExportButtonText}>Export</Text>
-              </TouchableOpacity>
+                        {/* Action Button Column */}
+                        <View style={styles.assessmentTableActionCell}>
+                          <TouchableOpacity
+                            style={styles.assessmentExportButton}
+                            onPress={() => handleExportUserPDF(assessment)}
+                          >
+                            <Ionicons name="download-outline" size={16} color="white" />
+                            <Text style={styles.assessmentExportButtonText}>Export</Text>
+                          </TouchableOpacity>
+                        </View>
+                      </View>
+                    ))
+                  ) : (
+                    <Text style={styles.assessmentNoAssessmentsText}>No assessments found</Text>
+                  )}
+                </View>
+              </ScrollView>
             </View>
-          </View>
-          ))
-        ) : (
-          <Text style={styles.assessmentNoAssessmentsText}>No assessments found</Text>
-        )}
-      </View>
-    </ScrollView>
-  </View>
-)}
-
+          )}
         </ScrollView>
       </Animated.View>
     </View>
@@ -1205,756 +1229,755 @@ const UserDashboard = ({ navigation }) => {
 };
 
 const styles = StyleSheet.create({
-    container: {
-      flex: 1,
-      backgroundColor: '#f1f8e9',
-      flexDirection: 'row',
-    },
-    sidebar: {
-      position: 'absolute',
-      top: 0,
-      left: 0,
-      bottom: 0,
-      zIndex: 999,
-      height: '100%',
-      overflow: 'hidden',
-    },
-    sidebarContent: {
-      flex: 1,
-      justifyContent: 'flex-start',
-      paddingTop: 40,
-    },
-    sidebarHeader: {
-      alignItems: 'center',
-      marginBottom: 30,
-      paddingHorizontal: 15,
-    },
-    sidebarAvatar: {
-      width: 80,
-      height: 80,
-      borderRadius: 40,
-      marginBottom: 10,
-      borderWidth: 3,
-      borderColor: '#ffffff',
-    },
-    sidebarUserName: {
-      color: '#ffffff',
-      fontSize: 18,
-      fontWeight: '600',
-    },
-    toggleButton: {
-      position: 'absolute',
-      top: 20,
-      right: 10,
-      zIndex: 1000,
-      width: 40,
-      height: 40,
-      backgroundColor: 'rgba(0,0,0,0.3)',
-      borderRadius: 20,
-      justifyContent: 'center',
-      alignItems: 'center',
-    },
-    sidebarItem: {
-      paddingVertical: 15,
-      paddingHorizontal: 20,
-      flexDirection: 'row',
-      alignItems: 'center',
-      borderRadius: 8,
-      marginHorizontal: 10,
-      marginBottom: 8,
-    },
-    activeSidebarItem: {
-      backgroundColor: 'rgba(255,255,255,0.2)',
-    },
-    sidebarText: {
-      fontSize: 16,
-      color: '#ffffff',
-      marginLeft: 15,
-    },
-    collapsedSidebar: {
-      flex: 1,
-      paddingTop: 70,
-    },
-    collapsedSidebarContent: {
-      alignItems: 'center',
-    },
-    collapsedSidebarItem: {
-      width: 50,
-      height: 50,
-      borderRadius: 25,
-      justifyContent: 'center',
-      alignItems: 'center',
-      marginBottom: 15,
-    },
-    logoutButton: {
-      paddingVertical: 15,
-      paddingHorizontal: 20,
-      flexDirection: 'row',
-      alignItems: 'center',
-      marginTop: 'auto',
-      marginBottom: 20,
-      marginHorizontal: 10,
-      backgroundColor: 'rgba(255,59,48,0.2)',
-      borderRadius: 8,
-    },
-    mainContent: {
-      flex: 1,
-      backgroundColor: '#f1f8e9',
-    },
-    scrollViewContent: {
-      padding: 20,
-      paddingBottom: 40,
-    },
-    tabContent: {
-      flex: 1,
-    },
-    loadingContainer: {
-      flex: 1,
-      justifyContent: 'center',
-      alignItems: 'center',
-    },
-    loadingText: {
-      marginTop: 10,
-      fontSize: 16,
-      color: '#2e7d32',
-    },
-    errorContainer: {
-      flex: 1,
-      justifyContent: 'center',
-      alignItems: 'center',
-      padding: 20,
-    },
-    errorText: {
-      fontSize: 18,
-      color: '#e63946',
-      textAlign: 'center',
-      marginTop: 10,
-    },
-    retryButton: {
-      marginTop: 20,
-      paddingVertical: 10,
-      paddingHorizontal: 20,
-      backgroundColor: '#2e7d32',
-      borderRadius: 8,
-    },
-    retryButtonText: {
-      color: '#ffffff',
-      fontSize: 16,
-    },
-    profileHeader: {
-      marginBottom: 30,
-    },
-    profileHeaderBg: {
-      padding: 20,
-      borderRadius: 10,
-      alignItems: 'center',
-    },
-    profileAvatar: {
-      width: 100,
-      height: 100,
-      borderRadius: 50,
-      borderWidth: 3,
-      borderColor: '#ffffff',
-      marginBottom: 20,
-    },
-    profileInfo: {
-      alignItems: 'center',
-    },
-    profileName: {
-      fontSize: 24,
-      fontWeight: 'bold',
-      color: '#ffffff',
-      marginBottom: 10,
-    },
-    profileDetailsBadge: {
-      backgroundColor: 'rgba(255,255,255,0.2)',
-      borderRadius: 20,
-      paddingVertical: 5,
-      paddingHorizontal: 15,
-      marginBottom: 10,
-    },
-    profileDetails: {
-      fontSize: 16,
-      color: '#ffffff',
-    },
-    profileEmailBadge: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      backgroundColor: 'rgba(255,255,255,0.2)',
-      borderRadius: 20,
-      paddingVertical: 5,
-      paddingHorizontal: 15,
-    },
-    profileEmailIcon: {
-      marginRight: 5,
-    },
-    profileEmail: {
-      fontSize: 16,
-      color: '#ffffff',
-    },
-    statsRow: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      marginBottom: 20,
-      
-    },
-    statCard: {
-      flex: 1,
-      backgroundColor: '#ffffff',
-      borderRadius: 10,
-      padding: 15,
-      alignItems: 'center',
-      marginHorizontal: 5,
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.1,
-      shadowRadius: 4,
-      elevation: 3,
-    },
-    statContent: {
-      alignItems: 'center',
-    },
-    statValue: {
-      fontSize: 24,
-      fontWeight: 'bold',
-      color: '#2e7d32',
-    },
-    statLabel: {
-      fontSize: 16,
-      color: '#689f38',
-    },
-    statStatus: {
-      marginTop: 10,
-      fontSize: 16,
-      color: '#689f38',
-    },
-    sectionContainer: {
-      marginBottom: 20,
-    },
-    sectionTitle: {
-      fontSize: 20,
-      fontWeight: 'bold',
-      color: '#2e7d32',
-      marginBottom: 10,
-    },
-    infoRow: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-    },
-    infoCard: {
-      flex: 1,
-      backgroundColor: '#ffffff',
-      borderRadius: 10,
-      padding: 15,
-      flexDirection: 'row',
-      alignItems: 'center',
-      marginHorizontal: 5,
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.1,
-      shadowRadius: 4,
-      elevation: 3,
-    },
-    infoIconContainer: {
-      marginRight: 10,
-    },
-    infoContent: {
-      flex: 1,
-    },
-    infoLabel: {
-      fontSize: 16,
-      color: '#689f38',
-    },
-    infoValue: {
-      fontSize: 18,
-      fontWeight: 'bold',
-      color: '#2e7d32',
-    },
-    lifestyleCard: {
-      backgroundColor: '#ffffff',
-      borderRadius: 10,
-      padding: 15,
-      marginBottom: 10,
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.1,
-      shadowRadius: 4,
-      elevation: 3,
-    },
-    lifestyleHeader: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      marginBottom: 10,
-    },
-    lifestyleTitle: {
-      fontSize: 18,
-      fontWeight: 'bold',
-      color: '#2e7d32',
-      flex: 1,
-      marginLeft: 10,
-    },
-    editButton: {
-      backgroundColor: '#2e7d32',
-      borderRadius: 20,
-      padding: 5,
-    },
-    lifestyleText: {
-      fontSize: 16,
-      color: '#689f38',
-    },
-    medicalCard: {
-      backgroundColor: '#ffffff',
-      borderRadius: 10,
-      padding: 15,
-      marginBottom: 10,
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.1,
-      shadowRadius: 4,
-      elevation: 3,
-    },
-    medicalHeader: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      marginBottom: 10,
-    },
-    medicalTitle: {
-      fontSize: 18,
-      fontWeight: 'bold',
-      color: '#2e7d32',
-      flex: 1,
-      marginLeft: 10,
-    },
-    medicalText: {
-      fontSize: 16,
-      color: '#689f38',
-    },
-    dashboardTitle: {
-      fontSize: 24,
-      fontWeight: 'bold',
-      color: '#2e7d32',
-      marginBottom: 20,
-    },
-    statsGridContainer: {
-      marginBottom: 20,
-    },
-    statsGrid: {
-      flexDirection: 'row',
-      flexWrap: 'wrap',
-      justifyContent: 'space-between',
-    },
-    statGridCard: {
-      width: '48%',
-      backgroundColor: '#ffffff',
-      borderRadius: 10,
-      padding: 15,
-      alignItems: 'center',
-      marginBottom: 10,
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.1,
-      shadowRadius: 4,
-      elevation: 3,
-    },
-    statGridPrimary: {
-      backgroundColor: '#2e7d32',
-    },
-    statGridSecondary: {
-      backgroundColor: '#388e3c',
-    },
-    statGridAccent: {
-      backgroundColor: '#43a047',
-    },
-    statGridNeutral: {
-      backgroundColor: '#66bb6a',
-    },
-    statGridValue: {
-      fontSize: 24,
-      fontWeight: 'bold',
-      color: '#ffffff',
-    },
-    statGridLabel: {
-      fontSize: 16,
-      color: '#ffffff',
-    },
-    chartCard: {
-      backgroundColor: '#ffffff',
-      borderRadius: 10,
-      padding: 15,
-      marginBottom: 20,
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.1,
-      shadowRadius: 4,
-      elevation: 3,
-    },
-    chartTitle: {
-      fontSize: 18,
-      fontWeight: 'bold',
-      color: '#2e7d32',
-      marginBottom: 10,
-    },
-    chart: {
-      borderRadius: 10,
-    },
-    noDataContainer: {
-      alignItems: 'center',
-      justifyContent: 'center',
-      height: 220,
-    },
-    noDataText: {
-      fontSize: 16,
-      color: '#689f38',
-      marginTop: 10,
-    },
-    tasksListContainer: {
-      backgroundColor: '#ffffff',
-      borderRadius: 10,
-      padding: 15,
-      marginBottom: 20,
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.1,
-      shadowRadius: 4,
-      elevation: 3,
-    },
-    tasksListHeader: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-      marginBottom: 10,
-    },
-    tasksListTitle: {
-      fontSize: 18,
-      fontWeight: 'bold',
-      color: '#2e7d32',
-    },
-    viewAllButton: {
-      backgroundColor: '#2e7d32',
-      borderRadius: 20,
-      paddingVertical: 5,
-      paddingHorizontal: 10,
-    },
-    viewAllText: {
-      color: '#ffffff',
-      fontSize: 14,
-    },
-    tasksScrollView: {
-      maxHeight: 200,
-    },
-    taskListItem: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      marginBottom: 10,
-    },
-    taskIconContainer: {
-      marginRight: 10,
-    },
-    taskDetails: {
-      flex: 1,
-    },
-    taskName: {
-      fontSize: 16,
-      color: '#2e7d32',
-    },
-    taskTime: {
-      fontSize: 14,
-      color: '#689f38',
-    },
-    taskDate: {
-      fontSize: 14,
-      color: '#689f38',
-    },
-    noTasksText: {
-      fontSize: 16,
-      color: '#689f38',
-      textAlign: 'center',
-      marginTop: 10,
-    },
-    assetsSection: {
-      marginBottom: 20,
-    },
-    assetsSectionTitle: {
-      fontSize: 20,
-      fontWeight: 'bold',
-      color: '#2e7d32',
-      marginBottom: 10,
-    },
-    assetsGrid: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-    },
-    assetCard: {
-      flex: 1,
-      backgroundColor: '#ffffff',
-      borderRadius: 10,
-      padding: 15,
-      alignItems: 'center',
-      marginHorizontal: 5,
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.1,
-      shadowRadius: 4,
-      elevation: 3,
-    },
-    assetValue: {
-      fontSize: 24,
-      fontWeight: 'bold',
-      color: '#2e7d32',
-      marginTop: 10,
-    },
-    assetLabel: {
-      fontSize: 16,
-      color: '#689f38',
-    },
-    centerContent: {
-      flex: 1,
-      justifyContent: 'center',
-      alignItems: 'center',
-    },
-    userInfoCard: {
-      width: '100%',
-      padding: 20,
-      backgroundColor: '#ffffff',
-      borderRadius: 10,
-      marginBottom: 20,
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.1,
-      shadowRadius: 4,
-      elevation: 3,
-    },
-    cardTitle: {
-      fontSize: 18,
-      fontWeight: 'bold',
-      color: '#2e7d32',
-      marginBottom: 10,
-    },
-    userDetailsText: {
-      fontSize: 16,
-      color: '#689f38',
-    },
-    predictionSection: {
-      width: '100%',
-      marginBottom: 20,
-    },
-    circleContainer: {
-      flexDirection: 'row',
-      flexWrap: 'wrap',
-      justifyContent: 'space-around',
-      width: '100%',
-      marginTop: 20,
-    },
-    riskCard: {
-      width: 150,
-      alignItems: 'center',
-      margin: 10,
-      padding: 10,
-      backgroundColor: '#ffffff',
-      borderRadius: 10,
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.1,
-      shadowRadius: 4,
-      elevation: 3,
-    },
-    progressChartWrapper: {
-      position: 'relative',
-      justifyContent: 'center',
-      alignItems: 'center',
-    },
-    progressChartOverlay: {
-      position: 'absolute',
-      justifyContent: 'center',
-      alignItems: 'center',
-      width: '100%',
-      height: '100%',
-    },
-    riskName: {
-      color: '#2e7d32',
-      fontWeight: 'bold',
-      fontSize: 14,
-      textAlign: 'center',
-      marginTop: 10,
-    },
-    riskPercentage: {
-      fontSize: 18,
-      fontWeight: 'bold',
-      color: '#2e7d32',
-    },
-    searchCreateContainer: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-      marginBottom: 20,
-    },
-    searchContainer: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-      width: '50%',
-      marginBottom: 20,
-    },
-    searchInput: {
-      flex: 1,
-      borderWidth: 1,
-      borderColor: '#ccc',
-      borderRadius: 5,
-      padding: 15,
-      marginRight: 10,
-      backgroundColor: '#fff',
-    },
-    searchButton: {
-      backgroundColor: '#3498db',
-      padding: 15,
-      borderRadius: 5,
-      alignItems: 'center',
-    },
-    searchButtonText: {
-      color: '#fff',
-      fontWeight: 'bold',
-      fontSize: 16,
-    },
-    assessmentsScrollView: {
-      maxHeight: 400,
-    },
-    assessmentCard: {
-      backgroundColor: '#ffffff',
-      borderRadius: 10,
-      padding: 15,
-      marginBottom: 10,
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.1,
-      shadowRadius: 4,
-      elevation: 3,
-    },
-    assessmentUser: {
-      fontSize: 16,
-      fontWeight: 'bold',
-      color: '#2e7d32',
-      marginBottom: 5,
-    },
-    assessmentContent: {
-      fontSize: 14,
-      color: '#689f38',
-      marginBottom: 5,
-    },
-    assessmentDate: {
-      fontSize: 12,
-      color: '#a5d6a7',
-    },
-    
-    // Assessment Tab Styles
-    assessmentTabContent: {
-      flex: 1,
-      padding: 20,
-    },
-    assessmentSectionTitle: {
-      fontSize: 22,
-      fontWeight: 'bold',
-      marginBottom: 15,
-      color: '#333',
-    },
-    assessmentSearchExportContainer: {
-      flexDirection: 'row',
-      justifyContent: 'space-between', // Ensures space between export & search
-      alignItems: 'center',
-      marginBottom: 15,
-    },
-    assessmentExportButton: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      backgroundColor: '#28a745',
-      paddingVertical: 8,
-      paddingHorizontal: 12, // Reduce width
-      borderRadius: 5,
-    },
-    assessmentExportButtonText: {
-      color: 'white',
-      fontSize: 16,
-      fontWeight: 'bold',
-      marginLeft: 5,
-      textAlign: 'center',
-    },
-    assessmentSearchContainer: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      backgroundColor: '#fff',
-      borderRadius: 5,
-      borderWidth: 1,
-      borderColor: '#ccc',
-      paddingHorizontal: 10,
-    },
-    assessmentSearchInput: {
-      flex: 1,
-      paddingVertical: 8,
-      fontSize: 16,
-    },
-    assessmentSearchButton: {
-      padding: 10,
-      backgroundColor: '#007bff',
-      borderRadius: 5,
-    },
-    assessmentTableContainer: {
-      width: '100%',
-      minWidth: '78vw', // Makes table take full width
-      backgroundColor: '#fff',
-      borderRadius: 8,
-      overflow: 'hidden',
-      borderWidth: 1,
-      borderColor: '#ddd',
-      alignSelf: 'center',
-    },
-    assessmentTableHeader: {
-      flexDirection: 'row',
-      backgroundColor: '#007bff',
-      paddingVertical: 12,
-    },
-    assessmentTableHeaderText: {
-      flex: 2, // Adjusts based on other column widths
-      fontSize: 16,
-      fontWeight: 'bold',
-      color: 'white',
-      textAlign: 'center',
-    },
-    assessmentTableRow: {
-      flexDirection: 'row',
-      borderBottomWidth: 1,
-      borderBottomColor: '#ddd',
-      paddingVertical: 12,
-      alignItems: 'center', // Centers content vertically
-    },
-    assessmentTableCell: {
-      flex: 2, // Makes sure date takes more space
-      textAlign: 'center',
-      fontSize: 16,
-      paddingVertical: 10,
-      color: '#333',
-    },
-    assessmentTableActionCell: {
-      flex: 1, // Smaller column for button
-      justifyContent: 'center',
-      alignItems: 'center',
-    },    
-    assessmentNoAssessmentsText: {
-      padding: 20,
-      textAlign: 'center',
-      fontSize: 16,
-      color: '#777',
-    },
-    exportButton: {
-      backgroundColor: '#2E7D32',
-      paddingVertical: 8,
-      paddingHorizontal: 12,
-      borderRadius: 5,
-      alignSelf: 'flex-end',
-      marginBottom: 20,
-    },
-    exportButtonText: {
-      color: '#fff',
-      textAlign: 'center',
-    },
-  });
+  container: {
+    flex: 1,
+    backgroundColor: '#f1f8e9',
+    flexDirection: 'row',
+  },
+  sidebar: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    bottom: 0,
+    zIndex: 999,
+    height: '100%',
+    overflow: 'hidden',
+  },
+  sidebarContent: {
+    flex: 1,
+    justifyContent: 'flex-start',
+    paddingTop: 40,
+  },
+  sidebarHeader: {
+    alignItems: 'center',
+    marginBottom: 30,
+    paddingHorizontal: 15,
+  },
+  sidebarAvatar: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    marginBottom: 10,
+    borderWidth: 3,
+    borderColor: '#ffffff',
+  },
+  sidebarUserName: {
+    color: '#ffffff',
+    fontSize: 18,
+    fontWeight: '600',
+  },
+  toggleButton: {
+    position: 'absolute',
+    top: 20,
+    right: 10,
+    zIndex: 1000,
+    width: 40,
+    height: 40,
+    backgroundColor: 'rgba(0,0,0,0.3)',
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  sidebarItem: {
+    paddingVertical: 15,
+    paddingHorizontal: 20,
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderRadius: 8,
+    marginHorizontal: 10,
+    marginBottom: 8,
+  },
+  activeSidebarItem: {
+    backgroundColor: 'rgba(255,255,255,0.2)',
+  },
+  sidebarText: {
+    fontSize: 16,
+    color: '#ffffff',
+    marginLeft: 15,
+  },
+  collapsedSidebar: {
+    flex: 1,
+    paddingTop: 70,
+  },
+  collapsedSidebarContent: {
+    alignItems: 'center',
+  },
+  collapsedSidebarItem: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 15,
+  },
+  logoutButton: {
+    paddingVertical: 15,
+    paddingHorizontal: 20,
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 'auto',
+    marginBottom: 20,
+    marginHorizontal: 10,
+    backgroundColor: 'rgba(255,59,48,0.2)',
+    borderRadius: 8,
+  },
+  mainContent: {
+    flex: 1,
+    backgroundColor: '#f1f8e9',
+  },
+  scrollViewContent: {
+    padding: 20,
+    paddingBottom: 40,
+  },
+  tabContent: {
+    flex: 1,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingText: {
+    marginTop: 10,
+    fontSize: 16,
+    color: '#2e7d32',
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  errorText: {
+    fontSize: 18,
+    color: '#e63946',
+    textAlign: 'center',
+    marginTop: 10,
+  },
+  retryButton: {
+    marginTop: 20,
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    backgroundColor: '#2e7d32',
+    borderRadius: 8,
+  },
+  retryButtonText: {
+    color: '#ffffff',
+    fontSize: 16,
+  },
+  profileHeader: {
+    marginBottom: 30,
+  },
+  profileHeaderBg: {
+    padding: 20,
+    borderRadius: 10,
+    alignItems: 'center',
+  },
+  profileAvatar: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    borderWidth: 3,
+    borderColor: '#ffffff',
+    marginBottom: 20,
+  },
+  profileInfo: {
+    alignItems: 'center',
+  },
+  profileName: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#ffffff',
+    marginBottom: 10,
+  },
+  profileDetailsBadge: {
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    borderRadius: 20,
+    paddingVertical: 5,
+    paddingHorizontal: 15,
+    marginBottom: 10,
+  },
+  profileDetails: {
+    fontSize: 16,
+    color: '#ffffff',
+  },
+  profileEmailBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    borderRadius: 20,
+    paddingVertical: 5,
+    paddingHorizontal: 15,
+  },
+  profileEmailIcon: {
+    marginRight: 5,
+  },
+  profileEmail: {
+    fontSize: 16,
+    color: '#ffffff',
+  },
+  statsRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 20,
+  },
+  statCard: {
+    flex: 1,
+    backgroundColor: '#ffffff',
+    borderRadius: 10,
+    padding: 15,
+    alignItems: 'center',
+    marginHorizontal: 5,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  statContent: {
+    alignItems: 'center',
+  },
+  statValue: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#2e7d32',
+  },
+  statLabel: {
+    fontSize: 16,
+    color: '#689f38',
+  },
+  statStatus: {
+    marginTop: 10,
+    fontSize: 16,
+    color: '#689f38',
+  },
+  sectionContainer: {
+    marginBottom: 20,
+  },
+  sectionTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#2e7d32',
+    marginBottom: 10,
+  },
+  infoRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  infoCard: {
+    flex: 1,
+    backgroundColor: '#ffffff',
+    borderRadius: 10,
+    padding: 15,
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginHorizontal: 5,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  infoIconContainer: {
+    marginRight: 10,
+  },
+  infoContent: {
+    flex: 1,
+  },
+  infoLabel: {
+    fontSize: 16,
+    color: '#689f38',
+  },
+  infoValue: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#2e7d32',
+  },
+  lifestyleCard: {
+    backgroundColor: '#ffffff',
+    borderRadius: 10,
+    padding: 15,
+    marginBottom: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  lifestyleHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  lifestyleTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#2e7d32',
+    flex: 1,
+    marginLeft: 10,
+  },
+  editButton: {
+    backgroundColor: '#2e7d32',
+    borderRadius: 20,
+    padding: 5,
+  },
+  lifestyleText: {
+    fontSize: 16,
+    color: '#689f38',
+  },
+  medicalCard: {
+    backgroundColor: '#ffffff',
+    borderRadius: 10,
+    padding: 15,
+    marginBottom: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  medicalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  medicalTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#2e7d32',
+    flex: 1,
+    marginLeft: 10,
+  },
+  medicalText: {
+    fontSize: 16,
+    color: '#689f38',
+  },
+  dashboardTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#2e7d32',
+    marginBottom: 20,
+  },
+  statsGridContainer: {
+    marginBottom: 20,
+  },
+  statsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+  },
+  statGridCard: {
+    width: '48%',
+    backgroundColor: '#ffffff',
+    borderRadius: 10,
+    padding: 15,
+    alignItems: 'center',
+    marginBottom: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  statGridPrimary: {
+    backgroundColor: '#2e7d32',
+  },
+  statGridSecondary: {
+    backgroundColor: '#388e3c',
+  },
+  statGridAccent: {
+    backgroundColor: '#43a047',
+  },
+  statGridNeutral: {
+    backgroundColor: '#66bb6a',
+  },
+  statGridValue: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#ffffff',
+  },
+  statGridLabel: {
+    fontSize: 16,
+    color: '#ffffff',
+  },
+  chartCard: {
+    backgroundColor: '#ffffff',
+    borderRadius: 10,
+    padding: 15,
+    marginBottom: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  chartTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#2e7d32',
+    marginBottom: 10,
+  },
+  chart: {
+    borderRadius: 10,
+  },
+  noDataContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    height: 220,
+  },
+  noDataText: {
+    fontSize: 16,
+    color: '#689f38',
+    marginTop: 10,
+  },
+  tasksListContainer: {
+    backgroundColor: '#ffffff',
+    borderRadius: 10,
+    padding: 15,
+    marginBottom: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  tasksListHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  tasksListTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#2e7d32',
+  },
+  viewAllButton: {
+    backgroundColor: '#2e7d32',
+    borderRadius: 20,
+    paddingVertical: 5,
+    paddingHorizontal: 10,
+  },
+  viewAllText: {
+    color: '#ffffff',
+    fontSize: 14,
+  },
+  tasksScrollView: {
+    maxHeight: 200,
+  },
+  taskListItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  taskIconContainer: {
+    marginRight: 10,
+  },
+  taskDetails: {
+    flex: 1,
+  },
+  taskName: {
+    fontSize: 16,
+    color: '#2e7d32',
+  },
+  taskTime: {
+    fontSize: 14,
+    color: '#689f38',
+  },
+  taskDate: {
+    fontSize: 14,
+    color: '#689f38',
+  },
+  noTasksText: {
+    fontSize: 16,
+    color: '#689f38',
+    textAlign: 'center',
+    marginTop: 10,
+  },
+  assetsSection: {
+    marginBottom: 20,
+  },
+  assetsSectionTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#2e7d32',
+    marginBottom: 10,
+  },
+  assetsGrid: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  assetCard: {
+    flex: 1,
+    backgroundColor: '#ffffff',
+    borderRadius: 10,
+    padding: 15,
+    alignItems: 'center',
+    marginHorizontal: 5,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  assetValue: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#2e7d32',
+    marginTop: 10,
+  },
+  assetLabel: {
+    fontSize: 16,
+    color: '#689f38',
+  },
+  centerContent: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  userInfoCard: {
+    width: '100%',
+    padding: 20,
+    backgroundColor: '#ffffff',
+    borderRadius: 10,
+    marginBottom: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  cardTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#2e7d32',
+    marginBottom: 10,
+  },
+  userDetailsText: {
+    fontSize: 16,
+    color: '#689f38',
+  },
+  predictionSection: {
+    width: '100%',
+    marginBottom: 20,
+  },
+  circleContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-around',
+    width: '100%',
+    marginTop: 20,
+  },
+  riskCard: {
+    width: 150,
+    alignItems: 'center',
+    margin: 10,
+    padding: 10,
+    backgroundColor: '#ffffff',
+    borderRadius: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  progressChartWrapper: {
+    position: 'relative',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  progressChartOverlay: {
+    position: 'absolute',
+    justifyContent: 'center',
+    alignItems: 'center',
+    width: '100%',
+    height: '100%',
+  },
+  riskName: {
+    color: '#2e7d32',
+    fontWeight: 'bold',
+    fontSize: 14,
+    textAlign: 'center',
+    marginTop: 10,
+  },
+  riskPercentage: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#2e7d32',
+  },
+  searchCreateContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  searchContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    width: '50%',
+    marginBottom: 20,
+  },
+  searchInput: {
+    flex: 1,
+    borderWidth: 1,
+    borderColor: '#ccc',
+    borderRadius: 5,
+    padding: 15,
+    marginRight: 10,
+    backgroundColor: '#fff',
+  },
+  searchButton: {
+    backgroundColor: '#3498db',
+    padding: 15,
+    borderRadius: 5,
+    alignItems: 'center',
+  },
+  searchButtonText: {
+    color: '#fff',
+    fontWeight: 'bold',
+    fontSize: 16,
+  },
+  assessmentsScrollView: {
+    maxHeight: 400,
+  },
+  assessmentCard: {
+    backgroundColor: '#ffffff',
+    borderRadius: 10,
+    padding: 15,
+    marginBottom: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  assessmentUser: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#2e7d32',
+    marginBottom: 5,
+  },
+  assessmentContent: {
+    fontSize: 14,
+    color: '#689f38',
+    marginBottom: 5,
+  },
+  assessmentDate: {
+    fontSize: 12,
+    color: '#a5d6a7',
+  },
+  
+  // Assessment Tab Styles
+  assessmentTabContent: {
+    flex: 1,
+    padding: 20,
+  },
+  assessmentSectionTitle: {
+    fontSize: 22,
+    fontWeight: 'bold',
+    marginBottom: 15,
+    color: '#333',
+  },
+  assessmentSearchExportContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between', // Ensures space between export & search
+    alignItems: 'center',
+    marginBottom: 15,
+  },
+  assessmentExportButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#28a745',
+    paddingVertical: 8,
+    paddingHorizontal: 12, // Reduce width
+    borderRadius: 5,
+  },
+  assessmentExportButtonText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginLeft: 5,
+    textAlign: 'center',
+  },
+  assessmentSearchContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#fff',
+    borderRadius: 5,
+    borderWidth: 1,
+    borderColor: '#ccc',
+    paddingHorizontal: 10,
+  },
+  assessmentSearchInput: {
+    flex: 1,
+    paddingVertical: 8,
+    fontSize: 16,
+  },
+  assessmentSearchButton: {
+    padding: 10,
+    backgroundColor: '#007bff',
+    borderRadius: 5,
+  },
+  assessmentTableContainer: {
+    width: '100%',
+    minWidth: '78vw', // Makes table take full width
+    backgroundColor: '#fff',
+    borderRadius: 8,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: '#ddd',
+    alignSelf: 'center',
+  },
+  assessmentTableHeader: {
+    flexDirection: 'row',
+    backgroundColor: '#007bff',
+    paddingVertical: 12,
+  },
+  assessmentTableHeaderText: {
+    flex: 2, // Adjusts based on other column widths
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: 'white',
+    textAlign: 'center',
+  },
+  assessmentTableRow: {
+    flexDirection: 'row',
+    borderBottomWidth: 1,
+    borderBottomColor: '#ddd',
+    paddingVertical: 12,
+    alignItems: 'center', // Centers content vertically
+  },
+  assessmentTableCell: {
+    flex: 2, // Makes sure date takes more space
+    textAlign: 'center',
+    fontSize: 16,
+    paddingVertical: 10,
+    color: '#333',
+  },
+  assessmentTableActionCell: {
+    flex: 1, // Smaller column for button
+    justifyContent: 'center',
+    alignItems: 'center',
+  },    
+  assessmentNoAssessmentsText: {
+    padding: 20,
+    textAlign: 'center',
+    fontSize: 16,
+    color: '#777',
+  },
+  exportButton: {
+    backgroundColor: '#2E7D32',
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 5,
+    alignSelf: 'flex-end',
+    marginBottom: 20,
+  },
+  exportButtonText: {
+    color: '#fff',
+    textAlign: 'center',
+  },
+});
 
 export default UserDashboard;
