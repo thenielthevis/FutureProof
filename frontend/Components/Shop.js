@@ -10,27 +10,36 @@ import { readAssets, buyAsset, purchaseItem, addOwnedAsset, getOwnedAssets, equi
 import { getUser } from '../API/user_api';
 import { LinearGradient } from 'expo-linear-gradient'; // Import LinearGradient
 
-function Model({ bodyUri, headUri, outfitUri, eyesUri, noseUri, scale, position }) {
-  if (!bodyUri || !headUri || !eyesUri || !noseUri) {
-    console.error("Missing required model URIs", { bodyUri, headUri, eyesUri, noseUri, outfitUri });
-    return null; // Prevents the model from rendering if URIs are missing
+function Model({ bodyUri, headUri, outfitUri, eyesUri, noseUri, scale, position, isBaseModel }) {
+  // For base model, require all base URIs
+  if (isBaseModel && (!bodyUri || !headUri || !eyesUri || !noseUri)) {
+    console.error("Missing required base model URIs");
+    return null;
   }
 
-  const { scene: bodyScene } = useGLTF(bodyUri, true);
-  const { scene: headScene } = useGLTF(headUri, true);
-  const { scene: eyesScene } = useGLTF(eyesUri, true);
-  const { scene: noseScene } = useGLTF(noseUri, true);
+  // For outfit models, only require outfit URI
+  if (!isBaseModel && !outfitUri) {
+    return null;
+  }
+
+  // Load base model parts if this is a base model
+  const bodyScene = isBaseModel ? useGLTF(bodyUri, true).scene : null;
+  const headScene = isBaseModel ? useGLTF(headUri, true).scene : null;
+  const eyesScene = isBaseModel ? useGLTF(eyesUri, true).scene : null;
+  const noseScene = isBaseModel ? useGLTF(noseUri, true).scene : null;
   const outfitScene = outfitUri ? useGLTF(outfitUri, true).scene : null;
 
-  bodyScene.scale.set(scale.x, scale.y, scale.z);
-  bodyScene.position.set(position.x, position.y, position.z);
-  headScene.scale.set(scale.x, scale.y, scale.z);
-  headScene.position.set(position.x, position.y, position.z);
-  eyesScene.scale.set(scale.x, scale.y, scale.z);
-  eyesScene.position.set(position.x, position.y, position.z);
-  noseScene.scale.set(scale.x, scale.y, scale.z);
-  noseScene.position.set(position.x, position.y, position.z);
+  // Scale and position base model parts
+  if (isBaseModel) {
+    [bodyScene, headScene, eyesScene, noseScene].forEach(scene => {
+      if (scene) {
+        scene.scale.set(scale.x, scale.y, scale.z);
+        scene.position.set(position.x, position.y, position.z);
+      }
+    });
+  }
 
+  // Scale and position outfit
   if (outfitScene) {
     outfitScene.scale.set(scale.x, scale.y, scale.z);
     outfitScene.position.set(position.x, position.y, position.z);
@@ -38,10 +47,14 @@ function Model({ bodyUri, headUri, outfitUri, eyesUri, noseUri, scale, position 
 
   return (
     <group>
-      <primitive object={bodyScene} />
-      <primitive object={headScene} />
-      <primitive object={eyesScene} />
-      <primitive object={noseScene} />
+      {isBaseModel && (
+        <>
+          <primitive object={bodyScene} />
+          <primitive object={headScene} />
+          <primitive object={eyesScene} />
+          <primitive object={noseScene} />
+        </>
+      )}
       {outfitScene && <primitive object={outfitScene} />}
     </group>
   );
@@ -181,6 +194,27 @@ export default function Shop() {
     }
   };
 
+  const handleUnequipAll = async () => {
+    try {
+      // Create a copy of currently equipped assets
+      const assetsToUnequip = Object.keys(equippedAssets);
+      
+      // Unequip each asset one by one
+      for (const assetType of assetsToUnequip) {
+        await unequipAsset(assetType);
+      }
+      
+      // Clear states after all unequip operations are complete
+      setSelectedOutfit(null);
+      setEquippedAssets({});
+      
+      Alert.alert('Success', 'All items unequipped successfully!');
+    } catch (error) {
+      console.error('Error unequipping all assets:', error);
+      Alert.alert('Error', 'Failed to unequip all items.');
+    }
+  };
+
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
@@ -200,36 +234,56 @@ export default function Shop() {
 
       {/* Left Half - 3D Model */}
       <View style={styles.leftHalf}>
-        {/* Model Display */}
         <View style={styles.modelContainer}>
           <Canvas>
             <ambientLight intensity={0.5} />
             <directionalLight position={[5, 5, 5]} />
             <Suspense fallback={null}>
+              {/* Base human model */}
               <Model
                 bodyUri={defaultBodyUri}
                 headUri={defaultHeadUri}
                 eyesUri={defaultEyesUri}
                 noseUri={defaultNoseUri}
-                outfitUri={selectedOutfit}
-                scale={{ x: 2.5, y: 2.5, z: 2.5 }}
-                position={{ x: 0, y: -3, z: 0 }}
+                outfitUri={null}
+                scale={{ x: 2, y: 2, z: 2 }}
+                position={{ x: 0, y: -2.6, z: 0 }}
+                isBaseModel={true}
               />
-              {Object.keys(equippedAssets).map(assetType => (
+              
+              {/* Selected outfit preview */}
+              {selectedOutfit && !Object.values(equippedAssets).some(asset => asset.url === selectedOutfit) && (
                 <Model
-                  key={assetType}
-                  bodyUri={defaultBodyUri}
-                  headUri={defaultHeadUri}
-                  eyesUri={defaultEyesUri}
-                  noseUri={defaultNoseUri}
-                  outfitUri={equippedAssets[assetType].url}
+                  outfitUri={selectedOutfit}
                   scale={{ x: 2, y: 2, z: 2 }}
                   position={{ x: 0, y: -2.6, z: 0 }}
+                  isBaseModel={false}
+                />
+              )}
+
+              {/* Equipped items */}
+              {Object.entries(equippedAssets).map(([assetType, asset]) => (
+                <Model
+                  key={assetType}
+                  outfitUri={asset.url}
+                  scale={{ x: 2, y: 2, z: 2 }}
+                  position={{ x: 0, y: -2.6, z: 0 }}
+                  isBaseModel={false}
                 />
               ))}
             </Suspense>
             <OrbitControls />
           </Canvas>
+        </View>
+        
+        {/* Unequip All button repositioned */}
+        <View style={styles.modelControlsContainer}>
+          <TouchableOpacity 
+            style={styles.unequipAllButton}
+            onPress={handleUnequipAll}
+          >
+            <Text style={styles.unequipAllButtonText}>Unequip All</Text>
+          </TouchableOpacity>
         </View>
       </View>
 
@@ -422,7 +476,14 @@ const styles = StyleSheet.create({
   },
   modelContainer: {
     width: '100%',
-    height: '100%',
+    height: '85%', // Reduce height to make room for controls
+  },
+  modelControlsContainer: {
+    width: '100%',
+    height: '15%',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingTop: 10,
   },
   backButton: {
     position: 'absolute',
@@ -438,5 +499,21 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  unequipAllButton: {
+    backgroundColor: '#f44336',
+    paddingVertical: 12,
+    paddingHorizontal: 25,
+    borderRadius: 8,
+    elevation: 3,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+  },
+  unequipAllButtonText: {
+    color: 'white',
+    fontWeight: 'bold',
+    fontSize: 14,
   },
 });
