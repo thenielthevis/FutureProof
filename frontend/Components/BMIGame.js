@@ -126,7 +126,7 @@ export default function Game() {
   const getModelPosition = () => {
     switch (bmiCategory) {
       case 'Overweight':
-        return { x: modelPositionX, y: -2, z: 0 }; // Move model slightly
+        return { x: modelPositionX, y: -1, z: 0 }; // Changed y from -2 to -1 to move model upward
       case 'Obese':
         return { x: 0, y: -3, z: 0 }; // Adjust position for Obese
       default:
@@ -145,7 +145,7 @@ const handleNextDay = () => {
       setFoodDragged(false);
       if (bmiCategory === 'Underweight') {
         setModelScale(prevScale => ({
-          x: Math.min(prevScale.x + 0.5, 5), // Increase width gradually until normal size (5 is the normal width)
+          x: Math.min(prevScale.x + 0.3, 5), // Increase width gradually until normal size (5 is the normal width)
           y: prevScale.y,
           z: prevScale.z
         }));
@@ -219,20 +219,50 @@ Drizzle of olive oil
   };
 
   const handleFoodHover = (foodKey) => {
-    playEatingSound();
-    setHighlightedFood(foodKey);
-    setSelectedFood(foodDescriptions[foodKey].description);
+    if (bmiCategory === 'Underweight' && foodDescriptions[foodKey]) {
+      setHighlightedFood(foodKey);
+      setSelectedFood(foodDescriptions[foodKey].description);
+    }
   };
+
+  const [typedWords, setTypedWords] = useState([]); // Add this state
+  const [currentWordIndex, setCurrentWordIndex] = useState(0); // Add this state
 
   const handleTyping = (text) => {
     setTypedText(text);
     const words = text.trim().split(" ");
     const levelWords = levels[currentLevel].split(" ");
-    if (words.length === levelWords.length && words.every((word, index) => word === levelWords[index])) {
-      setModelPositionX(15); // Move model to the end position
-    } else {
-      setModelPositionX(-15 + (words.length / levelWords.length) * 30); // Move model based on progress
+    
+    // Update typed words array
+    setTypedWords(words);
+    
+    // Find current word being typed
+    setCurrentWordIndex(words.length - 1);
+    
+    // Calculate progress based on correct words only
+    const correctWords = words.filter((word, index) => 
+      index < levelWords.length && word === levelWords[index]
+    );
+    
+    setModelPositionX(-15 + (correctWords.length / levelWords.length) * 30);
+  };
+
+  const getWordStyle = (word, index) => {
+    const levelWords = levels[currentLevel].split(" ");
+    
+    if (index >= typedWords.length) {
+      return styles.untypedWord;
     }
+    
+    if (index === currentWordIndex) {
+      return styles.currentWord;
+    }
+    
+    if (typedWords[index] === levelWords[index]) {
+      return styles.correctWord;
+    }
+    
+    return styles.wrongWord;
   };
 
   const handleNextLevel = () => {
@@ -341,29 +371,20 @@ const handleNextFoodSet = () => {
 
       {bmiCategory === 'Underweight' && (
         <>
-          <View style={styles.leftDescriptionContainer}>
-            <Text style={styles.leftDescriptionText}>
-              If you're underweight and want to reach a normal BMI, you should focus on nutrient-dense, high-calorie foods while maintaining a balanced diet. Here’s a structured high-calorie meal plan with specific foods to help you gain weight in a healthy way.
-              {'\n\n'}
-              Key Principles for Healthy Weight Gain:
-              {'\n'}
-              Increase Calories: Aim for 500-700 extra kcal/day to gain weight gradually.
-              {'\n'}
-              Prioritize Protein: 1.2-2.0g/kg body weight daily to support muscle growth.
-              {'\n'}
-              Healthy Fats & Carbs: Focus on whole foods with healthy fats and complex carbs.
-              {'\n'}
-              Frequent Meals: Eat 5-6 meals/day, including snacks.
-            </Text>
-          </View>
           <View style={styles.gameContainer}>
             <Text style={styles.dayText}>Day {day}</Text>
             <View style={styles.foodContainer}>
               <Animated.View
                 {...panResponderBreakfast.panHandlers}
-                style={panBreakfast.getLayout()}
+                style={[
+                  panBreakfast.getLayout(),
+                  styles.foodIconContainer
+                ]}
                 onMouseEnter={() => handleFoodHover('underbreakfast')}
-                onMouseLeave={() => setHighlightedFood(null)}
+                onMouseLeave={() => {
+                  setHighlightedFood(null);
+                  setSelectedFood(null);
+                }}
               >
                 <Image
                   source={require('../assets/food/underbreakfast.png')}
@@ -375,9 +396,15 @@ const handleNextFoodSet = () => {
               </Animated.View>
               <Animated.View
                 {...panResponderLunch.panHandlers}
-                style={panLunch.getLayout()}
+                style={[
+                  panLunch.getLayout(),
+                  styles.foodIconContainer
+                ]}
                 onMouseEnter={() => handleFoodHover('underlunch')}
-                onMouseLeave={() => setHighlightedFood(null)}
+                onMouseLeave={() => {
+                  setHighlightedFood(null);
+                  setSelectedFood(null);
+                }}
               >
                 <Image
                   source={require('../assets/food/underlunch.png')}
@@ -389,9 +416,15 @@ const handleNextFoodSet = () => {
               </Animated.View>
               <Animated.View
                 {...panResponderDinner.panHandlers}
-                style={panDinner.getLayout()}
+                style={[
+                  panDinner.getLayout(),
+                  styles.foodIconContainer
+                ]}
                 onMouseEnter={() => handleFoodHover('underdinner')}
-                onMouseLeave={() => setHighlightedFood(null)}
+                onMouseLeave={() => {
+                  setHighlightedFood(null);
+                  setSelectedFood(null);
+                }}
               >
                 <Image
                   source={require('../assets/food/underdinner.png')}
@@ -412,7 +445,13 @@ const handleNextFoodSet = () => {
       {bmiCategory === 'Overweight' && (
         <View style={styles.typingGameContainer}>
           <Text style={styles.levelText}>Level {currentLevel + 1}</Text>
-          <Text style={styles.levelSentence}>{levels[currentLevel]}</Text>
+          <View style={styles.sentenceContainer}>
+            {levels[currentLevel].split(" ").map((word, index) => (
+              <Text key={index} style={[styles.word, getWordStyle(word, index)]}>
+                {word}{' '}
+              </Text>
+            ))}
+          </View>
           <TextInput
             style={styles.typingInput}
             value={typedText}
@@ -604,14 +643,20 @@ const styles = StyleSheet.create({
     position: 'absolute',
     right: 20,
     top: 150,
-    backgroundColor: 'rgba(255, 255, 255, 0.8)',
-    padding: 10,
-    borderRadius: 5,
+    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+    padding: 15,
+    borderRadius: 10,
     width: '30%',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
   },
   descriptionText: {
     fontSize: 16,
     color: '#000',
+    lineHeight: 24,
   },
   completionTextContainer: {
     position: 'absolute',
@@ -660,11 +705,35 @@ const styles = StyleSheet.create({
     color: 'white',
     marginBottom: 10,
   },
-  levelSentence: {
-    fontSize: 18,
-    color: 'white',
+  sentenceContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
     marginBottom: 20,
-    textAlign: 'center',
+    padding: 10,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    borderRadius: 10,
+  },
+  word: {
+    fontSize: 18,
+    padding: 5,
+    margin: 2,
+    borderRadius: 5,
+  },
+  untypedWord: {
+    color: 'white',
+  },
+  currentWord: {
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    color: 'white',
+  },
+  correctWord: {
+    backgroundColor: 'rgba(0, 255, 0, 0.3)',
+    color: 'white',
+  },
+  wrongWord: {
+    backgroundColor: 'rgba(255, 0, 0, 0.3)',
+    color: 'white',
   },
   typingInput: {
     backgroundColor: 'white',
@@ -825,5 +894,13 @@ const styles = StyleSheet.create({
     width: '60%',
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  foodIconContainer: {
+    cursor: 'pointer',
+  },
+  highlightedFoodImage: {
+    borderColor: '#4CAF50',
+    borderWidth: 3,
+    borderRadius: 10,
   },
 });
