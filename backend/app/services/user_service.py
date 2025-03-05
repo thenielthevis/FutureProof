@@ -10,7 +10,7 @@ from jose import JWTError, jwt
 from app.database import get_user_by_email
 from fastapi import HTTPException
 import random
-from app.mailtrap_client import send_otp_email, send_reactivation_otp_email  # Import the correct function
+from app.mailtrap_client import send_otp_email, send_reactivation_otp_email, send_account_disabled_email  # Updated import
 import asyncio
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
@@ -364,15 +364,39 @@ async def disable_user(user_id: str):
     user = await db.users.find_one({"_id": ObjectId(user_id)})
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
+    
+    # Get the user's email
+    user_email = user.get("email")
+    
+    # Disable the user
     await db.users.update_one({"_id": ObjectId(user_id)}, {"$set": {"disabled": True}})
+    
+    # Send notification email
+    if user_email:
+        send_account_disabled_email(user_email, "administrative action")
+    
     return {"message": "User disabled successfully"}
 
 async def disable_inactive_users():
     one_month_ago = datetime.utcnow() - timedelta(days=30)
+    
+    # Find users who will be disabled
+    inactive_users = await db.users.find(
+        {"lastLogin": {"$lt": one_month_ago}, "disabled": False}
+    ).to_list(length=None)
+    
+    # Update the users to disabled
     await db.users.update_many(
         {"lastLogin": {"$lt": one_month_ago}, "disabled": False},
         {"$set": {"disabled": True}}
     )
+    
+    # Send notification emails to all affected users
+    for user in inactive_users:
+        user_email = user.get("email")
+        if user_email:
+            send_account_disabled_email(user_email, "inactivity")
+    
     return {"message": "Inactive users disabled successfully"}
 
 class UserService:

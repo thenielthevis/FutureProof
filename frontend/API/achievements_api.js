@@ -39,17 +39,31 @@ export const readAchievements = async () => {
 export const updateAchievement = async (achievementId, achievementData) => {
   try {
     const token = await AsyncStorage.getItem('token');
-    console.log("Updating Achievement ID:", achievementId); // Debug the ID
-    console.log("Updating Achievement Data:", achievementData); // Debug the data
-    const response = await axios.put(`${API_URL}/update/achievements/${achievementId}`, achievementData, {
+    if (!token) {
+      throw new Error('Authentication required');
+    }
+
+    console.log('Sending update request for achievement:', achievementId);
+    console.log('Update data:', achievementData);
+
+    const response = await fetch(`${API_URL}/achievements/${achievementId}`, { // Changed from /update/achievements/
+      method: 'PUT',
       headers: {
-        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
       },
+      body: JSON.stringify(achievementData),
     });
-    return response.data;
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.detail || 'Failed to update achievement');
+    }
+
+    return await response.json();
   } catch (error) {
-    console.error('Error updating achievement:', error.response ? error.response.data : error);
-    throw error.response ? error.response.data : { detail: 'An error occurred' };
+    console.error('Error in updateAchievement:', error);
+    throw error;
   }
 };
 
@@ -57,14 +71,26 @@ export const updateAchievement = async (achievementId, achievementData) => {
 export const deleteAchievement = async (achievementId) => {
   try {
     const token = await AsyncStorage.getItem('token');
-    const response = await axios.delete(`${API_URL}/delete/achievements/${achievementId}`, {
+    if (!token) {
+      throw new Error('Authentication required');
+    }
+
+    const response = await fetch(`${API_URL}/achievements/${achievementId}`, { // Changed from /delete/achievements/
+      method: 'DELETE',
       headers: {
-        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
       },
     });
-    return response.data;
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.detail || 'Failed to delete achievement');
+    }
+
+    return await response.json();
   } catch (error) {
-    console.error('Error deleting achievement:', error.response ? error.response.data : error);
-    throw error.response ? error.response.data : { detail: 'An error occurred' };
+    console.error('Error in deleteAchievement:', error);
+    throw error;
   }
 };

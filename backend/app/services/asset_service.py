@@ -19,30 +19,26 @@ async def create_asset(
         # Log received values for debugging
         print(f"Received name: {name}")  
         print(f"Received description: {description}")  
-        print(f"Received file: {file.filename}, ContentType: {file.content_type}")  
-        print(f"Received image_file: {image_file.filename}, ContentType: {image_file.content_type}")  
         print(f"Received price: {price}")
         print(f"Received asset_type: {asset_type}")
 
-        # Validate file presence
-        if not file or not file.filename:
-            raise HTTPException(status_code=400, detail="No GLB file uploaded or invalid file format")
-        if not image_file or not image_file.filename:
-            raise HTTPException(status_code=400, detail="No image file uploaded or invalid file format")
+        # ✅ Check if files are received correctly
+        if not file or not hasattr(file, "filename"):
+            raise HTTPException(status_code=400, detail="No GLB file uploaded or invalid format")
+        if not image_file or not hasattr(image_file, "filename"):
+            raise HTTPException(status_code=400, detail="No image file uploaded or invalid format")
 
-        # Log file details before upload
-        print(f"Uploading GLB file: {file.filename}, ContentType: {file.content_type}")
-        print(f"Uploading image file: {image_file.filename}, ContentType: {image_file.content_type}")
+        print(f"Received GLB file: {file.filename}, ContentType: {file.content_type}")  
+        print(f"Received image file: {image_file.filename}, ContentType: {image_file.content_type}")  
 
-        # Upload files to Cloudinary directly from UploadFile stream
+        # ✅ Upload files to Cloudinary from UploadFile stream
         glb_result = cloudinary.uploader.upload(file.file, resource_type="raw")
         image_result = cloudinary.uploader.upload(image_file.file, resource_type="image")
 
-        # Log Cloudinary response
         print(f"Cloudinary GLB upload result: {glb_result}")
         print(f"Cloudinary image upload result: {image_result}")
 
-        # Create asset object
+        # ✅ Create asset object
         asset = Asset(
             name=name,
             description=description,
@@ -52,9 +48,8 @@ async def create_asset(
             price=price,
             asset_type=asset_type
         )
-        
 
-        # Save asset to database
+        # ✅ Save to database
         await db.assets.insert_one(asset.dict())
 
         return asset

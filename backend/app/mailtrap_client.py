@@ -168,3 +168,81 @@ def send_reactivation_otp_email(to_email: str, otp: str):
         server.starttls()
         server.login(MAILTRAP_USERNAME, MAILTRAP_PASSWORD)
         server.sendmail(msg["From"], [msg["To"]], msg.as_string())
+
+def send_account_disabled_email(to_email: str, reason: str):
+    html_content = f"""
+    <html>
+    <head>
+        <style>
+            body {{
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            }}
+            .container {{
+            max-width: 600px;
+            width: 100%;
+            padding: 20px;
+            background-color: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            }}
+            .header {{
+            text-align: center;
+            margin-bottom: 20px;
+
+            }}
+            .header img {{
+                width: 100px;
+                height: auto;
+            }}
+            .header h2 {{
+                color: #333333;
+                margin: 10px 0 0;
+            }}
+            .message {{
+                font-size: 18px;
+                color: #333333;
+                text-align: center;
+                margin: 20px 0;
+            }}
+            .footer {{
+                margin-top: 20px;
+                text-align: center;
+                color: #777777;
+                font-size: 14px;
+            }}
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <div class="header">
+                <img src="https://i.ibb.co/YBStKgFC/logo-2.png" alt="logo-2" border="0">
+                <h2>FutureProof</h2>
+            </div>
+            <h1>Account Disabled</h1>
+            <p>Your FutureProof account has been disabled due to {reason}.</p>
+            <div class="message">To reactivate your account, please login again. You will receive an OTP to complete the reactivation process.</div>
+            <div class="footer">
+                <p>If you have any questions, please contact our support team.</p>
+            </div>
+        </div>
+    </body>
+    </html>
+    """
+    msg = MIMEMultipart()
+    msg["Subject"] = "Your FutureProof Account Has Been Disabled"
+    msg["From"] = "FutureProof@gmail.com"
+    msg["To"] = to_email
+    msg.attach(MIMEText(html_content, "html"))
+
+    with smtplib.SMTP(MAILTRAP_HOST, MAILTRAP_PORT) as server:
+        server.starttls()
+        server.login(MAILTRAP_USERNAME, MAILTRAP_PASSWORD)
+        server.sendmail(msg["From"], [msg["To"]], msg.as_string())

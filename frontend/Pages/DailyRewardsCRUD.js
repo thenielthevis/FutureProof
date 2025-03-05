@@ -31,6 +31,8 @@ const DailyRewardsCRUD = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [filteredAvatars, setFilteredAvatars] = useState([]);
   const [headerAnimation] = useState(new Animated.Value(0));
+  const [deleteModalVisible, setDeleteModalVisible] = useState(false);
+  const [selectedReward, setSelectedReward] = useState(null);
 
   useEffect(() => {
     const fetchRewards = async () => {
@@ -418,16 +420,10 @@ const DailyRewardsCRUD = () => {
                   </TouchableOpacity>
                   <TouchableOpacity 
                     style={[styles.actionBtn, styles.deleteBtn]} 
-                    onPress={() => 
-                      Alert.alert(
-                        "Confirm Delete",
-                        "Are you sure you want to delete this reward?",
-                        [
-                          { text: "Cancel", style: "cancel" },
-                          { text: "Delete", onPress: () => handleDeleteReward(item._id), style: "destructive" }
-                        ]
-                      )
-                    }
+                    onPress={() => {
+                      setSelectedReward(item._id);
+                      setDeleteModalVisible(true);
+                    }}
                   >
                     <FontAwesome name="trash" size={14} color="white" />
                   </TouchableOpacity>
@@ -542,6 +538,53 @@ const DailyRewardsCRUD = () => {
                   <Text style={styles.submitButtonText}>
                     {editingReward ? 'Update Reward' : 'Create Reward'}
                   </Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        </Modal>
+
+        <Modal
+          visible={deleteModalVisible}
+          transparent
+          animationType="slide"
+        >
+          <View style={styles.deleteModal_overlay}>
+            <View style={styles.deleteModal_content}>
+              <View style={styles.deleteModal_header}>
+                <Text style={styles.deleteModal_headerText}>Confirm Delete</Text>
+              </View>
+
+              <View style={styles.deleteModal_body}>
+                <Text style={styles.deleteModal_text}>
+                  Are you sure you want to delete this daily reward?
+                </Text>
+              </View>
+
+              <View style={styles.deleteModal_footer}>
+                <TouchableOpacity 
+                  onPress={() => setDeleteModalVisible(false)} 
+                  style={styles.deleteModal_cancelButton}
+                >
+                  <Text style={styles.deleteModal_cancelButtonText}>Cancel</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity 
+                  onPress={() => {
+                    if (selectedReward) {
+                      handleDeleteReward(selectedReward);
+                      setDeleteModalVisible(false);
+                    } else {
+                      Toast.show({
+                        type: 'error',
+                        text1: 'Error',
+                        text2: 'No reward selected for deletion',
+                      });
+                    }
+                  }} 
+                  style={styles.deleteModal_deleteButton}
+                >
+                  <Text style={styles.deleteModal_deleteButtonText}>Delete</Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -875,6 +918,80 @@ const styles = StyleSheet.create({
     borderRadius: 6,
   },
   submitButtonText: {
+    color: 'white',
+    fontWeight: '600',
+  },
+  // Delete Modal Styles
+  deleteModal_overlay: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    padding: 20,
+  },
+  deleteModal_content: {
+    width: '90%',
+    maxWidth: 400,
+    backgroundColor: 'white',
+    borderRadius: 10,
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 16,
+    elevation: 10,
+  },
+  deleteModal_header: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E5E7EB',
+  },
+  deleteModal_headerText: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#B91C1C', // Dark Red for danger
+  },
+  deleteModal_body: {
+    padding: 20,
+    alignItems: 'center',
+  },
+  deleteModal_text: {
+    fontSize: 16,
+    color: '#374151',
+    textAlign: 'center',
+  },
+  deleteModal_footer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    padding: 20,
+    borderTopWidth: 1,
+    borderTopColor: '#E5E7EB',
+  },
+  deleteModal_cancelButton: {
+    backgroundColor: '#E5E7EB',
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 6,
+    flex: 1,
+    marginRight: 10,
+    alignItems: 'center',
+  },
+  deleteModal_cancelButtonText: {
+    color: '#374151',
+    fontWeight: '600',
+  },
+  deleteModal_deleteButton: {
+    backgroundColor: '#DC2626',
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 6,
+    flex: 1,
+    alignItems: 'center',
+  },
+  deleteModal_deleteButtonText: {
     color: 'white',
     fontWeight: '600',
   },

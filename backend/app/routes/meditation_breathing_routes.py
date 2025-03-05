@@ -33,7 +33,7 @@ async def create_meditation_breathing_route(
     name: str = Form(...),
     description: str = Form(...),
     file: UploadFile = File(...),
-    instructions: Optional[List[str]] = Form(None),
+    instructions: Optional[str] = Form(None),  # Receives JSON string
     current_admin: UserInDB = Depends(get_current_admin),
 ):
     try:
@@ -85,7 +85,7 @@ async def update_meditation_breathing_route(
     name: Optional[str] = Form(None),
     description: Optional[str] = Form(None),
     file: Optional[UploadFile] = File(None),
-    instructions: Optional[List[str]] = Form(None),
+    instructions: Optional[str] = Form(None),  # Receives JSON string
     current_admin: UserInDB = Depends(get_current_admin),
 ):
     try:

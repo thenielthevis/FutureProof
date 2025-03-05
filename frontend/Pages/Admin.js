@@ -4,7 +4,7 @@ import { useNavigation } from '@react-navigation/native';
 import { FontAwesome, FontAwesome5, Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { getTotalUsers, getUserRegistrationsByDate } from '../API/user_api';
+import { getTotalUsers, getUserRegistrationsByDate, getAllUsers } from '../API/user_api';
 import { readAssets } from '../API/assets_api';
 import { readAvatars } from '../API/avatar_api';
 import { getMeditationBreathingExercises } from '../API/meditation_api';
@@ -12,7 +12,7 @@ import { getPhysicalActivities } from '../API/physical_activities_api';
 import { readQuotes } from '../API/quotes_api';
 import { getAllTaskCompletions } from '../API/task_completion_api';
 import { getMostPredictedDisease, getTopPredictedDiseases } from '../API/prediction_api';
-import { PieChart, LineChart } from 'react-native-chart-kit';
+import { PieChart, LineChart, BarChart } from 'react-native-chart-kit';
 import Sidebar from './Sidebar';
 import * as Print from 'expo-print';
 import { shareAsync } from 'expo-sharing';
@@ -34,6 +34,9 @@ const Admin = () => {
     weeklyRegistrations: Array(7).fill(0),  // Initialize with 7 days
     monthlyRegistrations: Array(12).fill(0),  // Initialize with 12 months
     topPredictedDiseases: [],
+    taskCompletionsByType: {},  // State for task completions by type
+    activeUsers: 0, // New state for active users count
+    disabledUsers: 0, // New state for disabled users count
   });
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [headerAnimation] = useState(new Animated.Value(0));
@@ -63,6 +66,18 @@ const Admin = () => {
         const totalQuotes = quotes.length;
         const taskCompletions = await getAllTaskCompletions();
         const totalTaskCompletions = taskCompletions.length;
+        
+        // Process task completions by type
+        const taskCompletionsByType = taskCompletions.reduce((acc, task) => {
+          acc[task.task_type] = (acc[task.task_type] || 0) + 1;
+          return acc;
+        }, {});
+        
+        // Get all users to calculate active vs disabled counts
+        const users = await getAllUsers(token);
+        const activeUsers = users.filter(user => !user.disabled).length;
+        const disabledUsers = users.filter(user => user.disabled).length;
+        
         const mostPredictedDisease = await getMostPredictedDisease(token);
         const topPredictedDiseases = await getTopPredictedDiseases(token);
         const registrations = await getUserRegistrationsByDate(token);
@@ -81,6 +96,9 @@ const Admin = () => {
           weeklyRegistrations: registrations.weekly_registrations,
           monthlyRegistrations: registrations.monthly_registrations,
           topPredictedDiseases,
+          taskCompletionsByType,
+          activeUsers,
+          disabledUsers,
         }));
       } catch (error) {
         console.error('Error fetching dashboard data:', error);
@@ -143,6 +161,29 @@ const Admin = () => {
     legendFontColor: '#555',
     legendFontSize: 12,
   }));
+  
+  // Create chart data for task completions by type
+  const taskCompletionChartData = Object.keys(dashboardData.taskCompletionsByType).map((key, index) => ({
+    name: key,
+    population: dashboardData.taskCompletionsByType[key],
+    color: chartColors[index % chartColors.length],
+    legendFontColor: '#555',
+    legendFontSize: 12,
+  }));
+  
+  // Create chart data for active vs disabled users
+  const userStatusData = {
+    labels: ['Active', 'Disabled'],
+    datasets: [
+      {
+        data: [dashboardData.activeUsers, dashboardData.disabledUsers],
+        colors: [
+          (opacity = 1) => `rgba(22, 163, 74, ${opacity})`, // Green for active
+          (opacity = 1) => `rgba(220, 38, 38, ${opacity})`, // Red for disabled
+        ]
+      }
+    ]
+  };
 
   // Chart configuration
   const chartConfig = {
@@ -161,6 +202,22 @@ const Admin = () => {
       strokeWidth: "2",
       stroke: "#10B981"
     }
+  };
+  
+  // Bar chart configuration
+  const barChartConfig = {
+    backgroundGradientFrom: '#ffffff',
+    backgroundGradientTo: '#ffffff',
+    barPercentage: 0.6,
+    decimalPlaces: 0,
+    color: (opacity = 1, index) => {
+      // Return green for active users, red for disabled
+      return index === 0 ? `rgba(22, 163, 74, ${opacity})` : `rgba(220, 38, 38, ${opacity})`;
+    },
+    labelColor: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
+    style: {
+      borderRadius: 16,
+    },
   };
 
   const convertImageToBase64 = async (uri) => {
@@ -247,6 +304,19 @@ const Admin = () => {
             <div style="width: 48%; text-align: center;">
               <h3>Top 5 Predicted Diseases</h3>
               <img src="${await convertChartToBase64('topPredictedDiseasesChart')}" alt="Top 5 Predicted Diseases" style="width: 100%; height: auto;">
+            </div>
+          </div>
+          <div style="page-break-after: always;"></div>
+          
+          <!-- Pair 3: Task Completions by Type and Active vs Disabled Users -->
+          <div style="display: flex; justify-content: space-between; margin-bottom: 20px;">
+            <div style="width: 48%; text-align: center;">
+              <h3>Task Completions by Type</h3>
+              <img src="${await convertChartToBase64('taskCompletionsByTypeChart')}" alt="Task Completions by Type" style="width: 100%; height: auto;">
+            </div>
+            <div style="width: 48%; text-align: center;">
+              <h3>Active vs Disabled Users</h3>
+              <img src="${await convertChartToBase64('userStatusChart')}" alt="Active vs Disabled Users" style="width: 100%; height: auto;">
             </div>
           </div>
         </div>
@@ -454,6 +524,45 @@ const Admin = () => {
                   paddingLeft="15"
                   absolute
                   style={styles.chart}
+                />
+              </View>
+              
+              {/* Task Completions by Type */}
+              <View style={styles.chartContainer} id="taskCompletionsByTypeChart">
+                <View style={styles.chartHeader}>
+                  <Text style={styles.chartTitle}>Task Completions by Type</Text>
+                  <View style={styles.chartActions}>
+                  </View>
+                </View>
+                <PieChart
+                  data={taskCompletionChartData}
+                  width={450}
+                  height={220}
+                  chartConfig={chartConfig}
+                  accessor="population"
+                  backgroundColor="transparent"
+                  paddingLeft="15"
+                  absolute
+                  style={styles.chart}
+                />
+              </View>
+              
+              {/* Active vs Disabled Users */}
+              <View style={styles.chartContainer} id="userStatusChart">
+                <View style={styles.chartHeader}>
+                  <Text style={styles.chartTitle}>Active vs Disabled Users</Text>
+                  <View style={styles.chartActions}>
+                  </View>
+                </View>
+                <BarChart
+                  data={userStatusData}
+                  width={450}
+                  height={220}
+                  chartConfig={barChartConfig}
+                  style={styles.chart}
+                  verticalLabelRotation={0}
+                  fromZero={true}
+                  showValuesOnTopOfBars={true}
                 />
               </View>
             </View>

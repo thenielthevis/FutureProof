@@ -18,43 +18,27 @@ export const readAssets = async () => {
   }
 };
 
-// Create a new asset
-export const createAsset = async (assetData) => {
+export const createAsset = async (formData) => {
   try {
-    const token = await AsyncStorage.getItem('token');
-    const formData = new FormData();
-    formData.append('name', assetData.name);
-    formData.append('description', assetData.description);
-    formData.append('file', {
-      uri: assetData.file.uri,
-      type: assetData.file.type,
-      name: assetData.file.name,
-    });
-    formData.append('image_file', {
-      uri: assetData.imageFile.uri,
-      type: assetData.imageFile.type,
-      name: assetData.imageFile.name,
-    });
-    formData.append('price', assetData.price);
-    formData.append('asset_type', assetData.assetType);
-    if (assetData.glbFile) {
-      formData.append('glb_file', {
-        uri: assetData.glbFile.uri,
-        type: assetData.glbFile.type,
-        name: assetData.glbFile.name,
-      });
-    }
+    const token = await AsyncStorage.getItem("token");
 
     const response = await axios.post(`${API_URL}/create/asset/`, formData, {
       headers: {
         Authorization: `Bearer ${token}`,
-        'Content-Type': 'multipart/form-data',
+        "Content-Type": "multipart/form-data",
+      },
+      transformRequest: (data, headers) => {
+        return data; // Ensure FormData is sent as-is
       },
     });
+
     return response.data;
   } catch (error) {
-    console.error('Error creating asset:', error.response ? error.response.data : error);
-    throw error.response ? error.response.data : { detail: 'An error occurred' };
+    console.error(
+      "Error creating asset:",
+      error.response ? error.response.data : error
+    );
+    throw error.response ? error.response.data : { detail: "An error occurred" };
   }
 };
 
