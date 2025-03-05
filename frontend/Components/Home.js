@@ -562,7 +562,7 @@ const Home = ({ navigation }) => {
       <Image source={require('../assets/logo.png')} style={styles.footerLogo} />
       <Text style={styles.footerTitle}>FutureProof</Text>
       <Text style={styles.footerText}>
-        Empowering your wellness journey through gamification and AI-driven insights.
+      Embrace the Bear Within—Strong, Resilient, Future-Ready
       </Text>
     </View>
     <View style={styles.footerLinksContainer}>
@@ -594,13 +594,10 @@ const Home = ({ navigation }) => {
       <View style={styles.footerLinkSection}>
         <Text style={styles.footerLinkTitle}>Connect</Text>
         <TouchableOpacity>
-          <Text style={styles.footerLink}>LinkedIn</Text>
+          <Text style={styles.footerLink}onPress={() => Linking.openURL('https://github.com/thenielthevis/FutureProof')}>GitHub</Text>
         </TouchableOpacity>
         <TouchableOpacity>
-          <Text style={styles.footerLink}>GitHub</Text>
-        </TouchableOpacity>
-        <TouchableOpacity>
-          <Text style={styles.footerLink}>Email</Text>
+          <Text style={styles.footerLink} onPress={() => Linking.openURL('mailto:davmarrearen@gmail.com')}>Email</Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -612,11 +609,8 @@ const Home = ({ navigation }) => {
       © {new Date().getFullYear()} FutureProof. All rights reserved.
     </Text>
     <View style={styles.footerSocial}>
-      <TouchableOpacity style={styles.socialIcon} onPress={() => Linking.openURL('mailto:davmarrearen@gmail.com')}>
+      <TouchableOpacity style={styles.socialIcon} onPress={() => Linking.openURL('https://github.com/thenielthevis/FutureProof')}>
         <Icon name="github" size={20} color="#ffffff" />
-      </TouchableOpacity>
-      <TouchableOpacity style={styles.socialIcon} onPress={() => Linking.openURL('mailto:davmarrearen@gmail.com')}>
-        <Icon name="linkedin" size={20} color="#ffffff" />
       </TouchableOpacity>
       <TouchableOpacity style={styles.socialIcon} onPress={() => Linking.openURL('mailto:davmarrearen@gmail.com')}>
         <Icon name="envelope" size={20} color="#ffffff" />
