@@ -413,22 +413,22 @@ export default function Game() {
     fetchQuotes();
   }, []);
 
-  useEffect(() => {
-    const interval = setInterval(() => {
-      if (quotes.length > 0) {
-        setQuoteVisible(true);
-        playMenuSelect();
-        setCurrentQuoteIndex((prevIndex) => (prevIndex + 1) % quotes.length);
-      }
-    }, 180000); // 3 minutes in milliseconds
+  // useEffect(() => {
+  //   const interval = setInterval(() => {
+  //     if (quotes.length > 0) {
+  //       setQuoteVisible(true);
+  //       playMenuSelect();
+  //       setCurrentQuoteIndex((prevIndex) => (prevIndex + 1) % quotes.length);
+  //     }
+  //   }, 180000); // 3 minutes in milliseconds
 
-    return () => clearInterval(interval);
-  }, [quotes]);
+  //   return () => clearInterval(interval);
+  // }, [quotes]);
 
-  const handleQuoteClose = async () => {
-    setQuoteVisible(false);
-    await playMenuClose();
-  };
+  // const handleQuoteClose = async () => {
+  //   setQuoteVisible(false);
+  //   await playMenuClose();
+  // };
 
   const playMenuClose = async () => {
     const { sound } = await Audio.Sound.createAsync(require('../assets/sound-effects/menu-close.mp3'));
