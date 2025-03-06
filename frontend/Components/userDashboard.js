@@ -999,7 +999,6 @@ const UserDashboard = ({ navigation }) => {
                     <Ionicons name="nutrition-outline" size={24} color="#3a86ff" />
                     <Text style={styles.lifestyleTitle}>Nutrition</Text>
                     <TouchableOpacity style={styles.editButton}>
-                      <Ionicons name="pencil-outline" size={18} color="#ffffff" />
                     </TouchableOpacity>
                   </View>
                   <Text style={styles.lifestyleText}>{user.food_intake || 'No nutrition data available'}</Text>
@@ -1010,7 +1009,6 @@ const UserDashboard = ({ navigation }) => {
                     <Ionicons name="bed-outline" size={24} color="#3a86ff" />
                     <Text style={styles.lifestyleTitle}>Sleep</Text>
                     <TouchableOpacity style={styles.editButton}>
-                      <Ionicons name="pencil-outline" size={18} color="#ffffff" />
                     </TouchableOpacity>
                   </View>
                   <Text style={styles.lifestyleText}>{user.sleep_hours || '>6 Hours'}</Text>
@@ -1022,7 +1020,6 @@ const UserDashboard = ({ navigation }) => {
                 <View style={styles.medicalCard}>
                   <View style={styles.medicalHeader}>
                     <Ionicons name="medical-outline" size={24} color="#3a86ff" />
-                    <Text style={styles.medicalTitle}>Genetic Background</Text>
                   </View>
                   <Text style={styles.medicalText}>{user.genetic_diseases || 'No genetic data available'}</Text>
                 </View>
