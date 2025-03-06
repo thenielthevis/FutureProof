@@ -179,12 +179,10 @@ const Profile = ({ visible, onClose }) => {
               <View style={styles.card}>
                 <Text style={styles.cardHeader}>Daily Habits/Lifestyle</Text>
                 <Text style={styles.cardText}>{user.lifestyle}</Text>
-                <MaterialIcons name="edit" size={20} color="#4CAF50" style={styles.editIcon} />
               </View>
               <View style={styles.card}>
                 <Text style={styles.cardHeader}>Calories/Food Intake</Text>
                 <Text style={styles.cardText}>{user.food_intake}</Text>
-                <MaterialIcons name="edit" size={20} color="#4CAF50" style={styles.editIcon} />
               </View>
             </View>
 
@@ -224,12 +222,10 @@ const Profile = ({ visible, onClose }) => {
               <View style={styles.card}>
                 <Text style={styles.cardHeader}>Daily Sleep</Text>
                 <Text style={styles.cardText}>{user.sleep_hours || '>6 Hours'}</Text>
-                <MaterialIcons name="edit" size={20} color="#4CAF50" style={styles.editIcon} />
               </View>
               <View style={styles.card}>
                 <Text style={styles.cardHeader}>Activeness</Text>
                 <Text style={styles.cardText}>{user.activeness || 'Moderate'}</Text>
-                <MaterialIcons name="edit" size={20} color="#4CAF50" style={styles.editIcon} />
               </View>
             </View>
 
