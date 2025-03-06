@@ -88,6 +88,7 @@ export default function Game() {
   const [currentQuoteIndex, setCurrentQuoteIndex] = useState(0);
   const [quoteVisible, setQuoteVisible] = useState(false);
   const [eyesUri, setEyesUri] = useState(getEyesUri(isAsleep, status.sleep));
+  const [quoteAnimationValue] = useState(new Animated.Value(300)); // Add this with other state declarations
 
   const icons = [
     require('../assets/icons/Navigation/dailyassessment.png'),
@@ -413,22 +414,33 @@ export default function Game() {
     fetchQuotes();
   }, []);
 
-  // useEffect(() => {
-  //   const interval = setInterval(() => {
-  //     if (quotes.length > 0) {
-  //       setQuoteVisible(true);
-  //       playMenuSelect();
-  //       setCurrentQuoteIndex((prevIndex) => (prevIndex + 1) % quotes.length);
-  //     }
-  //   }, 180000); // 3 minutes in milliseconds
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (quotes.length > 0 && !quoteVisible) {  // Only show new quote if none is currently visible
+        showQuoteNotification();
+      }
+    }, 5000);
 
-  //   return () => clearInterval(interval);
-  // }, [quotes]);
+    return () => clearInterval(interval);
+  }, [quotes, quoteVisible]);  // Add quoteVisible to dependencies
 
-  // const handleQuoteClose = async () => {
-  //   setQuoteVisible(false);
-  //   await playMenuClose();
-  // };
+  const showQuoteNotification = () => {
+    setQuoteVisible(true);
+    Animated.spring(quoteAnimationValue, {
+      toValue: 0,
+      useNativeDriver: true,
+    }).start();
+  };
+
+  const handleQuoteClose = () => {
+    Animated.spring(quoteAnimationValue, {
+      toValue: 300, // Keep this the same since we want it to exit to the right
+      useNativeDriver: true,
+    }).start(() => {
+      setQuoteVisible(false);
+      setCurrentQuoteIndex((prevIndex) => (prevIndex + 1) % quotes.length);  // Update index after closing
+    });
+  };
 
   const playMenuClose = async () => {
     const { sound } = await Audio.Sound.createAsync(require('../assets/sound-effects/menu-close.mp3'));
@@ -563,17 +575,20 @@ export default function Game() {
       {/* Sleep Overlay Condition */}
       {isAsleep && <View style={styles.sleepOverlay} />}
       {quoteVisible && (
-        <Modal visible={quoteVisible} animationType="slide" transparent>
-          <View style={styles.quoteModalContainer}>
-            <View style={styles.quoteModalContent}>
-              <Text style={styles.quoteText}>{quotes[currentQuoteIndex].text}</Text>
-              <Text style={styles.quoteAuthor}>- {quotes[currentQuoteIndex].author}</Text>
-              <TouchableOpacity style={styles.quoteButton} onPress={handleQuoteClose}>
-                <Text style={styles.quoteButtonText}>Got it!</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </Modal>
+        <Animated.View
+          style={[
+            styles.quoteNotification,
+            {
+              transform: [{ translateX: quoteAnimationValue }],
+            },
+          ]}
+        >
+          <Text style={styles.quoteNotificationText}>"{quotes[currentQuoteIndex].text}"</Text>
+          <Text style={styles.quoteNotificationAuthor}>- {quotes[currentQuoteIndex].author}</Text>
+          <TouchableOpacity style={styles.quoteButton} onPress={handleQuoteClose}>
+            <Text style={styles.quoteButtonText}>Got it!</Text>
+          </TouchableOpacity>
+        </Animated.View>
       )}
     </LinearGradient>
   );  
@@ -855,39 +870,44 @@ bmiGameButtonText: {
   fontSize: 16,
   fontWeight: 'bold',
 },
-quoteModalContainer: {
-  flex: 1,
-  justifyContent: 'center',
-  alignItems: 'center',
-  backgroundColor: 'rgba(0, 0, 0, 0.5)',
+quoteNotification: {
+  position: 'absolute',
+  right: 0, // Changed from left: 0
+  top: '40%',
+  backgroundColor: 'rgba(44, 62, 80, 0.9)',
+  padding: 15,
+  borderTopLeftRadius: 10, // Changed from borderTopRightRadius
+  borderBottomLeftRadius: 10, // Changed from borderBottomRightRadius
+  maxWidth: 300,
+  shadowColor: '#000',
+  shadowOffset: {
+    width: -2, // Changed from 2
+    height: 2,
+  },
+  shadowOpacity: 0.25,
+  shadowRadius: 3.84,
+  elevation: 5,
 },
-quoteModalContent: {
-  backgroundColor: '#2c3e50',
-  padding: 20,
-  borderRadius: 10,
-  width: '50%',
-  alignItems: 'center',
-},
-quoteText: {
-  fontSize: 18,
-  marginBottom: 10,
-  textAlign: 'center',
+quoteNotificationText: {
   color: '#fff',
+  fontSize: 14,
+  marginBottom: 5,
 },
-quoteAuthor: {
-  fontSize: 16,
+quoteNotificationAuthor: {
+  color: '#bdc3c7',
+  fontSize: 12,
   fontStyle: 'italic',
-  marginBottom: 20,
-  textAlign: 'center',
-  color: '#fff',
 },
 quoteButton: {
   backgroundColor: '#3498db',
-  padding: 10,
+  padding: 8,
   borderRadius: 5,
+  alignItems: 'center',
+  marginTop: 10,
 },
 quoteButtonText: {
   color: '#fff',
-  fontSize: 16,
+  fontSize: 14,
+  fontWeight: 'bold',
 },
 });
