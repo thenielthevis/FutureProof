@@ -543,7 +543,7 @@ export default function Game() {
         <Animated.View {...panResponder.panHandlers} style={pan.getLayout()}>
           <Image source={require('../assets/icons/Side/pill.png')} style={styles.floatingIcon} />
         </Animated.View>
-        <TouchableOpacity onPress={() => navigation.navigate('Achievements')}>
+        <TouchableOpacity onPress={() => navigation.navigate('achievements')}>
           <Image source={require('../assets/icons/Side/achievements.png')} style={styles.floatingIcon} />
         </TouchableOpacity>
         <TouchableOpacity onPress={() => navigation.navigate('BMIGame')}>
