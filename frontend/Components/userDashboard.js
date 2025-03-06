@@ -800,6 +800,273 @@ const UserDashboard = ({ navigation }) => {
     }
   };
 
+  const handleExportUserPDF = async (assessment) => {
+      try {
+        // Convert logo URLs to base64
+        const logo1Base64 = await convertImageToBase64("https://i.ibb.co/GQygLXT9/tuplogo.png");
+        const logo2Base64 = await convertImageToBase64("https://i.ibb.co/YBStKgFC/logo-2.png");
+  
+        // Create header content that will appear on each page
+        const headerContent = `
+          <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 2px solid #f0f0f0; padding-bottom: 10px;">
+            <img src="${logo1Base64}" alt="Logo 1" style="height: 60px; width: auto;">
+            <div style="flex: 1; text-align: center; margin-top: 15px;">
+              <h1 style="font-size: 18px; margin: 0; ">FUTUREPROOF: A Gamified AI Platform for Predictive Health and Preventive Wellness</h1>
+              <br>
+              <h2 style="font-size: 16px; margin: 0;">Daily Assessment Report</h2>
+              <h4 style="font-size: 14px; margin: 5px 0 0;">${new Date().toLocaleDateString()}</h4>
+            </div>
+            <img src="${logo2Base64}" alt="Logo 2" style="height: 60px; width: auto;">
+          </div>
+        `;
+  
+        // Create first page with mission and vision
+        const firstPageContent = `
+          <div style="font-family: Arial, sans-serif; padding: 20px; background: #fff; max-width: 900px; margin: 0 auto;">
+            ${headerContent}
+            
+            <div style="margin-top: 10px;">
+              <h3>Our Mission</h3>
+              <p>FutureProof empowers individuals with AI-driven, gamified health insights for proactive well-being. By integrating genetic, lifestyle, and environmental data, we deliver personalized, preventive care solutions.</p>
+              <h3>Our Vision</h3>
+              <p>We envision a future where predictive healthcare transforms lives, making well-being accessible, engaging, and proactive through AI and gamification.</p>
+            </div>
+          </div>
+        `;
+        
+        // User Information Page
+        const userInfoPage = `
+          <div style="font-family: Arial, sans-serif; padding: 20px; background: #fff; max-width: 900px; margin: 0 auto;">
+            ${headerContent}
+            
+            <div style="margin-top: 10px;">
+              <h3>User Information - ${assessment.username}</h3>
+              <h4>Page 1 of 4</h4>
+              <table style="width: 100%; border-collapse: collapse; margin-top: 20px;">
+                <tr>
+                  <th style="padding: 12px; border: 1px solid #ddd; text-align: left; background-color: #f8f9fa;">Username</th>
+                  <td style="padding: 12px; border: 1px solid #ddd;">${assessment.username}</td>
+                </tr>
+                <tr>
+                  <th style="padding: 12px; border: 1px solid #ddd; text-align: left; background-color: #f8f9fa;">Age</th>
+                  <td style="padding: 12px; border: 1px solid #ddd;">${assessment.age}</td>
+                </tr>
+                <tr>
+                  <th style="padding: 12px; border: 1px solid #ddd; text-align: left; background-color: #f8f9fa;">Gender</th>
+                  <td style="padding: 12px; border: 1px solid #ddd;">${assessment.gender}</td>
+                </tr>
+                <tr>
+                  <th style="padding: 12px; border: 1px solid #ddd; text-align: left; background-color: #f8f9fa;">Height</th>
+                  <td style="padding: 12px; border: 1px solid #ddd;">${assessment.height} cm</td>
+                </tr>
+                <tr>
+                  <th style="padding: 12px; border: 1px solid #ddd; text-align: left; background-color: #f8f9fa;">Weight</th>
+                  <td style="padding: 12px; border: 1px solid #ddd;">${assessment.weight} kg</td>
+                </tr>
+                <tr>
+                  <th style="padding: 12px; border: 1px solid #ddd; text-align: left; background-color: #f8f9fa;">Environment</th>
+                  <td style="padding: 12px; border: 1px solid #ddd;">${assessment.environment}</td>
+                </tr>
+                <tr>
+                  <th style="padding: 12px; border: 1px solid #ddd; text-align: left; background-color: #f8f9fa;">Vices</th>
+                  <td style="padding: 12px; border: 1px solid #ddd;">${assessment.vices.join(', ')}</td>
+                </tr>
+                <tr>
+                  <th style="padding: 12px; border: 1px solid #ddd; text-align: left; background-color: #f8f9fa;">Genetic Diseases</th>
+                  <td style="padding: 12px; border: 1px solid #ddd;">${assessment.genetic_diseases.join(', ')}</td>
+                </tr>
+                <tr>
+                  <th style="padding: 12px; border: 1px solid #ddd; text-align: left; background-color: #f8f9fa;">Lifestyle</th>
+                  <td style="padding: 12px; border: 1px solid #ddd;">${assessment.lifestyle.join(', ')}</td>
+                </tr>
+                <tr>
+                  <th style="padding: 12px; border: 1px solid #ddd; text-align: left; background-color: #f8f9fa;">Food Intake</th>
+                  <td style="padding: 12px; border: 1px solid #ddd;">${assessment.food_intake.join(', ')}</td>
+                </tr>
+                <tr>
+                  <th style="padding: 12px; border: 1px solid #ddd; text-align: left; background-color: #f8f9fa;">Sleep Hours</th>
+                  <td style="padding: 12px; border: 1px solid #ddd;">${assessment.sleep_hours}</td>
+                </tr>
+                <tr>
+                  <th style="padding: 12px; border: 1px solid #ddd; text-align: left; background-color: #f8f9fa;">Activeness</th>
+                  <td style="padding: 12px; border: 1px solid #ddd;">${assessment.activeness}</td>
+                </tr>
+              </table>
+            </div>
+          </div>
+        `;
+  
+        // Prevention Progress Page
+        const preventionPage = `
+          <div style="font-family: Arial, sans-serif; padding: 20px; background: #fff; max-width: 900px; margin: 0 auto;">
+            ${headerContent}
+            
+            <div style="margin-top: 10px;">
+              <h3>Prevention Progress - ${assessment.username}</h3>
+              <h4>Page 2 of 4</h4>
+              <ul>
+                ${assessment.updated_predictions.map(prediction => `
+                  <li>
+                    <b>Condition: ${prediction.condition}</b><br>
+                    <div style="display: flex; align-items: center;">
+                      <div style="width: 100px; height: 10px; background-color: #ddd; margin-right: 10px;">
+                        <div style="width: ${prediction.old_percentage}%; height: 100%; background-color: #3498db;"></div>
+                      </div>
+                      <span>${prediction.old_percentage}%</span>
+                    </div>
+                    <div style="display: flex; align-items: center; margin-top: 5px;">
+                      <div style="width: 100px; height: 10px; background-color: #ddd; margin-right: 10px;">
+                        <div style="width: ${prediction.new_percentage}%; height: 100%; background-color: #2ecc71;"></div>
+                      </div>
+                      <span>${prediction.new_percentage}%</span>
+                    </div>
+                    <p>Reason: ${prediction.reason}</p>
+                  </li>
+                `).join('')}
+              </ul>
+            </div>
+          </div>
+        `;
+  
+        // Nutritional Analysis Page
+        const nutritionalPage = `
+          <div style="font-family: Arial, sans-serif; padding: 20px; background: #fff; max-width: 900px; margin: 0 auto;">
+            ${headerContent}
+            
+            <div style="margin-top: 10px;">
+              <h3>Nutritional Analysis - ${assessment.username}</h3>
+              <h4>Page 3 of 4</h4>
+              <table style="width: 100%; border-collapse: collapse; margin-top: 20px;">
+                <thead>
+                  <tr>
+                    <th style="padding: 12px; border: 1px solid #ddd; text-align: left; background-color: #f8f9fa;">Question</th>
+                    <th style="padding: 12px; border: 1px solid #ddd; text-align: left; background-color: #f8f9fa;">Answer</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${assessment.nutritional_analysis.questions_answers.map(qa => `
+                    <tr>
+                      <td style="padding: 12px; border: 1px solid #ddd;">${qa.question}</td>
+                      <td style="padding: 12px; border: 1px solid #ddd;">${qa.answer}</td>
+                    </tr>
+                  `).join('')}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        `;
+  
+        // Recommendations Page
+        const recommendationsPage = `
+          <div style="font-family: Arial, sans-serif; padding: 20px; background: #fff; max-width: 900px; margin: 0 auto;">
+            ${headerContent}
+            
+            <div style="margin-top: 10px;">
+              <h3>Recommendations - ${assessment.username}</h3>
+              <h4>Page 4 of 4</h4>
+              <ul>
+                ${assessment.recommendations.map(rec => `
+                  <li>${rec}</li>
+                `).join('')}
+              </ul>
+            </div>
+          </div>
+        `;
+  
+        // Combine all pages
+        const allPages = [
+          firstPageContent,
+          userInfoPage,
+          preventionPage,
+          nutritionalPage,
+          recommendationsPage
+        ].join('<div style="page-break-after: always;"></div>');
+  
+        if (Platform.OS === 'web') {
+          try {
+            // For web platform - use jsPDF directly with separate pages
+            const pdf = new jsPDF('p', 'pt', 'a4');
+            
+            // Function to add a page to the PDF
+            const addPageToPdf = async (htmlContent, pageNum) => {
+              const container = document.createElement('div');
+              // Set a fixed width to match A4 dimensions
+              container.style.width = '595.28pt';
+              container.style.position = 'absolute';
+              container.style.left = '-9999px';
+              container.innerHTML = htmlContent;
+              document.body.appendChild(container);
+              
+              try {
+                // Wait for images to load
+                await Promise.all(
+                  Array.from(container.querySelectorAll('img')).map(img => {
+                    if (img.complete) return Promise.resolve();
+                    return new Promise(resolve => {
+                      img.onload = resolve;
+                      img.onerror = resolve;
+                    });
+                  })
+                );
+                
+                // Use a fixed scale to prevent zooming out
+                const canvas = await html2canvas(container, {
+                  scale: 1.0,
+                  useCORS: true,
+                  logging: false
+                });
+                
+                // Always use the full page width
+                const pdfWidth = pdf.internal.pageSize.getWidth();
+                
+                // Add new page if it's not the first page
+                if (pageNum > 0) pdf.addPage();
+                
+                // Add image with proper sizing
+                pdf.addImage(
+                  canvas.toDataURL('image/jpeg', 1.0), 
+                  'JPEG', 
+                  0, 0, 
+                  pdfWidth, 
+                  canvas.height * (pdfWidth / canvas.width)
+                );
+              } finally {
+                document.body.removeChild(container);
+              }
+            };
+            
+            // Process each page
+            const pages = [firstPageContent, userInfoPage, preventionPage, nutritionalPage, recommendationsPage];
+            for (let i = 0; i < pages.length; i++) {
+              await addPageToPdf(pages[i], i);
+            }
+            
+            const userName = assessment.username.replace(/\s+/g, '').toLowerCase();
+            pdf.save(`${userName}-assessment-report.pdf`);
+          } catch (err) {
+            console.error('Error generating PDF:', err);
+            Alert.alert('Error', 'Failed to generate PDF. Please try again.');
+          }
+        } else {
+          try {
+            const { uri } = await Print.printToFileAsync({ 
+              html: allPages,
+              base64: false,
+              width: 612,
+              height: 792
+            });
+            await shareAsync(uri, { UTI: '.pdf', mimeType: 'application/pdf' });
+          } catch (error) {
+            console.error('Error generating PDF:', error);
+            Alert.alert('Error', 'Failed to generate PDF. Please try again.');
+          }
+        }
+      } catch (error) {
+        console.error('Error in handleExportUserPDF:', error);
+        Alert.alert('Error', 'Something went wrong. Please try again.');
+      }
+    };
+
   if (loading) {
     return (
       <LinearGradient colors={['#e8f5e9', '#c8e6c9']} style={styles.loadingContainer}>
@@ -999,7 +1266,6 @@ const UserDashboard = ({ navigation }) => {
                     <Ionicons name="nutrition-outline" size={24} color="#3a86ff" />
                     <Text style={styles.lifestyleTitle}>Nutrition</Text>
                     <TouchableOpacity style={styles.editButton}>
-                      <Ionicons name="pencil-outline" size={18} color="#ffffff" />
                     </TouchableOpacity>
                   </View>
                   <Text style={styles.lifestyleText}>{user.food_intake || 'No nutrition data available'}</Text>
@@ -1010,7 +1276,6 @@ const UserDashboard = ({ navigation }) => {
                     <Ionicons name="bed-outline" size={24} color="#3a86ff" />
                     <Text style={styles.lifestyleTitle}>Sleep</Text>
                     <TouchableOpacity style={styles.editButton}>
-                      <Ionicons name="pencil-outline" size={18} color="#ffffff" />
                     </TouchableOpacity>
                   </View>
                   <Text style={styles.lifestyleText}>{user.sleep_hours || '>6 Hours'}</Text>
@@ -1022,7 +1287,6 @@ const UserDashboard = ({ navigation }) => {
                 <View style={styles.medicalCard}>
                   <View style={styles.medicalHeader}>
                     <Ionicons name="medical-outline" size={24} color="#3a86ff" />
-                    <Text style={styles.medicalTitle}>Genetic Background</Text>
                   </View>
                   <Text style={styles.medicalText}>{user.genetic_diseases || 'No genetic data available'}</Text>
                 </View>
