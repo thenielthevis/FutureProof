@@ -160,13 +160,22 @@ export default function Shop() {
         const ownedAssets = await getOwnedAssets();
         setOwnedAssets(ownedAssets.asset_ids); // Assuming setOwnedAssets is a state setter for owned assets
 
-        // Fetch equipped assets with their colors
+        // Fetch equipped assets with proper formatting
         const equippedAssetsData = await getEquippedAssets();
-        setEquippedAssets(equippedAssetsData);
+        const formattedEquippedAssets = {};
+        Object.entries(equippedAssetsData || {}).forEach(([key, value]) => {
+          if (value && value.url) {
+            formattedEquippedAssets[key] = {
+              ...value,
+              _id: value._id ? value._id.toString() : null,
+            };
+          }
+        });
+        setEquippedAssets(formattedEquippedAssets);
         
         // Initialize assetColors with equipped assets' colors
         const initialColors = {};
-        Object.entries(equippedAssetsData).forEach(([type, asset]) => {
+        Object.values(formattedEquippedAssets).forEach(asset => {
           if (asset.url && asset.color) {
             initialColors[asset.url] = asset.color;
           }
@@ -216,7 +225,10 @@ export default function Shop() {
   const handleEquip = async (assetType, assetId) => {
     try {
       const color = assetColors[selectedOutfit];
-      await equipAsset(assetType, assetId, color); // Modified to include color
+      // Ensure assetId is a string
+      const stringAssetId = assetId.toString();
+      await equipAsset(assetType, stringAssetId, color);
+      
       Alert.alert('Success', 'Item equipped successfully!');
       setEquippedAssets(prevEquippedAssets => {
         const updatedEquippedAssets = { ...prevEquippedAssets };
@@ -225,11 +237,17 @@ export default function Shop() {
             if (type !== 'costume') delete updatedEquippedAssets[type];
           });
         }
-        updatedEquippedAssets[assetType] = { 
-          _id: assetId, 
-          url: assets.find(asset => asset._id.toString() === assetId).url,
-          color: color
-        };
+        
+        // Find the asset in the assets array
+        const asset = assets.find(a => a._id.toString() === stringAssetId);
+        if (asset) {
+          updatedEquippedAssets[assetType] = {
+            _id: stringAssetId,
+            url: asset.url,
+            color: color || null
+          };
+        }
+        
         return updatedEquippedAssets;
       });
     } catch (error) {
@@ -414,8 +432,8 @@ export default function Shop() {
                     <Model
                       key={`equipped-${assetType}`}
                       outfitUri={asset.url}
-                      scale={{ x: 2, y: 2, z: 2 }}
-                      position={{ x: 0, y: -2.6, z: 0 }}
+                      scale={{ x: 2.3, y: 2.3, z: 2.3 }}
+                      position={{ x: 0, y: -3.25, z: 0 }}
                       color={asset.color}
                     />
                   ))}
@@ -434,6 +452,16 @@ export default function Shop() {
               <View style={styles.colorSelectorSticky}>
                 <ColorSelector />
               </View>
+            )}
+
+            {/* Add Unequip All button */}
+            {Object.keys(equippedAssets).length > 0 && (
+              <TouchableOpacity 
+                style={styles.unequipAllButton}
+                onPress={handleUnequipAll}
+              >
+                <Text style={styles.unequipAllButtonText}>Unequip All</Text>
+              </TouchableOpacity>
             )}
 
             {/* Category and Items */}
@@ -810,6 +838,10 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     paddingHorizontal: 25,
     borderRadius: 8,
+    marginHorizontal: 10,
+    marginTop: 10,
+    marginBottom: 5,
+    alignItems: 'center',
     elevation: 3,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },

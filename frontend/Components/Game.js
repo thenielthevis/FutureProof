@@ -113,8 +113,18 @@ export default function Game() {
         const items = await readPurchasedItems();
         setPurchasedItems(items);
 
-        const equippedAssets = await getEquippedAssets();
-        setEquippedAssets(equippedAssets);
+        const equippedAssetsData = await getEquippedAssets();
+        // Ensure equipped assets are properly formatted
+        const formattedEquippedAssets = {};
+        Object.entries(equippedAssetsData || {}).forEach(([key, value]) => {
+          if (value && value.url) {
+            formattedEquippedAssets[key] = {
+              ...value,
+              _id: value._id ? value._id.toString() : null, // Ensure ID is string
+            };
+          }
+        });
+        setEquippedAssets(formattedEquippedAssets);
 
         const token = await AsyncStorage.getItem('token');
         const userData = await getUser(token);
@@ -149,8 +159,17 @@ export default function Game() {
     React.useCallback(() => {
       const fetchEquippedAssets = async () => {
         try {
-          const equippedAssets = await getEquippedAssets();
-          setEquippedAssets(equippedAssets);
+          const equippedAssetsData = await getEquippedAssets();
+          const formattedEquippedAssets = {};
+          Object.entries(equippedAssetsData || {}).forEach(([key, value]) => {
+            if (value && value.url) {
+              formattedEquippedAssets[key] = {
+                ...value,
+                _id: value._id ? value._id.toString() : null,
+              };
+            }
+          });
+          setEquippedAssets(formattedEquippedAssets);
         } catch (error) {
           console.error('Error fetching equipped assets:', error);
         }
@@ -459,17 +478,13 @@ export default function Game() {
             <Model scale={modelScale} uri='https://res.cloudinary.com/dv4vzq7pv/image/upload/v1739961163/Head.001_p5sjoz.glb' position={modelPosition} color={LowHealth().color} />
             <Model scale={modelScale} uri={eyesUri} position={modelPosition} key={eyesUri} /> {/* Eyes */}
             <Model scale={modelScale} uri='https://res.cloudinary.com/dv4vzq7pv/image/upload/v1739961165/Nose.001_s4fxsi.glb' position={modelPosition} color={LowHealth().color}/> {/* Nose */}
-            {selectedHair && <Model scale={modelScale} uri={selectedHair} position={modelPosition} />}
-            {selectedHead && <Model scale={modelScale} uri={selectedHead} position={modelPosition} />}  {/* Add selectedHead */}
-            {selectedTop && <Model scale={modelScale} uri={selectedTop} position={modelPosition} />}
-            {selectedBottom && <Model scale={modelScale} uri={selectedBottom} position={modelPosition} />}
-            {selectedShoes && <Model scale={modelScale} uri={selectedShoes} position={modelPosition} />}
-            {Object.keys(equippedAssets).map(assetType => (
+            {Object.entries(equippedAssets).map(([assetType, asset]) => (
               <Model
                 key={assetType}
                 scale={modelScale}
-                uri={equippedAssets[assetType].url}
+                uri={asset.url}
                 position={modelPosition}
+                color={asset.color} // Support for colored items
               />
             ))}
           </Suspense>
