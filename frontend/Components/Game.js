@@ -537,6 +537,9 @@ export default function Game() {
         <TouchableOpacity onPress={() => navigation.navigate('BMIGame')}>
           <Image source={require('../assets/icons/Side/mini-game.png')} style={styles.floatingIcon} />
         </TouchableOpacity>
+        <TouchableOpacity onPress={() => navigation.navigate('NormalGame')}>
+          <Image source={require('../assets/icons/Side/mini-game.png')} style={styles.floatingIcon} />
+        </TouchableOpacity>
       </View>
   
       {/* Modal for Customization */}

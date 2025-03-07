@@ -1,5 +1,5 @@
 import React, { useState, useEffect, Suspense, useRef } from 'react';
-import { View, StyleSheet, TouchableOpacity, Text, Modal, Image, Animated, PanResponder, TextInput } from 'react-native';
+import { View, TouchableOpacity, Text, Modal, Image, Animated, PanResponder } from 'react-native';
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls, useGLTF } from '@react-three/drei/native';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -7,6 +7,10 @@ import { getEquippedAssets } from '../API/assets_api'; // Re-add this import
 import GameNavbar from '../Navbar/GameNavbar';
 import BMIGameCongratulationsModal from './BMIGameCongratulationsModal'; // Import the new modal
 import { Audio } from 'expo-av';
+import UnderweightGame from './UnderweightGame';
+import OverweightGame from './OverweightGame';
+import ObeseGame from './ObeseGame';
+import styles from '../styles/gameStyles';
 
 // Reusable Model Component with Color
 function Model({ scale, uri, position, rotation }) {
@@ -370,161 +374,48 @@ const handleNextFoodSet = () => {
       </Modal>
 
       {bmiCategory === 'Underweight' && (
-        <>
-          <View style={styles.gameContainer}>
-            <Text style={styles.dayText}>Day {day}</Text>
-            <View style={styles.foodContainer}>
-              <Animated.View
-                {...panResponderBreakfast.panHandlers}
-                style={[
-                  panBreakfast.getLayout(),
-                  styles.foodIconContainer
-                ]}
-                onMouseEnter={() => handleFoodHover('underbreakfast')}
-                onMouseLeave={() => {
-                  setHighlightedFood(null);
-                  setSelectedFood(null);
-                }}
-              >
-                <Image
-                  source={require('../assets/food/underbreakfast.png')}
-                  style={[
-                    styles.foodImage,
-                    highlightedFood === 'underbreakfast' && styles.highlightedFoodImage,
-                  ]}
-                />
-              </Animated.View>
-              <Animated.View
-                {...panResponderLunch.panHandlers}
-                style={[
-                  panLunch.getLayout(),
-                  styles.foodIconContainer
-                ]}
-                onMouseEnter={() => handleFoodHover('underlunch')}
-                onMouseLeave={() => {
-                  setHighlightedFood(null);
-                  setSelectedFood(null);
-                }}
-              >
-                <Image
-                  source={require('../assets/food/underlunch.png')}
-                  style={[
-                    styles.foodImage,
-                    highlightedFood === 'underlunch' && styles.highlightedFoodImage,
-                  ]}
-                />
-              </Animated.View>
-              <Animated.View
-                {...panResponderDinner.panHandlers}
-                style={[
-                  panDinner.getLayout(),
-                  styles.foodIconContainer
-                ]}
-                onMouseEnter={() => handleFoodHover('underdinner')}
-                onMouseLeave={() => {
-                  setHighlightedFood(null);
-                  setSelectedFood(null);
-                }}
-              >
-                <Image
-                  source={require('../assets/food/underdinner.png')}
-                  style={[
-                    styles.foodImage,
-                    highlightedFood === 'underdinner' && styles.highlightedFoodImage,
-                  ]}
-                />
-              </Animated.View>
-            </View>
-            <TouchableOpacity style={styles.nextButton} onPress={handleNextDay} disabled={eating}>
-              <Text style={styles.nextButtonText}>Next Day</Text>
-            </TouchableOpacity>
-          </View>
-        </>
+        <UnderweightGame
+          day={day}
+          handleNextDay={handleNextDay}
+          eating={eating}
+          panResponderBreakfast={panResponderBreakfast}
+          panResponderLunch={panResponderLunch}
+          panResponderDinner={panResponderDinner}
+          panBreakfast={panBreakfast}
+          panLunch={panLunch}
+          panDinner={panDinner}
+          handleFoodHover={handleFoodHover}
+          highlightedFood={highlightedFood}
+          selectedFood={selectedFood}
+        />
       )}
 
       {bmiCategory === 'Overweight' && (
-        <View style={styles.typingGameContainer}>
-          <Text style={styles.levelText}>Level {currentLevel + 1}</Text>
-          <View style={styles.sentenceContainer}>
-            {levels[currentLevel].split(" ").map((word, index) => (
-              <Text key={index} style={[styles.word, getWordStyle(word, index)]}>
-                {word}{' '}
-              </Text>
-            ))}
-          </View>
-          <TextInput
-            style={styles.typingInput}
-            value={typedText}
-            onChangeText={handleTyping}
-            placeholder="Type the sentence here..."
-          />
-          <TouchableOpacity
-            style={[styles.nextLevelButton, { opacity: typedText.trim() === levels[currentLevel] ? 1 : 0.5 }]}
-            onPress={handleNextLevel}
-            disabled={typedText.trim() !== levels[currentLevel]}
-          >
-            <Text style={styles.nextLevelButtonText}>Next Level</Text>
-          </TouchableOpacity>
-        </View>
+        <OverweightGame
+          currentLevel={currentLevel}
+          levels={levels}
+          typedText={typedText}
+          handleTyping={handleTyping}
+          handleNextLevel={handleNextLevel}
+        />
       )}
 
       {bmiCategory === 'Obese' && (
-        <View style={styles.obeseModeContainer}>
-          <View style={styles.foodChoiceGameContainer}>
-            <Text style={styles.foodChoiceText}>Choose the lower calorie food:</Text>
-            <View style={styles.foodChoiceContainer}>
-              <View style={getCardStyle(foodChoices[currentFoodSet].food1)}>
-                <TouchableOpacity style={styles.foodChoiceButton} onPress={() => handleFoodChoice(foodChoices[currentFoodSet].food1)}>
-                  <Image source={foodChoices[currentFoodSet].food1.image} style={styles.foodImage} />
-                  <Text style={styles.foodChoiceButtonText}>{foodChoices[currentFoodSet].food1.name}</Text>
-                  <Text style={styles.calorieText}>Calories: {foodChoices[currentFoodSet].food1.calories}</Text>
-                </TouchableOpacity>
-              </View>
-              <View style={getCardStyle(foodChoices[currentFoodSet].food2)}>
-                <TouchableOpacity style={styles.foodChoiceButton} onPress={() => handleFoodChoice(foodChoices[currentFoodSet].food2)}>
-                  <Image source={foodChoices[currentFoodSet].food2.image} style={styles.foodImage} />
-                  <Text style={styles.foodChoiceButtonText}>{foodChoices[currentFoodSet].food2.name}</Text>
-                  <Text style={styles.calorieText}>Calories: {foodChoices[currentFoodSet].food2.calories}</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-            <TouchableOpacity style={styles.nextFoodSetButton} onPress={handleNextFoodSet}>
-              <Text style={styles.nextFoodSetButtonText}>Next</Text>
-            </TouchableOpacity>
-            <Text style={styles.scoreText}>Score: {score}</Text>
-          </View>
-          <View style={styles.modelContainer}>
-            <Canvas camera={{ position: [0, 0, 10] }}>
-              <ambientLight intensity={0.5} />
-              <directionalLight position={[5, 5, 5]} />
-              <Suspense fallback={null}>
-                <Model scale={getModelScale()} uri='https://res.cloudinary.com/dv4vzq7pv/image/upload/v1739961165/NakedFullBody_jaufkc.glb' position={getModelPosition()} rotation={getModelRotation()} />
-                <Model scale={getModelScale()} uri='https://res.cloudinary.com/dv4vzq7pv/image/upload/v1739961163/Head.001_p5sjoz.glb' position={getModelPosition()} rotation={getModelRotation()} />
-                <Model scale={getModelScale()} uri='https://res.cloudinary.com/dv4vzq7pv/image/upload/v1739961141/Eyes.001_uab6p6.glb' position={getModelPosition()} rotation={getModelRotation()} /> {/* Eyes */}
-                <Model scale={getModelScale()} uri='https://res.cloudinary.com/dv4vzq7pv/image/upload/v1739961165/Nose.001_s4fxsi.glb' position={getModelPosition()} rotation={getModelRotation()} /> {/* Nose */}
-                {selectedTop && <Model scale={getModelScale()} uri={selectedTop} position={getModelPosition()} rotation={getModelRotation()} />}
-                {selectedBottom && <Model scale={getModelScale()} uri={selectedBottom} position={getModelPosition()} rotation={getModelRotation()} />}
-                {selectedShoes && <Model scale={getModelScale()} uri={selectedShoes} position={getModelPosition()} rotation={getModelRotation()} />}
-                {Object.keys(equippedAssets).map(assetType => (
-                  <Model
-                    key={assetType}
-                    scale={getModelScale()}
-                    uri={equippedAssets[assetType].url}
-                    position={getModelPosition()}
-                    rotation={getModelRotation()}
-                  />
-                ))}
-              </Suspense>
-              <OrbitControls enableDamping maxPolarAngle={Math.PI} minDistance={10} maxDistance={15} />
-            </Canvas>
-          </View>
-        </View>
-      )}
-
-      {selectedFood && day < 7 && (
-        <View style={styles.descriptionContainer}>
-          <Text style={styles.descriptionText}>{[selectedFood]}</Text>
-        </View>
+        <ObeseGame
+          foodChoices={foodChoices}
+          currentFoodSet={currentFoodSet}
+          handleFoodChoice={handleFoodChoice}
+          selectedFoodCalories={selectedFoodCalories}
+          handleNextFoodSet={handleNextFoodSet}
+          score={score}
+          modelScale={getModelScale()}
+          modelPosition={getModelPosition()}
+          getModelRotation={getModelRotation}
+          equippedAssets={equippedAssets}
+          selectedTop={selectedTop}
+          selectedBottom={selectedBottom}
+          selectedShoes={selectedShoes}
+        />
       )}
 
       {gameCompleted && (
@@ -546,361 +437,3 @@ const handleNextFoodSet = () => {
     </LinearGradient>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 16,
-  },
-  sceneContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    width: '100%',
-    height: '100%',
-    marginTop: 150,
-  },
-  modalContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-  },
-  modalContent: {
-    backgroundColor: '#fff',
-    padding: 20,
-    borderRadius: 10,
-    width: '80%',
-    alignItems: 'center',
-  },
-  modalTitle: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    marginBottom: 10,
-  },
-  modalSubtitle: {
-    fontSize: 18,
-    marginBottom: 20,
-  },
-  button: {
-    backgroundColor: '#4CAF50',
-    padding: 10,
-    borderRadius: 5,
-    marginVertical: 5,
-    width: '80%',
-    alignItems: 'center',
-  },
-  buttonText: {
-    color: 'white',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  gameContainer: {
-    alignItems: 'center',
-    marginTop: 20,
-  },
-  dayText: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    marginBottom: 20,
-  },
-  foodContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    width: '100%',
-    marginBottom: 20,
-  },
-  foodImage: {
-    width: 80,
-    height: 80,
-    resizeMode: 'contain',
-  },
-  highlightedFoodImage: {
-    borderColor: 'yellow',
-    borderWidth: 2,
-  },
-  eatingText: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: 'white',
-    position: 'absolute',
-    top: 10,
-    zIndex: 1,
-  },
-  nextButton: {
-    backgroundColor: '#4CAF50',
-    padding: 10,
-    borderRadius: 5,
-  },
-  nextButtonText: {
-    color: 'white',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  descriptionContainer: {
-    position: 'absolute',
-    right: 20,
-    top: 150,
-    backgroundColor: 'rgba(255, 255, 255, 0.95)',
-    padding: 15,
-    borderRadius: 10,
-    width: '30%',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-    elevation: 5,
-  },
-  descriptionText: {
-    fontSize: 16,
-    color: '#000',
-    lineHeight: 24,
-  },
-  completionTextContainer: {
-    position: 'absolute',
-    top: 90,
-    alignItems: 'center',
-    width: '100%',
-  },
-  completionText: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: 'white',
-  },
-  okButton: {
-    marginTop: 20,
-    backgroundColor: '#4CAF50',
-    padding: 10,
-    borderRadius: 5,
-  },
-  okButtonText: {
-    color: 'white',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  leftDescriptionContainer: {
-    position: 'absolute',
-    left: 20,
-    top: 150,
-    backgroundColor: 'rgba(255, 255, 255, 0.8)',
-    padding: 10,
-    borderRadius: 5,
-    width: '30%',
-  },
-  leftDescriptionText: {
-    fontSize: 16,
-    color: '#000',
-  },
-  typingGameContainer: {
-    position: 'absolute',
-    bottom: 50,
-    width: '80%',
-    alignItems: 'center',
-  },
-  levelText: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: 'white',
-    marginBottom: 10,
-  },
-  sentenceContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'center',
-    marginBottom: 20,
-    padding: 10,
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-    borderRadius: 10,
-  },
-  word: {
-    fontSize: 18,
-    padding: 5,
-    margin: 2,
-    borderRadius: 5,
-  },
-  untypedWord: {
-    color: 'white',
-  },
-  currentWord: {
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    color: 'white',
-  },
-  correctWord: {
-    backgroundColor: 'rgba(0, 255, 0, 0.3)',
-    color: 'white',
-  },
-  wrongWord: {
-    backgroundColor: 'rgba(255, 0, 0, 0.3)',
-    color: 'white',
-  },
-  typingInput: {
-    backgroundColor: 'white',
-    padding: 10,
-    borderRadius: 5,
-    width: '100%',
-    fontSize: 16,
-  },
-  nextLevelButton: {
-    backgroundColor: '#4CAF50',
-    padding: 10,
-    borderRadius: 5,
-    marginTop: 20,
-  },
-  nextLevelButtonText: {
-    color: 'white',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  foodChoiceGameContainer: {
-    alignItems: 'center',
-    marginTop: 20,
-  },
-  foodChoiceText: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    marginBottom: 20,
-  },
-  foodChoiceContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    width: '100%',
-    marginBottom: 20,
-  },
-  foodCard: {
-    width: '40%',
-    backgroundColor: '#fff',
-    padding: 10,
-    borderRadius: 10,
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.8,
-    shadowRadius: 2,
-    elevation: 5,
-  },
-  foodChoiceButton: {
-    alignItems: 'center',
-  },
-  foodImage: {
-    width: 80,
-    height: 80,
-    marginBottom: 10,
-  },
-  foodChoiceButtonText: {
-    color: '#000',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  calorieText: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: 'white',
-    marginTop: 10,
-  },
-  nextFoodSetButton: {
-    backgroundColor: '#4CAF50',
-    padding: 10,
-    borderRadius: 5,
-    marginTop: 20,
-  },
-  nextFoodSetButtonText: {
-    color: 'white',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  scoreText: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: 'white',
-    marginTop: 10,
-  },
-  obeseModeContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    width: '100%',
-    height: '100%',
-  },
-  foodChoiceGameContainer: {
-    width: '40%',
-    alignItems: 'center',
-    marginTop: 20,
-  },
-  foodChoiceText: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    marginBottom: 20,
-  },
-  foodChoiceContainer: {
-    width: '100%',
-    marginBottom: 20,
-  },
-  foodCard: {
-    backgroundColor: '#fff',
-    padding: 10,
-    borderRadius: 10,
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.8,
-    shadowRadius: 2,
-    elevation: 5,
-    marginBottom: 10,
-  },
-  correctCard: {
-    backgroundColor: 'green',
-  },
-  wrongCard: {
-    backgroundColor: 'red',
-  },
-  foodChoiceButton: {
-    alignItems: 'center',
-  },
-  foodImage: {
-    width: 80,
-    height: 80,
-    marginBottom: 10,
-  },
-  foodChoiceButtonText: {
-    color: '#000',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  calorieText: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: 'white',
-    marginTop: 10,
-  },
-  nextFoodSetButton: {
-    backgroundColor: '#4CAF50',
-    padding: 10,
-    borderRadius: 5,
-    marginTop: 20,
-  },
-  nextFoodSetButtonText: {
-    color: 'white',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  scoreText: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: 'white',
-    marginTop: 10,
-  },
-  modelContainer: {
-    width: '60%',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  foodIconContainer: {
-    cursor: 'pointer',
-  },
-  highlightedFoodImage: {
-    borderColor: '#4CAF50',
-    borderWidth: 3,
-    borderRadius: 10,
-  },
-});
