@@ -32,6 +32,7 @@ import MeditationCRUD from './Pages/MeditationCRUD';
 import UserDashboard from './Components/userDashboard';
 import BMIGame from './Components/BMIGame';
 import UsersManagement from './Pages/UsersManagement';
+import MainMenu from './Components/Game/MainMenu';
 
 const Stack = createStackNavigator();
 const { width, height } = Dimensions.get('window');
@@ -80,6 +81,7 @@ export default function App() {
                   <Stack.Screen name="UserDashboard" component={UserDashboard} />
                   <Stack.Screen name="BMIGame" component={BMIGame} />
                   <Stack.Screen name="UsersManagement" component={UsersManagement} />
+                  <Stack.Screen name="MainMenu" component={MainMenu} options={{ headerShown: false }} />
                 </Stack.Navigator>
               </NavigationContainer>
             </ScrollView>

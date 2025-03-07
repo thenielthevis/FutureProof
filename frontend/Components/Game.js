@@ -605,7 +605,7 @@ export default function Game() {
         <TouchableOpacity onPress={() => navigation.navigate('achievements')}>
           <Image source={require('../assets/icons/Side/achievements.png')} style={styles.floatingIcon} />
         </TouchableOpacity>
-        <TouchableOpacity onPress={() => navigation.navigate('BMIGame')}>
+        <TouchableOpacity onPress={() => navigation.navigate('MainMenu')}>
           <Image source={require('../assets/icons/Side/mini-game.png')} style={styles.floatingIcon} />
         </TouchableOpacity>
       </View>
