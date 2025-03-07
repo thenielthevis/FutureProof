@@ -38,7 +38,7 @@ const Contacts = ({ navigation }) => {
               style={styles.contactButton}
               onPress={() => navigation.navigate('Register')}
             >
-              <Text style={styles.contactButtonText}>Reach Out</Text>
+              <Text style={styles.contactButtonText} onPress={() => Linking.openURL('mailto:davmarrearen@gmail.com')}>Reach Out</Text>
             </TouchableOpacity>
           </View>
 

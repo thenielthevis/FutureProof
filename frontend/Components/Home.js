@@ -1299,7 +1299,7 @@ const styles = StyleSheet.create({
   },
   
   footer: {
-    backgroundColor: '#14243b',
+    backgroundColor: 'rgba(25, 47,66, 0.50)',
     paddingTop: 40,
     paddingBottom: 0, // Remove bottom padding
     marginTop: 40,

@@ -13,7 +13,7 @@ async def equip_asset(user_id: ObjectId, asset_type: str, asset_id: str, color: 
         equipped_asset = EquippedAsset(
             asset_id=asset_id, 
             url=asset["url"],
-            color=color  # Can be None for original color
+            color=color if color is not None else None  # Ensure color is set to None if not provided
         )
         
         if default_asset:

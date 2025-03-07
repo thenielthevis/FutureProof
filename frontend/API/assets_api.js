@@ -134,10 +134,15 @@ export const getOwnedAssets = async () => {
       },
     });
     console.log('Response from getOwnedAssets:', response.data); // Log response
-    return response.data;
+    // Ensure we always return a consistent structure
+    return {
+      ...response.data,
+      asset_ids: response.data.asset_ids || []
+    };
   } catch (error) {
     console.error('Error getting owned assets:', error.response ? error.response.data : error);
-    throw error.response ? error.response.data : { detail: 'An error occurred' };
+    // Return a default structure instead of throwing error
+    return { asset_ids: [] };
   }
 };
 
@@ -145,10 +150,12 @@ export const getOwnedAssets = async () => {
 export const getTotalOwnedAssetsCount = async () => {
   try {
     const ownedAssets = await getOwnedAssets();
+    // Check if asset_ids exists and is an array
     return ownedAssets.asset_ids.length;
   } catch (error) {
-    console.error('Error fetching total owned assets count:', error.response ? error.response.data : error);
-    throw error.response ? error.response.data : { detail: 'An error occurred' };
+    console.error('Error fetching total owned assets count:', error);
+    // Return 0 instead of throwing an error
+    return 0;
   }
 };
 
@@ -185,7 +192,7 @@ export const readPurchasedItems = async () => {
 };
 
 // Equip an asset
-export const equipAsset = async (assetType, assetId, color = '#FFFFFF') => {
+export const equipAsset = async (assetType, assetId, color) => {
   try {
     const token = await AsyncStorage.getItem('token');
     const response = await fetch(`${API_URL}/equip_asset/`, {

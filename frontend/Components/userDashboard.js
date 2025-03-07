@@ -106,9 +106,10 @@ const UserDashboard = ({ navigation }) => {
           return;
         }
         const totalCount = await getTotalOwnedAssetsCount();
-        setTotalOwnedAssetsCount(totalCount);
+        setTotalOwnedAssetsCount(totalCount || 0); // Ensure we have at least 0
       } catch (err) {
-        setError(err.detail || 'An error occurred');
+        console.error('Error fetching owned assets count:', err);
+        setTotalOwnedAssetsCount(0); // Default to 0 on error
       } finally {
         setLoading(false);
       }
@@ -208,13 +209,18 @@ const UserDashboard = ({ navigation }) => {
     return '#F44336'; // Red for obese
   };
 
-  const bmi = calculateBMI(parseFloat(user.height), parseFloat(user.weight));
+  const bmi = user.height && user.weight ? 
+    calculateBMI(parseFloat(user.height || 0), parseFloat(user.weight || 0)) : 
+    '0.00';
   const bmiStatus = getBMIStatus(bmi);
   const bmiColor = getBMIColor(bmi);
 
   const formatPrediction = (prediction) => {
     const diseaseLabels = prediction.predicted_diseases?.map((item) => item.condition) || [];
-    const diseaseData = prediction.predicted_diseases?.map((item) => parseInt(item.details.match(/\d+/)?.[0] || 0)) || [];
+    const diseaseData = prediction.predicted_diseases?.map((item) => {
+      const match = item.details.match(/\d+/);
+      return match ? parseInt(match[0]) : 0;
+    }) || [];
 
     const chartData = {
       labels: diseaseLabels,
@@ -1092,7 +1098,9 @@ const UserDashboard = ({ navigation }) => {
     labels: taskCompletions.length > 0 ? taskCompletions.map((task, index) => `Task ${index + 1}`) : ["No Data"],
     datasets: [
       {
-        data: taskCompletions.length > 0 ? taskCompletions.map((task) => task.time_spent) : [0],
+        data: taskCompletions.length > 0 ? 
+          taskCompletions.map((task) => task.time_spent || 0) : 
+          [0], // Provide a default value when no data
         color: (opacity = 1) => `rgba(46, 125, 50, ${opacity})`,
         strokeWidth: 2,
       },
@@ -1254,9 +1262,6 @@ const UserDashboard = ({ navigation }) => {
                   <View style={styles.lifestyleHeader}>
                     <Ionicons name="calendar-outline" size={24} color="#3a86ff" />
                     <Text style={styles.lifestyleTitle}>Daily Habits</Text>
-                    <TouchableOpacity style={styles.editButton}>
-                      <Ionicons name="pencil-outline" size={18} color="#ffffff" />
-                    </TouchableOpacity>
                   </View>
                   <Text style={styles.lifestyleText}>{user.lifestyle || 'No lifestyle data available'}</Text>
                 </View>
@@ -1265,8 +1270,6 @@ const UserDashboard = ({ navigation }) => {
                   <View style={styles.lifestyleHeader}>
                     <Ionicons name="nutrition-outline" size={24} color="#3a86ff" />
                     <Text style={styles.lifestyleTitle}>Nutrition</Text>
-                    <TouchableOpacity style={styles.editButton}>
-                    </TouchableOpacity>
                   </View>
                   <Text style={styles.lifestyleText}>{user.food_intake || 'No nutrition data available'}</Text>
                 </View>
@@ -1275,8 +1278,6 @@ const UserDashboard = ({ navigation }) => {
                   <View style={styles.lifestyleHeader}>
                     <Ionicons name="bed-outline" size={24} color="#3a86ff" />
                     <Text style={styles.lifestyleTitle}>Sleep</Text>
-                    <TouchableOpacity style={styles.editButton}>
-                    </TouchableOpacity>
                   </View>
                   <Text style={styles.lifestyleText}>{user.sleep_hours || '>6 Hours'}</Text>
                 </View>
