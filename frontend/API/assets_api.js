@@ -185,7 +185,7 @@ export const readPurchasedItems = async () => {
 };
 
 // Equip an asset
-export const equipAsset = async (assetType, assetId, color = '#FFFFFF') => {
+export const equipAsset = async (assetType, assetId, color) => {
   try {
     const token = await AsyncStorage.getItem('token');
     const response = await fetch(`${API_URL}/equip_asset/`, {

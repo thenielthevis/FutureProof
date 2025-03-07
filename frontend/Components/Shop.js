@@ -6,7 +6,6 @@ import {
   StyleSheet, 
   ScrollView, 
   Text, 
-  Alert, 
   ActivityIndicator, 
   TextInput
 } from 'react-native';
@@ -17,11 +16,52 @@ import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import GameNavbar from '../Navbar/GameNavbar';
-import { readAssets, buyAsset, purchaseItem, addOwnedAsset, getOwnedAssets, equipAsset, getEquippedAssets, unequipAsset } from '../API/assets_api'; // Import the API functions to fetch and buy assets
+import { readAssets, buyAsset, addOwnedAsset, getOwnedAssets, equipAsset, getEquippedAssets, unequipAsset } from '../API/assets_api'; // Import the API functions to fetch and buy assets
 import { getUser } from '../API/user_api';
 import { LinearGradient } from 'expo-linear-gradient';
 import { ColorPicker } from 'react-native-color-picker';
 import tinycolor from 'tinycolor2';  // Add this import
+import Toast, { BaseToast } from 'react-native-toast-message';  // Update the import
+
+// Add this custom toast config before the Shop component
+const toastConfig = {
+  success: (props) => (
+    <BaseToast
+      {...props}
+      style={{
+        borderLeftColor: '#4CAF50',
+        marginTop: 85, // Adjust this value based on your GameNavbar height
+      }}
+      contentContainerStyle={{
+        paddingHorizontal: 15,
+      }}
+      text1Style={{
+        fontSize: 16,
+      }}
+      text2Style={{
+        fontSize: 14
+      }}
+    />
+  ),
+  error: (props) => (
+    <BaseToast
+      {...props}
+      style={{
+        borderLeftColor: '#FF0000',
+        marginTop: 85, // Adjust this value based on your GameNavbar height
+      }}
+      contentContainerStyle={{
+        paddingHorizontal: 15,
+      }}
+      text1Style={{
+        fontSize: 16,
+      }}
+      text2Style={{
+        fontSize: 14
+      }}
+    />
+  )
+};
 
 // Update the Model component to properly handle base model and outfit parts
 function Model({ bodyUri, headUri, outfitUri, eyesUri, noseUri, scale, position, color, isBaseModel = false }) {
@@ -52,11 +92,15 @@ function Model({ bodyUri, headUri, outfitUri, eyesUri, noseUri, scale, position,
     return scene;
   };
 
-  // Apply color to outfit
-  if (outfitModel && color) {
+  // Only apply color if it's not null (Original)
+  if (outfitModel) {
     outfitModel.scene.traverse((child) => {
       if (child.isMesh) {
-        child.material.color.set(color);
+        if (color !== null) {
+          // Only apply custom color if one is specifically set
+          child.material.color.set(color);
+        }
+        child.material.needsUpdate = true;
       }
     });
   }
@@ -73,6 +117,9 @@ function Model({ bodyUri, headUri, outfitUri, eyesUri, noseUri, scale, position,
 }
 
 export default function Shop() {
+  // Add this constant at the beginning of the component
+  const CATEGORY_ORDER = ['costume', 'head', 'hair', 'top', 'bottom', 'shoes'];
+
   const [selectedOutfit, setSelectedOutfit] = useState(null);
   const [assets, setAssets] = useState([]);
   const [defaultBodyUri, setDefaultBodyUri] = useState('');
@@ -91,24 +138,24 @@ export default function Shop() {
   const [saturation, setSaturation] = useState(100);
   const [brightness, setBrightness] = useState(100);
   const [hexInput, setHexInput] = useState(null);
+  const [isBuying, setIsBuying] = useState(false);  // Add this state for loading
+  const [isEquipping, setIsEquipping] = useState(false);  // Add this state for loading
+  const [originalAssets, setOriginalAssets] = useState([]); // Add new state for tracking original asset data
 
+  // Modify the handleColorChange to better handle original color
   const handleColorChange = (h, s, b) => {
     const color = tinycolor({ h, s, b });
     const hexColor = color.toHexString();
-    console.log('Color changed:', hexColor); // Add logging
+    console.log('Color changed:', hexColor);
     
     setHexInput(hexColor);
     setSelectedColor(hexColor);
     
     if (selectedOutfit) {
-      setAssetColors(prev => {
-        const updated = {
-          ...prev,
-          [selectedOutfit]: hexColor
-        };
-        console.log('Updated asset colors:', updated); // Add logging
-        return updated;
-      });
+      setAssetColors(prev => ({
+        ...prev,
+        [selectedOutfit]: hexColor
+      }));
     }
   };
 
@@ -135,6 +182,7 @@ export default function Shop() {
     const fetchData = async () => {
       try {
         const fetchedAssets = await readAssets();
+        setOriginalAssets(fetchedAssets);
 
         // Extract Body, Head, Eyes, and Nose URIs but exclude them from the selection cards
         const bodyAsset = fetchedAssets.find(asset => asset.name === 'Body');
@@ -205,31 +253,60 @@ export default function Shop() {
     try {
       const selectedAsset = assets.find(asset => asset.url === selectedOutfit);
       if (user.coins < selectedAsset.price) {
-        Alert.alert('Insufficient Coins', 'You do not have enough coins to purchase this item.');
+        Toast.show({
+          type: 'error',
+          text1: 'Insufficient Coins',
+          text2: 'You have insufficient coins to purchase this item.',
+          visibilityTime: 3000,
+          position: 'top',
+        });
         return;
       }
 
-      console.log('Selected asset for purchase:', selectedAsset); // Log selected asset
+      setIsBuying(true);
+      console.log('Selected asset for purchase:', selectedAsset);
       await buyAsset(selectedAsset._id.toString());
-      await addOwnedAsset(selectedAsset._id.toString()); // Add the asset to owned assets
-      Alert.alert('Success', 'Item purchased successfully!');
+      await addOwnedAsset(selectedAsset._id.toString());
+      
+      Toast.show({
+        type: 'success',
+        text1: 'Purchase Successful',
+        text2: 'Item has been added to your inventory!',
+        visibilityTime: 3000,
+        position: 'top',
+      });
+      
       setUser(prevUser => ({ ...prevUser, coins: prevUser.coins - selectedAsset.price }));
-      setSelectedOutfit(null); // Reset selected outfit after purchase
-      setOwnedAssets(prevOwnedAssets => [...prevOwnedAssets, selectedAsset._id.toString()]); // Update owned assets state
+      setSelectedOutfit(null);
+      setOwnedAssets(prevOwnedAssets => [...prevOwnedAssets, selectedAsset._id.toString()]);
     } catch (error) {
       console.error('Error buying asset:', error);
-      Alert.alert('Error', 'Failed to purchase item.');
+      Toast.show({
+        type: 'error',
+        text1: 'Purchase Failed',
+        text2: 'Unable to complete the purchase. Please try again.',
+        visibilityTime: 3000,
+        position: 'top',
+      });
+    } finally {
+      setIsBuying(false);
     }
   };
 
   const handleEquip = async (assetType, assetId) => {
     try {
-      const color = assetColors[selectedOutfit];
-      // Ensure assetId is a string
+      const color = selectedColor === null ? undefined : assetColors[selectedOutfit];
       const stringAssetId = assetId.toString();
       await equipAsset(assetType, stringAssetId, color);
       
-      Alert.alert('Success', 'Item equipped successfully!');
+      Toast.show({
+        type: 'success',
+        text1: 'Item Equipped',
+        text2: 'The item has been equipped successfully!',
+        visibilityTime: 2000,
+        position: 'top',
+      });
+
       setEquippedAssets(prevEquippedAssets => {
         const updatedEquippedAssets = { ...prevEquippedAssets };
         if (assetType === 'costume') {
@@ -244,7 +321,8 @@ export default function Shop() {
           updatedEquippedAssets[assetType] = {
             _id: stringAssetId,
             url: asset.url,
-            color: color || null
+            // Only include color if it's not null (Original)
+            ...(color !== undefined && { color })
           };
         }
         
@@ -252,15 +330,26 @@ export default function Shop() {
       });
     } catch (error) {
       console.error('Error equipping asset:', error);
-      Alert.alert('Error', 'Failed to equip item.');
+      Toast.show({
+        type: 'error',
+        text1: 'Equipment Failed',
+        text2: 'Unable to equip the item. Please try again.',
+        visibilityTime: 3000,
+        position: 'top',
+      });
     }
   };
 
   const handleUnequip = async (assetType) => {
     try {
-      console.log('Unequipping asset:', assetType); // Log unequipping action
       await unequipAsset(assetType);
-      Alert.alert('Success', 'Item unequipped successfully!');
+      Toast.show({
+        type: 'success',
+        text1: 'Item Unequipped',
+        text2: 'The item has been unequipped successfully!',
+        visibilityTime: 2000,
+        position: 'top',
+      });
       setEquippedAssets(prevEquippedAssets => {
         const updatedEquippedAssets = { ...prevEquippedAssets };
         delete updatedEquippedAssets[assetType];
@@ -268,7 +357,13 @@ export default function Shop() {
       }); // Update equipped assets state
     } catch (error) {
       console.error('Error unequipping asset:', error);
-      Alert.alert('Error', 'Failed to unequip item.');
+      Toast.show({
+        type: 'error',
+        text1: 'Unequip Failed',
+        text2: 'Unable to unequip the item. Please try again.',
+        visibilityTime: 3000,
+        position: 'top',
+      });
     }
   };
 
@@ -290,6 +385,42 @@ export default function Shop() {
       return null;
     }
 
+    const handleColorSelect = async (color) => {
+      setSelectedColor(color.value);
+      if (color.value === null) {
+        try {
+          // Fetch fresh asset data when selecting original color
+          const originalAsset = getOriginalAsset(selectedOutfit);
+          if (originalAsset) {
+            setAssetColors(prev => {
+              const newColors = { ...prev };
+              delete newColors[selectedOutfit];
+              return newColors;
+            });
+
+            // If the asset is equipped, update equipped assets state
+            const assetType = Object.entries(equippedAssets).find(([_, asset]) => asset.url === selectedOutfit)?.[0];
+            if (assetType) {
+              setEquippedAssets(prev => ({
+                ...prev,
+                [assetType]: {
+                  ...prev[assetType],
+                  color: undefined
+                }
+              }));
+            }
+          }
+        } catch (error) {
+          console.error('Error resetting to original color:', error);
+        }
+      } else {
+        setAssetColors(prev => ({
+          ...prev,
+          [selectedOutfit]: color.value
+        }));
+      }
+    };
+
     return (
       <View style={styles.colorSelectorContainer}>
         <ScrollView horizontal showsHorizontalScrollIndicator={false}>
@@ -305,13 +436,7 @@ export default function Shop() {
                 },
                 selectedColor === color.value && styles.selectedColorSuggestion
               ]}
-              onPress={() => {
-                setSelectedColor(color.value);
-                setAssetColors(prev => ({
-                  ...prev,
-                  [selectedOutfit]: color.value // null for original color
-                }));
-              }}
+              onPress={() => handleColorSelect(color)}
             >
               {!color.value && (
                 <Text style={styles.originalColorText}>{color.label}</Text>
@@ -332,8 +457,18 @@ export default function Shop() {
       const equippedAsset = Object.values(equippedAssets).find(ea => ea.url === asset.url);
       if (equippedAsset && equippedAsset.color) {
         setSelectedColor(equippedAsset.color);
+        setAssetColors(prev => ({
+          ...prev,
+          [asset.url]: equippedAsset.color
+        }));
       } else {
-        setSelectedColor(null); // Reset to original color
+        // Reset to original color by removing from assetColors
+        setSelectedColor(null);
+        setAssetColors(prev => {
+          const newColors = { ...prev };
+          delete newColors[asset.url];
+          return newColors;
+        });
       }
     }, 10);
   };
@@ -344,7 +479,7 @@ export default function Shop() {
       ...props,
       color: props.outfitUri ? (
         equippedAssets[assetType]?.color || 
-        assetColors[props.outfitUri] || 
+        (assetColors[props.outfitUri] === null ? null : assetColors[props.outfitUri]) ||
         null
       ) : null
     };
@@ -352,11 +487,16 @@ export default function Shop() {
     return <Model {...modelProps} />;
   };
 
-  // Add helper function to check if asset is equipped
+  // Add helper function to get original asset data
+  const getOriginalAsset = (url) => {
+    return originalAssets.find(asset => asset.url === url);
+  };
+
+  // Update the isAssetEquipped helper function
   const isAssetEquipped = (asset) => {
-    return Object.values(equippedAssets).some(
-      equipped => equipped._id === asset._id.toString()
-    );
+    return Object.entries(equippedAssets).some(([assetType, equipped]) => {
+      return equipped._id === asset._id.toString() || equipped.url === asset.url;
+    });
   };
 
   const handleUnequipAll = async () => {
@@ -373,10 +513,22 @@ export default function Shop() {
       setSelectedOutfit(null);
       setEquippedAssets({});
       
-      Alert.alert('Success', 'All items unequipped successfully!');
+      Toast.show({
+        type: 'success',
+        text1: 'All Items Unequipped',
+        text2: 'All items have been unequipped successfully!',
+        visibilityTime: 2000,
+        position: 'top',
+      });
     } catch (error) {
       console.error('Error unequipping all assets:', error);
-      Alert.alert('Error', 'Failed to unequip all items.');
+      Toast.show({
+        type: 'error',
+        text1: 'Unequip All Failed',
+        text2: 'Unable to unequip all items. Please try again.',
+        visibilityTime: 3000,
+        position: 'top',
+      });
     }
   };
 
@@ -468,66 +620,70 @@ export default function Shop() {
             <View style={styles.shopContent}>
               <ScrollView style={styles.scrollContainer}>
                 <ScrollView contentContainerStyle={styles.categoryButtonsContainer}>
-                  {Object.keys(groupedAssets).map((assetType) => (
+                  {CATEGORY_ORDER.map((assetType) => (
                     <View key={assetType}>
-                      <TouchableOpacity
-                        style={[styles.categoryButton, selectedCategory === assetType && styles.selectedCategoryButton]}
-                        onPress={() => setSelectedCategory(assetType)}
-                      >
-                        <Text style={styles.categoryButtonText}>{assetType.toUpperCase()}</Text>
-                      </TouchableOpacity>
-                      {selectedCategory === assetType && (
-                        <View style={styles.cardsContainer}>
-                          {groupedAssets[assetType].map((asset, index) => (
-                            <TouchableOpacity
-                              key={index}
-                              onPress={() => handleCardPress(asset)}
-                              style={[
-                                styles.card,
-                                selectedOutfit === asset?.url && styles.selectedCard,
-                                isAssetEquipped(asset) && styles.equippedCard
-                              ]}
-                              disabled={!asset}
-                            >
-                              {asset ? (
-                                <>
-                                  <Image source={{ uri: asset.image_url }} style={styles.previewImage} />
-                                  <View style={styles.priceContainer}>
-                                    <Ionicons name="logo-bitcoin" size={16} color="gold" />
-                                    <Text style={styles.priceText}>{asset.price}</Text>
-                                  </View>
-                                  {ownedAssets.includes(asset._id.toString()) ? (
+                      {groupedAssets[assetType] && ( // Only render if category exists
+                        <>
+                          <TouchableOpacity
+                            style={[styles.categoryButton, selectedCategory === assetType && styles.selectedCategoryButton]}
+                            onPress={() => setSelectedCategory(assetType)}
+                          >
+                            <Text style={styles.categoryButtonText}>{assetType.toUpperCase()}</Text>
+                          </TouchableOpacity>
+                          {selectedCategory === assetType && (
+                            <View style={styles.cardsContainer}>
+                              {groupedAssets[assetType].map((asset, index) => (
+                                <TouchableOpacity
+                                  key={index}
+                                  onPress={() => handleCardPress(asset)}
+                                  style={[
+                                    styles.card,
+                                    selectedOutfit === asset?.url && styles.selectedCard,
+                                    isAssetEquipped(asset) && styles.equippedCard
+                                  ]}
+                                  disabled={!asset}
+                                >
+                                  {asset ? (
                                     <>
-                                      {isAssetEquipped(asset) ? (
-                                        <TouchableOpacity
-                                          style={styles.unequipButton}
-                                          onPress={() => handleUnequip(asset.asset_type)}
-                                        >
-                                          <Text style={styles.unequipButtonText}>Unequip</Text>
-                                        </TouchableOpacity>
+                                      <Image source={{ uri: asset.image_url }} style={styles.previewImage} />
+                                      <View style={styles.priceContainer}>
+                                        <Ionicons name="logo-bitcoin" size={16} color="gold" />
+                                        <Text style={styles.priceText}>{asset.price}</Text>
+                                      </View>
+                                      {ownedAssets.includes(asset._id.toString()) ? (
+                                        <>
+                                          {isAssetEquipped(asset) ? (
+                                            <TouchableOpacity
+                                              style={styles.unequipButton}
+                                              onPress={() => handleUnequip(asset.asset_type)}
+                                            >
+                                              <Text style={styles.unequipButtonText}>Unequip</Text>
+                                            </TouchableOpacity>
+                                          ) : (
+                                            <TouchableOpacity
+                                              style={styles.equipButton}
+                                              onPress={() => handleEquip(asset.asset_type, asset._id.toString())}
+                                            >
+                                              <Text style={styles.equipButtonText}>Equip</Text>
+                                            </TouchableOpacity>
+                                          )}
+                                        </>
                                       ) : (
                                         <TouchableOpacity
-                                          style={styles.equipButton}
-                                          onPress={() => handleEquip(asset.asset_type, asset._id.toString())}
+                                          style={styles.buyButton}
+                                          onPress={handleBuy}
+                                          disabled={ownedAssets.includes(asset._id.toString())}
                                         >
-                                          <Text style={styles.equipButtonText}>Equip</Text>
+                                          <Text style={styles.buyButtonText}>Buy</Text>
                                         </TouchableOpacity>
                                       )}
                                     </>
-                                  ) : (
-                                    <TouchableOpacity
-                                      style={styles.buyButton}
-                                      onPress={handleBuy}
-                                      disabled={ownedAssets.includes(asset._id.toString())}
-                                    >
-                                      <Text style={styles.buyButtonText}>Buy</Text>
-                                    </TouchableOpacity>
-                                  )}
-                                </>
-                              ) : null}
-                            </TouchableOpacity>
-                          ))}
-                        </View>
+                                  ) : null}
+                                </TouchableOpacity>
+                              ))}
+                            </View>
+                          )}
+                        </>
                       )}
                     </View>
                   ))}
@@ -542,6 +698,7 @@ export default function Shop() {
           </View>
         </View>
       </View>
+      <Toast config={toastConfig} /> {/* Update this line */}
     </LinearGradient>
   );
 }

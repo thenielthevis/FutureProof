@@ -18,20 +18,37 @@ import { Audio } from 'expo-av';
 import { readQuotes } from '../API/quotes_api'; // Import readQuotes function
 
 // Reusable Model Component with Color
-function Model({ scale, uri, position, color }) { // Added color prop
+function Model({ scale, uri, position, color }) {
+  // Load base model
   const { scene } = useGLTF(uri);
-  scene.scale.set(scale.x, scale.y, scale.z);
-  scene.position.set(position.x, position.y, position.z);
 
-  if (color) {
+  // Apply transformations and cleanup
+  useEffect(() => {
+    return () => {
+      scene.traverse((obj) => obj.dispose && obj.dispose());
+    };
+  }, [uri]);
+
+  // Apply transformations to models
+  const applyTransforms = () => {
+    if (scene) {
+      scene.scale.set(scale.x, scale.y, scale.z);
+      scene.position.set(position.x, position.y, position.z);
+    }
+    return scene;
+  };
+
+  // Apply color if provided
+  if (color !== null && color !== undefined) {
     scene.traverse((child) => {
       if (child.isMesh) {
         child.material.color.set(color);
+        child.material.needsUpdate = true;
       }
     });
   }
 
-  return <primitive object={scene} />;
+  return <primitive object={applyTransforms()} />;
 }
 
 // Reusable Option Button Component
@@ -466,6 +483,48 @@ export default function Game() {
     setSound(sound);
     await sound.playAsync();
   };
+
+  useFocusEffect(
+    React.useCallback(() => {
+      const refreshGame = async () => {
+        setLoading(true);
+        try {
+          // Refetch equipped assets
+          const equippedAssetsData = await getEquippedAssets();
+          const formattedEquippedAssets = {};
+          Object.entries(equippedAssetsData || {}).forEach(([key, value]) => {
+            if (value && value.url) {
+              formattedEquippedAssets[key] = {
+                ...value,
+                _id: value._id ? value._id.toString() : null,
+              };
+            }
+          });
+          setEquippedAssets(formattedEquippedAssets);
+
+          // Refetch user data
+          const token = await AsyncStorage.getItem('token');
+          const userData = await getUser(token);
+          setIsAsleep(userData.isasleep);
+          setMedicationField(userData.medication);
+          setStatus(prevStatus => ({
+            ...prevStatus,
+            sleep: userData.sleep,
+            health: userData.health,
+            medication: userData.medication,
+            isAsleep: userData.isasleep,
+          }));
+
+        } catch (error) {
+          console.error('Error refreshing game data:', error);
+        } finally {
+          setLoading(false);
+        }
+      };
+
+      refreshGame();
+    }, [])
+  );
 
   if (loading) {
     return (

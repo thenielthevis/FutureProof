@@ -5,13 +5,14 @@ from app.models.user_model import UserInDB
 from app.dependencies import get_current_user
 from app.services.default_asset_service import equip_asset, get_equipped_assets, unequip_asset
 from pydantic import BaseModel
+from typing import Optional
 
 router = APIRouter()
 
 class EquipAssetRequest(BaseModel):
     asset_type: str
     asset_id: str
-    color: str = "#FFFFFF"
+    color: Optional[str] = None  # Make color optional
 
 class UnequipAssetRequest(BaseModel):
     asset_type: str
