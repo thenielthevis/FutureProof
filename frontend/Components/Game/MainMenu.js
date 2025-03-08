@@ -65,7 +65,13 @@ export default function MainMenu() {
   };
 
   const handleCategorySelect = (category) => {
-    navigation.navigate('BMIGame', { category });
+    const gameRoutes = {
+      'Underweight': 'UnderweightGame',
+      'Normal': 'NormalGame',
+      'Overweight': 'OverweightGame',
+      'Obese': 'ObeseGame'
+    };
+    navigation.navigate(gameRoutes[category]);
   };
 
   const handleBack = async () => {

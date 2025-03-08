@@ -39,7 +39,7 @@ const Logout = ({ navigation }) => {
           {/* Buttons Side by Side */}
           <View style={styles.buttonContainer}>
             <Button title="Cancel" onPress={() => setModalVisible(false)} color="gray" />
-            <Button title="Logout" onPress={handleLogout} color="#388E3C" />
+            <Button title="Logout" onPress={handleLogout} style={styles.buttonLogout} />
           </View>
         </View>
       </View>
@@ -74,6 +74,9 @@ const styles = StyleSheet.create({
     marginTop: 20,
     borderRadius: 20,
   },
+  buttonLogout: {
+    backgroundColor: 'rgba(25, 47, 66, 0.5)',
+  }
 });
 
 export default Logout;

@@ -30,9 +30,13 @@ import { UserLevelProvider } from './Context/UserLevelContext'; // Import the Us
 import PhysicalActivitiesCRUD from './Pages/PhysicalActivitiesCRUD';
 import MeditationCRUD from './Pages/MeditationCRUD';
 import UserDashboard from './Components/userDashboard';
-import BMIGame from './Components/BMIGame';
+import BMIGame from './Components/Game/BMIGame';
 import UsersManagement from './Pages/UsersManagement';
 import MainMenu from './Components/Game/MainMenu';
+import UnderweightGame from './Components/Game/UnderweightGame';
+import NormalGame from './Components/Game/NormalGame';
+import OverweightGame from './Components/Game/OverweightGame';
+import ObeseGame from './Components/Game/ObeseGame';
 
 const Stack = createStackNavigator();
 const { width, height } = Dimensions.get('window');
@@ -82,6 +86,10 @@ export default function App() {
                   <Stack.Screen name="BMIGame" component={BMIGame} />
                   <Stack.Screen name="UsersManagement" component={UsersManagement} />
                   <Stack.Screen name="MainMenu" component={MainMenu} options={{ headerShown: false }} />
+                  <Stack.Screen name="UnderweightGame" component={UnderweightGame} />
+                  <Stack.Screen name="NormalGame" component={NormalGame} />
+                  <Stack.Screen name="OverweightGame" component={OverweightGame} />
+                  <Stack.Screen name="ObeseGame" component={ObeseGame} />
                 </Stack.Navigator>
               </NavigationContainer>
             </ScrollView>

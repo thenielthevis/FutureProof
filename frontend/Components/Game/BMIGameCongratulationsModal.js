@@ -3,10 +3,10 @@ import { View, Text, TouchableOpacity, StyleSheet, Modal, Dimensions, FlatList }
 import { FontAwesome5 } from '@expo/vector-icons';
 import ConfettiCannon from 'react-native-confetti-cannon';
 import { Audio } from 'expo-av';
-import { createTaskCompletion } from '../API/task_completion_api';
+import { createTaskCompletion } from '../../API/task_completion_api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { UserStatusContext } from '../Context/UserStatusContext';
-import { UserLevelContext } from '../Context/UserLevelContext';
+import { UserStatusContext } from '../../Context/UserStatusContext';
+import { UserLevelContext } from '../../Context/UserLevelContext';
 
 const { width, height } = Dimensions.get("window");
 
@@ -26,7 +26,7 @@ const BMIGameCongratulationsModal = ({ visible, onClose, rewards, exercises, tim
 
   async function playSound() {
     const { sound } = await Audio.Sound.createAsync(
-      require('../assets/sound-effects/success.mp3')
+      require('../../assets/sound-effects/success.mp3')
     );
     setSound(sound);
     await sound.playAsync();
@@ -41,7 +41,7 @@ const BMIGameCongratulationsModal = ({ visible, onClose, rewards, exercises, tim
   }, [sound]);
 
   const playMenuClose = async () => {
-    const { sound } = await Audio.Sound.createAsync(require('../assets/sound-effects/menu-close.mp3'));
+    const { sound } = await Audio.Sound.createAsync(require('../../assets/sound-effects/menu-close.mp3'));
     setSound(sound);
     await sound.playAsync();
   };

@@ -1091,7 +1091,15 @@ const styles = StyleSheet.create({
     borderRadius: 5,
   },
   cancelButton: {
-    backgroundColor: '#ccc',
+    backgroundColor: 'rgba(25, 47, 66, 0.9)',
+    paddingVertical: 5,
+    paddingHorizontal: 10,
+    marginHorizontal: 10,
+    height: 50,
+    justifyContent: 'center',
+    alignItems: 'center',
+    width: 100,
+    borderRadius: 10,
   },
   buttonText: {
     fontSize: 16,
