@@ -16,6 +16,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { UserStatusContext } from '../Context/UserStatusContext';
 import { Audio } from 'expo-av';
 import { readQuotes } from '../API/quotes_api'; // Import readQuotes function
+import TutorialModal from './TutorialModal'; // Import the new TutorialModal
 
 // Reusable Model Component with Color
 function Model({ scale, uri, position, color }) {
@@ -106,6 +107,7 @@ export default function Game() {
   const [quoteVisible, setQuoteVisible] = useState(false);
   const [eyesUri, setEyesUri] = useState(getEyesUri(isAsleep, status.sleep));
   const [quoteAnimationValue] = useState(new Animated.Value(300)); // Add this with other state declarations
+  const [tutorialModalVisible, setTutorialModalVisible] = useState(false); // Add state for tutorial modal
 
   const icons = [
     require('../assets/icons/Navigation/dailyassessment.png'),
@@ -608,6 +610,9 @@ export default function Game() {
         <TouchableOpacity onPress={() => navigation.navigate('MainMenu')}>
           <Image source={require('../assets/icons/Side/mini-game.png')} style={styles.floatingIcon} />
         </TouchableOpacity>
+        <TouchableOpacity onPress={() => setTutorialModalVisible(true)}>
+          <Image source={require('../assets/icons/Side/help.png')} style={styles.floatingIcon} />
+        </TouchableOpacity>
       </View>
   
       {/* Modal for Customization */}
@@ -646,6 +651,8 @@ export default function Game() {
       <DailyRewards visible={dailyRewardsVisible} onClose={() => setDailyRewardsVisible(false)} />
       {/* Task Modal */}
       <TaskModal visible={taskModalVisible} onClose={() => setTaskModalVisible(false)} />
+      {/* Tutorial Modal */}
+      <TutorialModal visible={tutorialModalVisible} onClose={() => setTutorialModalVisible(false)} />
       {/* Sleep Overlay Condition */}
       {isAsleep && <View style={styles.sleepOverlay} />}
       {quoteVisible && (
