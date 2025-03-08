@@ -27,10 +27,14 @@ const TutorialModal = ({ visible, onClose }) => {
       ]
     },
     {
-      title: "Daily Rewards & Shop",
+      title: "Main Menu Icons",
       content: [
         { type: 'image', source: require('../assets/Tutorial/10.png') },
         { type: 'image', source: require('../assets/Tutorial/12.png') },
+        { type: 'image', source: require('../assets/Tutorial/20.png') },
+        { type: 'image', source: require('../assets/Tutorial/21.png') },
+        { type: 'image', source: require('../assets/Tutorial/22.png') },
+        { type: 'image', source: require('../assets/Tutorial/23.png') },
       ]
     },
     {
