@@ -8,7 +8,6 @@ import Contacts from './Components/Contacts';
 import Features from './Components/Features';
 import About from './Components/About';
 import Login from './Components/Login';
-import Logout from './Components/Logout';
 import Register from './Components/Register';
 import Prediction from './Components/Prediction';
 import Navbar from './Navbar/Navbar';
@@ -68,7 +67,6 @@ export default function App() {
                   <Stack.Screen name="Profile" component={Profile} />
                   <Stack.Screen name="Game" component={Game} />
                   <Stack.Screen name="Login" component={Login} />
-                  <Stack.Screen name="Logout" component={Logout} />
                   <Stack.Screen name="Register" component={Register} />
                   <Stack.Screen name="Admin" component={Admin} />
                   <Stack.Screen name="AvatarCRUD" component={AvatarCRUD} />
