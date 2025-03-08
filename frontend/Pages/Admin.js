@@ -1,10 +1,10 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, FlatList, ScrollView, Animated, Platform, Alert } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { FontAwesome, FontAwesome5, Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { getTotalUsers, getUserRegistrationsByDate, getAllUsers } from '../API/user_api';
+import { getTotalUsers, getUserRegistrationsByDate, getAllUsers, getDailyUserRegistrations } from '../API/user_api';
 import { readAssets } from '../API/assets_api';
 import { readAvatars } from '../API/avatar_api';
 import { getMeditationBreathingExercises } from '../API/meditation_api';
@@ -12,7 +12,7 @@ import { getPhysicalActivities } from '../API/physical_activities_api';
 import { readQuotes } from '../API/quotes_api';
 import { getAllTaskCompletions } from '../API/task_completion_api';
 import { getMostPredictedDisease, getTopPredictedDiseases } from '../API/prediction_api';
-import { PieChart, LineChart, BarChart } from 'react-native-chart-kit';
+import { PieChart, LineChart, BarChart, ProgressChart, ContributionGraph, StackedBarChart } from 'react-native-chart-kit';
 import Sidebar from './Sidebar';
 import * as Print from 'expo-print';
 import { shareAsync } from 'expo-sharing';
@@ -31,15 +31,23 @@ const Admin = () => {
     mostPredictedDiseases: [],
     totalTaskCompletions: 0,
     assetsByType: {},
-    weeklyRegistrations: Array(7).fill(0),  // Initialize with 7 days
-    monthlyRegistrations: Array(12).fill(0),  // Initialize with 12 months
+    weeklyRegistrations: Array(7).fill(0),
+    monthlyRegistrations: Array(12).fill(0),
     topPredictedDiseases: [],
-    taskCompletionsByType: {},  // State for task completions by type
-    activeUsers: 0, // New state for active users count
-    disabledUsers: 0, // New state for disabled users count
+    taskCompletionsByType: {},
+    activeUsers: 0,
+    disabledUsers: 0,
+    dailyRegistrations: Array(365).fill(0),
   });
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [headerAnimation] = useState(new Animated.Value(0));
+
+  // Refs for chart components
+  const dailyRegistrationsChartRef = useRef(null);
+  const assetsByTypeChartRef = useRef(null);
+  const monthlyRegistrationsChartRef = useRef(null);
+  const topPredictedDiseasesChartRef = useRef(null);
+  const taskCompletionsByTypeChartRef = useRef(null);
 
   const toggleSidebar = () => {
     setSidebarCollapsed(!sidebarCollapsed);
@@ -66,21 +74,20 @@ const Admin = () => {
         const totalQuotes = quotes.length;
         const taskCompletions = await getAllTaskCompletions();
         const totalTaskCompletions = taskCompletions.length;
-        
-        // Process task completions by type
+
         const taskCompletionsByType = taskCompletions.reduce((acc, task) => {
           acc[task.task_type] = (acc[task.task_type] || 0) + 1;
           return acc;
         }, {});
-        
-        // Get all users to calculate active vs disabled counts
+
         const users = await getAllUsers(token);
         const activeUsers = users.filter(user => !user.disabled).length;
         const disabledUsers = users.filter(user => user.disabled).length;
-        
+
         const mostPredictedDisease = await getMostPredictedDisease(token);
         const topPredictedDiseases = await getTopPredictedDiseases(token);
         const registrations = await getUserRegistrationsByDate(token);
+        const dailyRegistrations = await getDailyUserRegistrations(token);
 
         setDashboardData((prevData) => ({
           ...prevData,
@@ -99,6 +106,7 @@ const Admin = () => {
           taskCompletionsByType,
           activeUsers,
           disabledUsers,
+          dailyRegistrations: dailyRegistrations.daily_registrations,
         }));
       } catch (error) {
         console.error('Error fetching dashboard data:', error);
@@ -106,8 +114,7 @@ const Admin = () => {
     };
 
     fetchData();
-    
-    // Animate header on mount
+
     Animated.timing(headerAnimation, {
       toValue: 1,
       duration: 800,
@@ -115,7 +122,6 @@ const Admin = () => {
     }).start();
   }, []);
 
-  // Get icon for dashboard card based on title
   const getCardIcon = (title) => {
     switch (title) {
       case 'Total Assets': return <FontAwesome5 name="boxes" size={24} color="#10B981" />;
@@ -161,8 +167,7 @@ const Admin = () => {
     legendFontColor: '#555',
     legendFontSize: 12,
   }));
-  
-  // Create chart data for task completions by type
+
   const taskCompletionChartData = Object.keys(dashboardData.taskCompletionsByType).map((key, index) => ({
     name: key,
     population: dashboardData.taskCompletionsByType[key],
@@ -170,22 +175,20 @@ const Admin = () => {
     legendFontColor: '#555',
     legendFontSize: 12,
   }));
-  
-  // Create chart data for active vs disabled users
+
   const userStatusData = {
     labels: ['Active', 'Disabled'],
     datasets: [
       {
         data: [dashboardData.activeUsers, dashboardData.disabledUsers],
         colors: [
-          (opacity = 1) => `rgba(22, 163, 74, ${opacity})`, // Green for active
-          (opacity = 1) => `rgba(220, 38, 38, ${opacity})`, // Red for disabled
+          (opacity = 1) => `rgba(22, 163, 74, ${opacity})`,
+          (opacity = 1) => `rgba(220, 38, 38, ${opacity})`,
         ]
       }
     ]
   };
 
-  // Chart configuration
   const chartConfig = {
     backgroundGradientFrom: '#ffffff',
     backgroundGradientTo: '#ffffff',
@@ -203,15 +206,13 @@ const Admin = () => {
       stroke: "#10B981"
     }
   };
-  
-  // Bar chart configuration
+
   const barChartConfig = {
     backgroundGradientFrom: '#ffffff',
     backgroundGradientTo: '#ffffff',
     barPercentage: 0.6,
     decimalPlaces: 0,
     color: (opacity = 1, index) => {
-      // Return green for active users, red for disabled
       return index === 0 ? `rgba(22, 163, 74, ${opacity})` : `rgba(220, 38, 38, ${opacity})`;
     },
     labelColor: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
@@ -241,12 +242,19 @@ const Admin = () => {
     }
   };
 
+  const convertChartToBase64 = async (chartRef) => {
+    if (chartRef.current) {
+      const canvas = await html2canvas(chartRef.current);
+      return canvas.toDataURL('image/png');
+    }
+    return null;
+  };
+
   const handleExportPDF = async () => {
     try {
       const logo1Base64 = await convertImageToBase64("https://i.ibb.co/GQygLXT9/tuplogo.png");
       const logo2Base64 = await convertImageToBase64("https://i.ibb.co/YBStKgFC/logo-2.png");
-  
-      // Generate HTML content for the summary (Page 1)
+
       const summaryHtml = `
         <div style="font-family: Arial, sans-serif; padding: 20px; background: #fff; max-width: 900px; margin: 0 auto;">
           <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 2px solid #f0f0f0; padding-bottom: 10px;">
@@ -278,63 +286,53 @@ const Admin = () => {
           </div>
         </div>
       `;
-  
-      // Generate HTML content for the charts (Page 2 onwards)
+
       const chartsHtml = `
         <div style="font-family: Arial, sans-serif; padding: 20px; background: #fff; max-width: 900px; margin: 0 auto;">
-          <!-- Pair 1: Weekly User Registrations and Assets by Type -->
           <div style="display: flex; justify-content: space-between; margin-bottom: 20px;">
             <div style="width: 48%; text-align: center;">
-              <h3>Weekly User Registrations</h3>
-              <img src="${await convertChartToBase64('weeklyRegistrationsChart')}" alt="Weekly User Registrations" style="width: 100%; height: auto;">
+              <h3>Daily User Registrations</h3>
+              <img src="${await convertChartToBase64(dailyRegistrationsChartRef)}" alt="Daily User Registrations" style="width: 100%; height: auto;">
             </div>
             <div style="width: 48%; text-align: center;">
               <h3>Assets by Type</h3>
-              <img src="${await convertChartToBase64('assetsByTypeChart')}" alt="Assets by Type" style="width: 100%; height: auto;">
+              <img src="${await convertChartToBase64(assetsByTypeChartRef)}" alt="Assets by Type" style="width: 100%; height: auto;">
             </div>
           </div>
           <div style="page-break-after: always;"></div>
-  
-          <!-- Pair 2: Monthly User Registrations and Top 5 Predicted Diseases -->
           <div style="display: flex; justify-content: space-between; margin-bottom: 20px;">
             <div style="width: 48%; text-align: center;">
               <h3>Monthly User Registrations</h3>
-              <img src="${await convertChartToBase64('monthlyRegistrationsChart')}" alt="Monthly User Registrations" style="width: 100%; height: auto;">
+              <img src="${await convertChartToBase64(monthlyRegistrationsChartRef)}" alt="Monthly User Registrations" style="width: 100%; height: auto;">
             </div>
             <div style="width: 48%; text-align: center;">
               <h3>Top 5 Predicted Diseases</h3>
-              <img src="${await convertChartToBase64('topPredictedDiseasesChart')}" alt="Top 5 Predicted Diseases" style="width: 100%; height: auto;">
+              <img src="${await convertChartToBase64(topPredictedDiseasesChartRef)}" alt="Top 5 Predicted Diseases" style="width: 100%; height: auto;">
             </div>
           </div>
           <div style="page-break-after: always;"></div>
-          
-          <!-- Pair 3: Task Completions by Type and Active vs Disabled Users -->
           <div style="display: flex; justify-content: space-between; margin-bottom: 20px;">
             <div style="width: 48%; text-align: center;">
               <h3>Task Completions by Type</h3>
-              <img src="${await convertChartToBase64('taskCompletionsByTypeChart')}" alt="Task Completions by Type" style="width: 100%; height: auto;">
-            </div>
-            <div style="width: 48%; text-align: center;">
-              <h3>Active vs Disabled Users</h3>
-              <img src="${await convertChartToBase64('userStatusChart')}" alt="Active vs Disabled Users" style="width: 100%; height: auto;">
+              <img src="${await convertChartToBase64(taskCompletionsByTypeChartRef)}" alt="Task Completions by Type" style="width: 100%; height: auto;">
             </div>
           </div>
         </div>
       `;
-  
+
       if (Platform.OS === 'web') {
         const summaryContainer = document.createElement('div');
         summaryContainer.style.position = 'absolute';
         summaryContainer.style.left = '-9999px';
         summaryContainer.innerHTML = summaryHtml;
         document.body.appendChild(summaryContainer);
-  
+
         const chartsContainer = document.createElement('div');
         chartsContainer.style.position = 'absolute';
         chartsContainer.style.left = '-9999px';
         chartsContainer.innerHTML = chartsHtml;
         document.body.appendChild(chartsContainer);
-  
+
         const waitForImages = () => {
           const images = [...summaryContainer.getElementsByTagName('img'), ...chartsContainer.getElementsByTagName('img')];
           return Promise.all(
@@ -347,33 +345,31 @@ const Admin = () => {
             })
           );
         };
-  
+
         try {
           await waitForImages();
-  
+
           const pdf = new jsPDF('p', 'pt', 'a4');
-  
-          // Render summary page
+
           const summaryCanvas = await html2canvas(summaryContainer);
           const summaryImgData = summaryCanvas.toDataURL('image/png');
           const pdfWidth = pdf.internal.pageSize.getWidth();
           const summaryPdfHeight = (summaryCanvas.height * pdfWidth) / summaryCanvas.width;
           pdf.addImage(summaryImgData, 'PNG', 0, 0, pdfWidth, summaryPdfHeight);
-  
-          // Render charts pages
+
           const chartsCanvas = await html2canvas(chartsContainer);
           const chartsImgData = chartsCanvas.toDataURL('image/png');
           const chartsPdfHeight = (chartsCanvas.height * pdfWidth) / chartsCanvas.width;
-  
+
           let currentHeight = 0;
           while (currentHeight < chartsCanvas.height) {
             pdf.addPage();
             pdf.addImage(chartsImgData, 'PNG', 0, -currentHeight, pdfWidth, chartsPdfHeight);
             currentHeight += pdf.internal.pageSize.getHeight();
           }
-  
+
           pdf.save('admin-dashboard-report.pdf');
-  
+
         } catch (err) {
           console.error('Error generating PDF:', err);
           Alert.alert('Error', 'Failed to generate PDF. Please try again.');
@@ -396,12 +392,6 @@ const Admin = () => {
     }
   };
 
-  const convertChartToBase64 = async (chartId) => {
-    const chart = document.getElementById(chartId);
-    const canvas = await html2canvas(chart);
-    return canvas.toDataURL('image/png');
-  };
-
   return (
     <View style={styles.container}>
       <Sidebar />
@@ -412,7 +402,6 @@ const Admin = () => {
             <TouchableOpacity style={styles.exportButton} onPress={handleExportPDF}>
               <Text style={styles.exportButtonText}>Export PDF</Text>
             </TouchableOpacity>
-            {/* Summary Cards */}
             <View style={styles.cardsContainer}>
               <FlatList
                 data={dashboardCards}
@@ -433,21 +422,60 @@ const Admin = () => {
                 )}
               />
             </View>
-            
             <View style={styles.chartGrid}>
-              {/* Weekly User Registrations */}
-              <View style={styles.chartContainer} id="weeklyRegistrationsChart">
+              <View style={styles.chartContainer} ref={dailyRegistrationsChartRef}>
                 <View style={styles.chartHeader}>
-                  <Text style={styles.chartTitle}>Weekly User Registrations</Text>
-                  <View style={styles.chartActions}>
-                  </View>
+                  <Text style={styles.chartTitle}>Daily User Registrations</Text>
+                </View>
+                <ContributionGraph
+                  values={dashboardData.dailyRegistrations.map((count, index) => ({
+                    date: new Date(new Date().getFullYear(), 0, index + 1).toISOString().split('T')[0],
+                    count,
+                  }))}
+                  endDate={new Date(new Date().getFullYear(), 11, 31)}
+                  numDays={365}
+                  width={450}
+                  height={220}
+                  chartConfig={chartConfig}
+                  accessor="count"
+                  backgroundColor="transparent"
+                  paddingLeft="15"
+                  absolute
+                  style={styles.chart}
+                />
+              </View>
+              <View style={styles.chartContainer} ref={assetsByTypeChartRef}>
+                <View style={styles.chartHeader}>
+                  <Text style={styles.chartTitle}>Assets by Type</Text>
+                </View>
+                <BarChart
+                  data={{
+                    labels: Object.keys(dashboardData.assetsByType),
+                    datasets: [
+                      {
+                        data: Object.values(dashboardData.assetsByType),
+                      },
+                    ],
+                  }}
+                  width={450}
+                  height={220}
+                  chartConfig={barChartConfig}
+                  style={styles.chart}
+                  verticalLabelRotation={0}
+                  fromZero={true}
+                  showValuesOnTopOfBars={true}
+                />
+              </View>
+              <View style={styles.chartContainer} ref={monthlyRegistrationsChartRef}>
+                <View style={styles.chartHeader}>
+                  <Text style={styles.chartTitle}>Monthly User Registrations</Text>
                 </View>
                 <LineChart
                   data={{
-                    labels: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
+                    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
                     datasets: [
                       {
-                        data: dashboardData.weeklyRegistrations,
+                        data: dashboardData.monthlyRegistrations,
                         color: (opacity = 1) => `rgba(16, 185, 129, ${opacity})`,
                         strokeWidth: 2
                       },
@@ -460,59 +488,9 @@ const Admin = () => {
                   style={styles.chart}
                 />
               </View>
-              
-              {/* Assets by Type */}
-              <View style={styles.chartContainer} id="assetsByTypeChart">
-                <View style={styles.chartHeader}>
-                  <Text style={styles.chartTitle}>Assets by Type</Text>
-                  <View style={styles.chartActions}>
-                  </View>
-                </View>
-                <PieChart
-                  data={assetChartData}
-                  width={450}
-                  height={220}
-                  chartConfig={chartConfig}
-                  accessor="population"
-                  backgroundColor="transparent"
-                  paddingLeft="15"
-                  absolute
-                  style={styles.chart}
-                />
-              </View>
-              
-              {/* Monthly User Registrations */}
-              <View style={styles.chartContainer} id="monthlyRegistrationsChart">
-                <View style={styles.chartHeader}>
-                  <Text style={styles.chartTitle}>Monthly User Registrations</Text>
-                  <View style={styles.chartActions}>
-                  </View>
-                </View>
-                <LineChart
-                  data={{
-                    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
-                    datasets: [
-                      {
-                        data: dashboardData.monthlyRegistrations,
-                        color: (opacity = 1) => `rgba(5, 150, 105, ${opacity})`,
-                        strokeWidth: 2
-                      },
-                    ],
-                  }}
-                  width={450}
-                  height={220}
-                  chartConfig={chartConfig}
-                  bezier
-                  style={styles.chart}
-                />
-              </View>
-              
-              {/* Top 5 Predicted Diseases */}
-              <View style={styles.chartContainer} id="topPredictedDiseasesChart">
+              <View style={styles.chartContainer} ref={topPredictedDiseasesChartRef}>
                 <View style={styles.chartHeader}>
                   <Text style={styles.chartTitle}>Top 5 Predicted Diseases</Text>
-                  <View style={styles.chartActions}>
-                  </View>
                 </View>
                 <PieChart
                   data={diseaseChartData}
@@ -526,43 +504,28 @@ const Admin = () => {
                   style={styles.chart}
                 />
               </View>
-              
-              {/* Task Completions by Type */}
-              <View style={styles.chartContainer} id="taskCompletionsByTypeChart">
+              <View style={styles.chartContainer} ref={taskCompletionsByTypeChartRef}>
                 <View style={styles.chartHeader}>
                   <Text style={styles.chartTitle}>Task Completions by Type</Text>
-                  <View style={styles.chartActions}>
-                  </View>
                 </View>
-                <PieChart
-                  data={taskCompletionChartData}
+                <ProgressChart
+                  data={{
+                    labels: Object.keys(dashboardData.taskCompletionsByType).slice(0, 4),
+                    data: Object.values(dashboardData.taskCompletionsByType)
+                      .slice(0, 4)
+                      .map(value => value / Math.max(...Object.values(dashboardData.taskCompletionsByType)))
+                  }}
                   width={450}
                   height={220}
-                  chartConfig={chartConfig}
-                  accessor="population"
-                  backgroundColor="transparent"
-                  paddingLeft="15"
-                  absolute
+                  strokeWidth={16}
+                  radius={32}
+                  chartConfig={{
+                    ...chartConfig,
+                    backgroundGradientFromOpacity: 0,
+                    backgroundGradientToOpacity: 0,
+                  }}
+                  hideLegend={false}
                   style={styles.chart}
-                />
-              </View>
-              
-              {/* Active vs Disabled Users */}
-              <View style={styles.chartContainer} id="userStatusChart">
-                <View style={styles.chartHeader}>
-                  <Text style={styles.chartTitle}>Active vs Disabled Users</Text>
-                  <View style={styles.chartActions}>
-                  </View>
-                </View>
-                <BarChart
-                  data={userStatusData}
-                  width={450}
-                  height={220}
-                  chartConfig={barChartConfig}
-                  style={styles.chart}
-                  verticalLabelRotation={0}
-                  fromZero={true}
-                  showValuesOnTopOfBars={true}
                 />
               </View>
             </View>
@@ -579,7 +542,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     backgroundColor: '#f8f9fc',
   },
-  // Sidebar styles
   sidebar: {
     width: 240,
     height: '100%',
@@ -668,8 +630,6 @@ const styles = StyleSheet.create({
     fontSize: 13,
     marginLeft: 10,
   },
-  
-  // Main content styles
   mainContent: {
     flex: 1,
     backgroundColor: '#f8f9fc',

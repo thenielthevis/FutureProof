@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException, Depends
 from fastapi.security import OAuth2PasswordBearer
 from pydantic import BaseModel
-from app.services.user_service import (register_user, login_user, get_user_by_token, toggle_sleep_status, increase_medication, count_total_users, get_user_registrations, get_user_registrations_by_date, UserService, get_user_by_token_health_xp, get_avatar_details, disable_user, enable_user, get_all_users, disable_inactive_users, delete_disabled_users, fetch_all_users)
+from app.services.user_service import (register_user, login_user, get_user_by_token, toggle_sleep_status, increase_medication, count_total_users, get_user_registrations, get_user_registrations_by_date, UserService, get_user_by_token_health_xp, get_avatar_details, disable_user, enable_user, get_all_users, disable_inactive_users, delete_disabled_users, fetch_all_users, get_daily_user_registrations)
 from app.models.user_model import UserCreate, UserLogin, UserInDB
 from app.models.avatar_model import Avatar
 from app.mailtrap_client import send_otp_email
@@ -263,3 +263,11 @@ async def verify_reactivation_otp(request: ReactivationOTPRequest):
 async def verify_reactivation_otp_route(request: ReactivationOTPRequest):
     result = await verify_reactivation_otp(request.email, request.otp)
     return result
+
+@router.get("/user-daily-registrations")
+async def user_daily_registrations():
+    try:
+        registrations = await get_daily_user_registrations()
+        return registrations
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
