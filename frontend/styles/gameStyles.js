@@ -156,6 +156,14 @@ export default StyleSheet.create({
     width: '100%',
     fontSize: 16,
   },
+  finishLine: {
+    position: 'absolute',
+    bottom: 150, // Adjust this value to align with the feet of the human model
+    right: 150,
+    width: 200,
+    height: 100,
+    resizeMode: 'contain',
+  },
 
   // Obese game styles
   obeseModeContainer: {
@@ -246,5 +254,13 @@ export default StyleSheet.create({
     fontWeight: 'bold',
     color: 'white',
     marginTop: 10,
+  },
+  timerText: {
+    position: 'absolute',
+    top: 10,
+    right: 10,
+    fontSize: 100, // 5 times bigger
+    color: 'white',
+    fontWeight: 'bold',
   },
 });

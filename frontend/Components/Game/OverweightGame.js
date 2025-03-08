@@ -1,5 +1,5 @@
-import React, { useState, Suspense, useEffect } from 'react';
-import { View, TouchableOpacity, Text, TextInput } from 'react-native';
+import React, { useState, useEffect, Suspense } from 'react';
+import { View, Text, TextInput, StyleSheet, Image } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls, useGLTF } from '@react-three/drei/native';
@@ -33,6 +33,10 @@ export default function OverweightGame() {
   const [modelPositionX, setModelPositionX] = useState(-15);
   const [modelScale] = useState({ x: 2, y: 2, z: 2 });
   const [equippedAssets, setEquippedAssets] = useState({});
+  const [startTime, setStartTime] = useState(null);
+  const [elapsedTime, setElapsedTime] = useState(0);
+  const [timerActive, setTimerActive] = useState(false);
+
   const modelPosition = { x: modelPositionX, y: -1, z: 0 };
   const modelRotation = [0, Math.PI / 2, 0]; // Facing right
 
@@ -49,7 +53,23 @@ export default function OverweightGame() {
     fetchEquippedAssets();
   }, []);
 
+  useEffect(() => {
+    let interval;
+    if (timerActive) {
+      interval = setInterval(() => {
+        setElapsedTime(Date.now() - startTime);
+      }, 100);
+    } else if (!timerActive && elapsedTime !== 0) {
+      clearInterval(interval);
+    }
+    return () => clearInterval(interval);
+  }, [timerActive, startTime]);
+
   const handleTyping = (text) => {
+    if (!timerActive) {
+      setTimerActive(true);
+      setStartTime(Date.now());
+    }
     setTypedText(text);
     const words = text.trim().split(" ");
     const levelWords = levels[currentLevel].split(" ");
@@ -63,13 +83,17 @@ export default function OverweightGame() {
     );
     
     setModelPositionX(-15 + (correctWords.length / levelWords.length) * 30);
-  };
 
-  const handleNextLevel = () => {
-    if (currentLevel < levels.length - 1) {
-      setCurrentLevel(currentLevel + 1);
-      setTypedText("");
-      setModelPositionX(-15); // Reset position for next level
+    // Proceed to next level if the last word is typed
+    if (text.trim() === levels[currentLevel]) {
+      if (currentLevel < levels.length - 1) {
+        setCurrentLevel(currentLevel + 1);
+        setTypedText("");
+        setModelPositionX(-15); // Reset position for next level
+      } else {
+        // Stop timer if the last word in the last level is typed
+        setTimerActive(false);
+      }
     }
   };
 
@@ -139,7 +163,17 @@ export default function OverweightGame() {
           </Suspense>
           <OrbitControls enableDamping maxPolarAngle={Math.PI} minDistance={10} maxDistance={15} />
         </Canvas>
+        {currentLevel === levels.length - 1 && (
+          <Image
+            source={require('../../assets/OverGame/finishline.png')}
+            style={styles.finishLine}
+          />
+        )}
       </View>
+
+      <Text style={styles.timerText}>
+        Time: {(elapsedTime / 1000).toFixed(1)}s
+      </Text>
 
       <View style={styles.typingGameContainer}>
         <Text style={styles.levelText}>Level {currentLevel + 1}</Text>
@@ -156,14 +190,8 @@ export default function OverweightGame() {
           onChangeText={handleTyping}
           placeholder="Type the sentence here..."
         />
-        <TouchableOpacity
-          style={[styles.nextLevelButton, { opacity: typedText.trim() === levels[currentLevel] ? 1 : 0.5 }]}
-          onPress={handleNextLevel}
-          disabled={typedText.trim() !== levels[currentLevel]}
-        >
-          <Text style={styles.nextLevelButtonText}>Next Level</Text>
-        </TouchableOpacity>
       </View>
     </LinearGradient>
   );
 }
+
