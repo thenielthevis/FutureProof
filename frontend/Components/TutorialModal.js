@@ -27,7 +27,7 @@ const TutorialModal = ({ visible, onClose }) => {
       ]
     },
     {
-      title: "Daily Rewards & shops",
+      title: "Daily Rewards & Shop",
       content: [
         { type: 'image', source: require('../assets/Tutorial/10.png') },
         { type: 'image', source: require('../assets/Tutorial/12.png') },
