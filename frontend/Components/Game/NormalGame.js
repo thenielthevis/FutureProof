@@ -83,6 +83,7 @@ export default function NormalGame() {
   const animationFrameId = useRef();
   const [isLoading, setIsLoading] = useState(true);
   const [assetsLoaded, setAssetsLoaded] = useState(false);
+  const [isPlaying, setIsPlaying] = useState(false); // Add isPlaying state
 
   useEffect(() => {
     const fetchEquippedAssets = async () => {
@@ -259,6 +260,10 @@ export default function NormalGame() {
     obstacleCounter.current = 0; // Reset the counter
   };
 
+  const handlePlay = () => {
+    setIsPlaying(true);
+  };
+
   if (isLoading) {
     return (
       <LinearGradient colors={['#14243b', '#77f3bb']} style={styles.container}>
@@ -266,6 +271,23 @@ export default function NormalGame() {
           <ModelPreloader />
           <Text style={styles.loadingText}>Loading Game Assets...</Text>
           {!assetsLoaded && <Text style={styles.loadingSubText}>Preparing models...</Text>}
+        </View>
+      </LinearGradient>
+    );
+  }
+
+  if (!isPlaying) {
+    return (
+      <LinearGradient colors={['#14243b', '#77f3bb']} style={styles.container}>
+        <View style={styles.instructionContainer}>
+          <Text style={styles.instructionText}>Welcome to the Game!</Text>
+          <Text style={styles.instructionSubText}>Press PLAY to start</Text>
+          <TouchableOpacity 
+            style={styles.playButton}
+            onPress={handlePlay}
+          >
+            <Text style={styles.playButtonText}>PLAY</Text>
+          </TouchableOpacity>
         </View>
       </LinearGradient>
     );
@@ -515,5 +537,29 @@ const styles = StyleSheet.create({
   loadingSubText: {
     fontSize: 16,
     color: 'rgba(255, 255, 255, 0.7)',
+  },
+  instructionContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  instructionText: {
+    fontSize: 32,
+    color: 'white',
+    marginBottom: 20,
+  },
+  instructionSubText: {
+    fontSize: 20,
+    color: 'rgba(255, 255, 255, 0.7)',
+    marginBottom: 30,
+  },
+  playButton: {
+    backgroundColor: '#4CAF50',
+    padding: 15,
+    borderRadius: 10,
+  },
+  playButtonText: {
+    color: 'white',
+    fontSize: 24,
   },
 });
