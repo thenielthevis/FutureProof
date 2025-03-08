@@ -7,6 +7,7 @@ import { createTaskCompletion } from '../../API/task_completion_api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { UserStatusContext } from '../../Context/UserStatusContext';
 import { UserLevelContext } from '../../Context/UserLevelContext';
+import { useNavigation } from '@react-navigation/native';
 
 const { width, height } = Dimensions.get("window");
 
@@ -16,6 +17,7 @@ const BMIGameCongratulationsModal = ({ visible, onClose, rewards, exercises, tim
   const [sound, setSound] = useState();
   const { updateBattery } = useContext(UserStatusContext);
   const { addXP } = useContext(UserLevelContext);
+  const navigation = useNavigation();
 
   useEffect(() => {
     if (visible) {
@@ -47,21 +49,29 @@ const BMIGameCongratulationsModal = ({ visible, onClose, rewards, exercises, tim
   };
 
   const handleContinue = async () => {
-    const userId = await AsyncStorage.getItem('userId');
-    const taskCompletionData = {
-      user_id: userId, // Store as string
-      task_type: 'bmi_game',
-      time_spent: timeSpent,
-      coins_received: rewards.coins,
-      xp_received: rewards.xp,
-      date_completed: new Date().toISOString()
-    };
     try {
+      const userId = await AsyncStorage.getItem('userId');
+      const taskCompletionData = {
+        user_id: userId,
+        task_type: 'bmi_game',
+        time_spent: timeSpent,
+        coins_received: rewards.coins,
+        xp_received: rewards.xp,
+        date_completed: new Date().toISOString()
+      };
+      
       await createTaskCompletion(taskCompletionData);
       await playMenuClose();
       await updateBattery(10);
       await addXP(rewards.xp);
-      onClose();
+      
+      // First navigate, then close modal
+      navigation.reset({
+        index: 0,
+        routes: [{ name: 'MainMenu' }],
+      });
+      
+      if (onClose) onClose();
     } catch (error) {
       console.error('Error creating task completion:', error);
     }

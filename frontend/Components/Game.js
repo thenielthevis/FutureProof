@@ -611,7 +611,7 @@ export default function Game() {
           <Image source={require('../assets/icons/Side/mini-game.png')} style={styles.floatingIcon} />
         </TouchableOpacity>
         <TouchableOpacity onPress={() => setTutorialModalVisible(true)}>
-          <Image source={require('../assets/icons/Side/help.png')} style={styles.floatingIcon} />
+          <Image source={require('../assets/icons/Side/help2.png')} style={styles.floatingIcon} />
         </TouchableOpacity>
       </View>
   
