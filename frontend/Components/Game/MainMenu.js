@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Animated } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Animated, Image, ScrollView } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useNavigation } from '@react-navigation/native';
 import { Audio } from 'expo-av';
@@ -10,6 +10,7 @@ const GAME_INFO = {
   'Word Hunt: Fuel Up!': {
     route: 'UnderweightGame',
     color: '#FFB74D',
+    image: require('../../assets/Game/word-hunt-thumbnail.png'),
     description: 'Build healthy mass through proper nutrition',
     purpose: 'Word Hunt: Fuel Up! aims to educate underweight individuals about essential nutrients and healthy foods that promote weight gain in a balanced way. The game enhances vocabulary and awareness of proper nutrition.',
     mechanics: [
@@ -22,6 +23,7 @@ const GAME_INFO = {
   'Food Dash: Eat Smart!': {
     route: 'NormalGame',
     color: '#81C784',
+    image: require('../../assets/Game/food-dash-thumbnail.png'),
     description: 'Maintain your healthy lifestyle',
     purpose: 'Food Dash: Eat Smart! helps players maintain a balanced diet through quick decision-making in a fun and engaging endless runner format.',
     mechanics: [
@@ -34,6 +36,7 @@ const GAME_INFO = {
   'Type & Sprint!': {
     route: 'OverweightGame',
     color: '#FF8A65',
+    image: require('../../assets/Game/type-sprint-thumbnail.png'),
     description: 'Progress towards a healthier weight',
     purpose: 'Type & Sprint! encourages players to commit to their health goals through typing exercises that reinforce positive health affirmations.',
     mechanics: [
@@ -46,6 +49,7 @@ const GAME_INFO = {
   'MindFit: Guess Right!': {
     route: 'ObeseGame',
     color: '#E57373',
+    image: require('../../assets/Game/mindfit-thumbnail.png'),
     description: 'Begin your transformation journey',
     purpose: 'MindFit: Guess Right! helps players make better food choices by comparing calorie content and nutritional value of different foods.',
     mechanics: [
@@ -69,6 +73,7 @@ export default function MainMenu() {
   const [fadeAnim] = useState(new Animated.Value(0));
   const [bgMusic, setBgMusic] = useState(null);
   const [isMusicPlaying, setIsMusicPlaying] = useState(false);
+  const [pressedCategory, setPressedCategory] = useState(null);
 
   useEffect(() => {
     const loadSounds = async () => {
@@ -225,9 +230,14 @@ export default function MainMenu() {
     }
   };
 
+  const handleCloseModal = () => {
+    setShowGameInfo(false);
+    setSelectedGame(null);
+  };
+
   return (
     <LinearGradient colors={['#14243b', '#77f3bb']} style={styles.container}>
-      <Text style={styles.title}>BMI Adventure</Text>
+      {!showCategories && <Text style={styles.title}>BMI Adventure</Text>}
 
       {!showCategories ? (
         <View style={styles.menuContainer}>
@@ -246,14 +256,41 @@ export default function MainMenu() {
           <Text style={styles.subtitle}>Select Your Journey</Text>
 
           {Object.keys(GAME_INFO).map((gameName) => (
-            <TouchableOpacity
+            <Animated.View
               key={gameName}
-              style={[styles.categoryButton, { backgroundColor: GAME_INFO[gameName].color }]}
-              onPress={() => handleGameSelect(gameName)}
+              style={[
+                styles.categoryContainer,
+                {
+                  transform: [{
+                    scale: pressedCategory === gameName ? 0.95 : 1
+                  }]
+                }
+              ]}
             >
-              <Text style={styles.categoryText}>{gameName}</Text>
-              <Text style={styles.categoryDescription}>{GAME_INFO[gameName].description}</Text>
-            </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.categoryButton}
+                onPress={() => handleGameSelect(gameName)}
+                onPressIn={() => setPressedCategory(gameName)}
+                onPressOut={() => setPressedCategory(null)}
+              >
+                <Image
+                  source={GAME_INFO[gameName].image}
+                  style={styles.categoryImage}
+                  resizeMode="cover"
+                />
+                <LinearGradient
+                  colors={['transparent', 'rgba(0,0,0,0.8)']}
+                  style={styles.categoryOverlay}
+                >
+                  <View style={styles.categoryContent}>
+                    <Text style={styles.categoryText}>{gameName}</Text>
+                    <Text style={styles.categoryDescription}>
+                      {GAME_INFO[gameName].description}
+                    </Text>
+                  </View>
+                </LinearGradient>
+              </TouchableOpacity>
+            </Animated.View>
           ))}
 
           <TouchableOpacity style={[styles.button, styles.backButton]} onPress={handleBack}>
@@ -273,21 +310,31 @@ export default function MainMenu() {
         animationIn="fadeIn"
         animationOut="fadeOut"
         style={styles.modal}
+        onBackdropPress={handleCloseModal}
       >
         <View style={styles.modalContent}>
+          <TouchableOpacity 
+            style={styles.closeButton}
+            onPress={handleCloseModal}
+          >
+            <Text style={styles.closeButtonText}>×</Text>
+          </TouchableOpacity>
+
           <Text style={styles.modalTitle}>{selectedGame}</Text>
           
-          <Text style={styles.modalSectionTitle}>Purpose:</Text>
-          <Text style={styles.modalText}>
-            {selectedGame && GAME_INFO[selectedGame].purpose}
-          </Text>
+          <ScrollView style={styles.modalScroll}>
+            <Text style={styles.modalSectionTitle}>Purpose:</Text>
+            <Text style={styles.modalText}>
+              {selectedGame && GAME_INFO[selectedGame].purpose}
+            </Text>
 
-          <Text style={styles.modalSectionTitle}>Mechanics:</Text>
-          <View style={styles.mechanicsList}>
-            {selectedGame && GAME_INFO[selectedGame].mechanics.map((mechanic, index) => (
-              <Text key={index} style={styles.mechanicItem}>• {mechanic}</Text>
-            ))}
-          </View>
+            <Text style={styles.modalSectionTitle}>Mechanics:</Text>
+            <View style={styles.mechanicsList}>
+              {selectedGame && GAME_INFO[selectedGame].mechanics.map((mechanic, index) => (
+                <Text key={index} style={styles.mechanicItem}>• {mechanic}</Text>
+              ))}
+            </View>
+          </ScrollView>
 
           <TouchableOpacity style={styles.startButton} onPress={handleStartGame}>
             <Text style={styles.startButtonText}>Start Game</Text>
@@ -344,6 +391,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     width: '100%',
     maxWidth: 400,
+    padding: 10,
   },
   button: {
     backgroundColor: '#4CAF50',
@@ -378,29 +426,51 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: 'bold',
   },
+  categoryContainer: {
+    width: '100%',
+    height: 120, // Reduced from 160
+    marginVertical: 8, // Reduced from 10
+    borderRadius: 15,
+    overflow: 'hidden',
+  },
   categoryButton: {
     width: '100%',
-    padding: 20,
-    borderRadius: 15,
-    marginVertical: 10,
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-    elevation: 5,
+    height: '100%',
+    position: 'relative',
+  },
+  categoryImage: {
+    width: '100%',
+    height: '100%',
+    position: 'absolute',
+  },
+  categoryOverlay: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: '100%',
+    justifyContent: 'flex-end',
+    padding: 15,
+  },
+  categoryContent: {
+    zIndex: 2,
   },
   categoryText: {
     color: '#ffffff',
     fontSize: 24,
     fontWeight: 'bold',
     marginBottom: 5,
+    textShadowColor: 'rgba(0,0,0,0.75)',
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 3,
   },
   categoryDescription: {
     color: '#ffffff',
     fontSize: 14,
-    textAlign: 'center',
     opacity: 0.9,
+    textShadowColor: 'rgba(0,0,0,0.75)',
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 3,
   },
   modal: {
     margin: 0,
@@ -408,29 +478,51 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   modalContent: {
-    backgroundColor: 'white',
+    backgroundColor: '#2c3e50',
     padding: 30,
     borderRadius: 20,
-    width: '80%',
-    maxWidth: 500,
+    width: '100%',
+    maxWidth: 600,
+    maxHeight: '80%',
+    position: 'relative',
+  },
+  closeButton: {
+    position: 'absolute',
+    right: 10,
+    top: 10,
+    width: 30,
+    height: 30,
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 1,
+  },
+  closeButtonText: {
+    fontSize: 24,
+    color: '#ffffff',  // Changed from #666
+    fontWeight: 'bold',
+  },
+  modalScroll: {
+    maxHeight: '70%',
+    marginBottom: 15,
   },
   modalTitle: {
-    fontSize: 24,
+    fontSize: 22,
     fontWeight: 'bold',
-    color: '#333',
-    marginBottom: 20,
+    color: '#ffffff',  // Changed from #333
+    marginBottom: 15,
+    marginTop: 5,
     textAlign: 'center',
   },
   modalSectionTitle: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: 'bold',
-    color: '#444',
-    marginTop: 15,
-    marginBottom: 10,
+    color: '#ecf0f1',  // Changed from #444
+    marginTop: 10,
+    marginBottom: 8,
   },
   modalText: {
     fontSize: 16,
-    color: '#666',
+    color: '#bdc3c7',  // Changed from #666
     lineHeight: 24,
   },
   mechanicsList: {
@@ -438,7 +530,7 @@ const styles = StyleSheet.create({
   },
   mechanicItem: {
     fontSize: 16,
-    color: '#666',
+    color: '#bdc3c7',  // Changed from #666
     marginBottom: 8,
     lineHeight: 22,
   },
