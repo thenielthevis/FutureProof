@@ -478,7 +478,13 @@ Drizzle of olive oil
               styles.crosswordContainer,
               !wordSearchActive && styles.dimmedContainer
             ]}>
-              <Text style={styles.dayText}>Day {day}</Text>
+              <View style={styles.headerStats}>
+                <Text style={styles.dayText}>Day {day}</Text>
+                <View style={styles.rewardsContainer}>
+                  <Text style={styles.rewardText}>🌟 10 XP</Text>
+                  <Text style={styles.rewardText}>💰 50 Coins</Text>
+                </View>
+              </View>
               <CrosswordPuzzle 
                 words={currentWords} // This will now receive the correct words for each day
                 onComplete={handleWordSearchComplete}
@@ -924,6 +930,22 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     fontWeight: 'bold',
     textAlign: 'center',
+  },
+  headerStats: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    width: '100%',
+    marginBottom: 15,
+  },
+  rewardsContainer: {
+    flexDirection: 'row',
+    gap: 20,
+  },
+  rewardText: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#fff',
   },
 });
 
