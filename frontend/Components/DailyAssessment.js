@@ -1,27 +1,61 @@
-import React, { useState, useContext } from 'react';
+import React, { useState, useContext, useEffect } from 'react';
 import { View, Text, TouchableOpacity, Modal, ActivityIndicator, StyleSheet, ScrollView, Animated } from 'react-native';
-import { generateDailyAssessment } from '../API/daily_assessment_api';
+import { generateDailyAssessment, checkAssessmentRequirements } from '../API/daily_assessment_api';
 import { FontAwesome, FontAwesome5 } from '@expo/vector-icons';
 import { BarChart } from 'react-native-chart-kit';
 import { UserStatusContext } from '../Context/UserStatusContext';
 import { LinearGradient } from 'expo-linear-gradient';
+import Toast from 'react-native-toast-message';
 
 const DailyAssessment = ({ visible, onClose, onBack }) => {
   const [loading, setLoading] = useState(false);
   const [assessmentData, setAssessmentData] = useState(null);
+  const [showRequirements, setShowRequirements] = useState(false);
+  const [requirements, setRequirements] = useState(null);
   const { updateHealth } = useContext(UserStatusContext);
+
+  useEffect(() => {
+    const checkRequirements = async () => {
+      try {
+        const reqStatus = await checkAssessmentRequirements();
+        setRequirements(reqStatus);
+      } catch (error) {
+        console.error('Error checking requirements:', error);
+      }
+    };
+    checkRequirements();
+  }, []);
 
   const handleAnalyze = async () => {
     setLoading(true);
     try {
+      const reqStatus = await checkAssessmentRequirements();
+      setRequirements(reqStatus);
+      
+      if (!reqStatus.requirements_met) {
+        setShowRequirements(true);
+        Toast.show({
+          type: 'error',
+          text1: 'Missing Requirements',
+          text2: 'Please complete all required tasks before proceeding',
+          visibilityTime: 4000,
+          position: 'top'
+        });
+        setLoading(false);
+        return;
+      }
+
       const response = await generateDailyAssessment();
       setAssessmentData(response.assessment?.data);
-      console.log('Daily assessment:', response.assessment?.data);
-      if (response.assessment?.data?.updated_predictions) {
-        console.log('Updating health with predictions:', response.assessment.data.updated_predictions);
-      }
     } catch (error) {
-      console.error('Error fetching daily assessment:', error);
+      console.error('Error:', error);
+      Toast.show({
+        type: 'error',
+        text1: 'Error',
+        text2: 'Failed to check requirements or generate assessment',
+        visibilityTime: 4000,
+        position: 'top'
+      });
     } finally {
       setLoading(false);
     }
@@ -102,6 +136,146 @@ const DailyAssessment = ({ visible, onClose, onBack }) => {
     }));
 };
 
+const renderRequirements = () => (
+  <View style={styles.requirementsContainer}>
+    <Text style={styles.requirementsTitle}>Assessment Requirements</Text>
+    <View style={styles.requirementsList}>
+      <View style={styles.requirementItem}>
+        <FontAwesome5 
+          name={requirements?.requirements_status.has_predictions ? "check-circle" : "times-circle"} 
+          size={20} 
+          color={requirements?.requirements_status.has_predictions ? "#2ecc71" : "#e74c3c"} 
+        />
+        <Text style={[styles.requirementText, 
+          !requirements?.requirements_status.has_predictions && styles.requirementTextError]}>
+          Initial Health Prediction
+        </Text>
+      </View>
+      <View style={styles.requirementItem}>
+        <FontAwesome5 
+          name={requirements?.requirements_status.has_tasks ? "check-circle" : "times-circle"} 
+          size={20} 
+          color={requirements?.requirements_status.has_tasks ? "#2ecc71" : "#e74c3c"} 
+        />
+        <Text style={[styles.requirementText, 
+          !requirements?.requirements_status.has_tasks && styles.requirementTextError]}>
+          Daily Tasks Completion
+        </Text>
+      </View>
+      <View style={styles.requirementItem}>
+        <FontAwesome5 
+          name={requirements?.requirements_status.has_nutrition ? "check-circle" : "times-circle"} 
+          size={20} 
+          color={requirements?.requirements_status.has_nutrition ? "#2ecc71" : "#e74c3c"} 
+        />
+        <Text style={[styles.requirementText, 
+          !requirements?.requirements_status.has_nutrition && styles.requirementTextError]}>
+          Nutritional Tracking
+        </Text>
+      </View>
+    </View>
+  </View>
+);
+
+const renderContent = () => {
+  if (showRequirements && requirements) {
+    return (
+      <View style={styles.contentContainer}>
+        <ScrollView 
+          style={styles.requirementsScroll}
+          contentContainerStyle={styles.requirementsScrollContent}
+        >
+          <View style={styles.requirementsHeader}>
+            <FontAwesome5 name="exclamation-circle" size={40} color="#e74c3c" />
+            <Text style={styles.requirementsTitle}>Missing Requirements</Text>
+            <Text style={styles.requirementsSubtitle}>Please complete the following:</Text>
+          </View>
+          
+          <View style={styles.requirementsList}>
+            {!requirements.requirements_status.has_predictions && (
+              <View style={styles.requirementCard}>
+                <FontAwesome5 name="chart-line" size={24} color="#e74c3c" />
+                <Text style={styles.requirementTitle}>Initial Health Prediction</Text>
+                <Text style={styles.requirementDescription}>
+                  Complete your initial health assessment to establish baseline predictions
+                </Text>
+              </View>
+            )}
+            
+            {!requirements.requirements_status.has_tasks && (
+              <View style={styles.requirementCard}>
+                <FontAwesome5 name="tasks" size={24} color="#e74c3c" />
+                <Text style={styles.requirementTitle}>Daily Tasks</Text>
+                <Text style={styles.requirementDescription}>
+                  Complete at least one task for today to track your progress
+                </Text>
+              </View>
+            )}
+            
+            {!requirements.requirements_status.has_nutrition && (
+              <View style={styles.requirementCard}>
+                <FontAwesome5 name="apple-alt" size={24} color="#e74c3c" />
+                <Text style={styles.requirementTitle}>Nutritional Tracking</Text>
+                <Text style={styles.requirementDescription}>
+                  Log your daily nutritional information for accurate assessment
+                </Text>
+              </View>
+            )}
+          </View>
+        </ScrollView>
+
+        <TouchableOpacity 
+          style={styles.backToHomeButton} 
+          onPress={() => setShowRequirements(false)}
+        >
+          <FontAwesome5 name="arrow-left" size={20} color="#fff" style={styles.buttonIcon} />
+          <Text style={styles.buttonText}>Back to Overview</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
+
+  return (
+    <>
+      <View style={styles.introHeader}>
+        <FontAwesome5 name="heartbeat" size={40} color="#fff" />
+        <Text style={styles.introTitle}>Your Daily Health Check</Text>
+      </View>
+
+      <View style={styles.featureGrid}>
+        <View style={styles.featureCard}>
+          <FontAwesome5 name="tasks" size={24} color="#fff" />
+          <Text style={styles.featureTitle}>Task Summary</Text>
+          <Text style={styles.featureDescription}>Track your daily activities and achievements</Text>
+        </View>
+        <View style={styles.featureCard}>
+          <FontAwesome5 name="apple-alt" size={24} color="#fff" />
+          <Text style={styles.featureTitle}>Nutrition Analysis</Text>
+          <Text style={styles.featureDescription}>Monitor your diet and eating habits</Text>
+        </View>
+        <View style={styles.featureCard}>
+          <FontAwesome5 name="chart-pie" size={24} color="#fff" />
+          <Text style={styles.featureTitle}>Health Predictions</Text>
+          <Text style={styles.featureDescription}>AI-powered health risk assessment</Text>
+        </View>
+        <View style={styles.featureCard}>
+          <FontAwesome5 name="lightbulb" size={24} color="#fff" />
+          <Text style={styles.featureTitle}>Recommendations</Text>
+          <Text style={styles.featureDescription}>Personalized health suggestions</Text>
+        </View>
+      </View>
+
+      <TouchableOpacity 
+        style={styles.analyzeButton} 
+        onPress={handleAnalyze}
+      >
+        <FontAwesome5 name="play-circle" size={20} color="#fff" style={styles.buttonIcon} />
+        <Text style={styles.buttonText}>Start Analysis</Text>
+      </TouchableOpacity>
+    </>
+  );
+};
+
 return (
     <Modal animationType="slide" transparent={true} visible={visible} onRequestClose={onClose}>
         <View style={styles.modalOverlay}>
@@ -137,38 +311,7 @@ return (
                     </View>
                 ) : !assessmentData ? (
                     <View style={styles.introContainer}>
-                        <View style={styles.introHeader}>
-                            <FontAwesome5 name="heartbeat" size={40} color="#fff" />
-                            <Text style={styles.introTitle}>Your Daily Health Check</Text>
-                        </View>
-                        
-                        <View style={styles.featureGrid}>
-                            <View style={styles.featureCard}>
-                                <FontAwesome5 name="tasks" size={24} color="#fff" />
-                                <Text style={styles.featureTitle}>Task Summary</Text>
-                                <Text style={styles.featureDescription}>Track your daily activities and achievements</Text>
-                            </View>
-                            <View style={styles.featureCard}>
-                                <FontAwesome5 name="apple-alt" size={24} color="#fff" />
-                                <Text style={styles.featureTitle}>Nutrition Analysis</Text>
-                                <Text style={styles.featureDescription}>Monitor your diet and eating habits</Text>
-                            </View>
-                            <View style={styles.featureCard}>
-                                <FontAwesome5 name="chart-pie" size={24} color="#fff" />
-                                <Text style={styles.featureTitle}>Health Predictions</Text>
-                                <Text style={styles.featureDescription}>AI-powered health risk assessment</Text>
-                            </View>
-                            <View style={styles.featureCard}>
-                                <FontAwesome5 name="lightbulb" size={24} color="#fff" />
-                                <Text style={styles.featureTitle}>Recommendations</Text>
-                                <Text style={styles.featureDescription}>Personalized health suggestions</Text>
-                            </View>
-                        </View>
-
-                        <TouchableOpacity style={styles.analyzeButton} onPress={handleAnalyze}>
-                            <FontAwesome5 name="play-circle" size={20} color="#fff" style={styles.buttonIcon} />
-                            <Text style={styles.buttonText}>Start Analysis</Text>
-                        </TouchableOpacity>
+                        {renderContent()}
                     </View>
                 ) : (
                     <ScrollView style={styles.dataContainer}>
@@ -285,7 +428,15 @@ return (
 
 const styles = StyleSheet.create({
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0, 0, 0, 0.5)', justifyContent: 'center', alignItems: 'center' },
-  modalContent: { backgroundColor: '#2c3e50', padding: 20, borderRadius: 15, width: '60%', maxHeight: '80%', position: 'relative' },
+  modalContent: { 
+    backgroundColor: '#2c3e50', 
+    padding: 20, 
+    borderRadius: 15, 
+    width: '60%', 
+    maxHeight: '80%', 
+    position: 'relative',
+    overflow: 'hidden' // Add this to prevent content overflow
+  },
   modalHeader: { fontSize: 24, fontWeight: 'bold', marginBottom: 15, textAlign: 'center', color: '#fff' },
   closeButtonTopRight: { position: 'absolute', top: 10, right: 10, backgroundColor: '#c0392b', padding: 5, borderRadius: 15 },
   backButtonTopLeft: { position: 'absolute', top: 10, left: 10, backgroundColor: '#3498db', padding: 5, borderRadius: 15 },
@@ -544,6 +695,145 @@ const styles = StyleSheet.create({
     fontSize: 12,
     marginLeft: 6,
     textDecorationLine: 'underline',
+  },
+  requirementsContainer: {
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    borderRadius: 15,
+    padding: 20,
+    marginBottom: 20,
+    width: '100%',
+  },
+  requirementsTitle: {
+    color: '#fff',
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 15,
+    textAlign: 'center',
+  },
+  requirementsList: {
+    width: '100%',
+  },
+  requirementItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+    paddingHorizontal: 10,
+  },
+  requirementText: {
+    color: '#fff',
+    fontSize: 16,
+    marginLeft: 10,
+  },
+  requirementTextError: {
+    color: '#e74c3c',
+  },
+  analyzeButtonDisabled: {
+    backgroundColor: '#7f8c8d',
+    opacity: 0.7,
+  },
+  requirementsHeader: {
+    alignItems: 'center',
+    marginBottom: 30,
+  },
+  requirementsSubtitle: {
+    fontSize: 16,
+    color: '#fff',
+    opacity: 0.8,
+    marginTop: 5,
+  },
+  requirementCard: {
+    backgroundColor: 'rgba(231, 76, 60, 0.1)',
+    borderWidth: 1,
+    borderColor: '#e74c3c',
+    borderRadius: 10,
+    padding: 10,
+    alignItems: 'center',
+  },
+  requirementTitle: {
+    color: '#fff',
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginTop: 10,
+  },
+  requirementDescription: {
+    color: '#fff',
+    fontSize: 14,
+    textAlign: 'center',
+    opacity: 0.8,
+    marginTop: 5,
+  },
+  backToHomeButton: {
+    backgroundColor: '#3498db',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 15,
+    borderRadius: 25,
+    marginTop: 20,
+  },
+  requirementsScroll: {
+    flex: 1,
+    width: '100%',
+    maxHeight: '70vh', // Limit height to prevent modal overflow
+  },
+  requirementsContainer: {
+    padding: 10,
+    alignItems: 'center',
+  },
+  requirementsList: {
+    width: '100%',
+    gap: 15,
+    marginBottom: 20,
+  },
+  requirementCard: {
+    backgroundColor: 'rgba(231, 76, 60, 0.1)',
+    borderWidth: 1,
+    borderColor: '#e74c3c',
+    borderRadius: 10,
+    padding: 10,
+    alignItems: 'center',
+    marginBottom: 15, // Add spacing between cards
+  },
+  contentContainer: {
+    flex: 1,
+    width: '100%',
+    display: 'flex',
+    flexDirection: 'column'
+  },
+
+  requirementsScroll: {
+    flex: 1,
+    width: '100%'
+  },
+
+  requirementsScrollContent: {
+    paddingBottom: 20
+  },
+
+  requirementsContainer: {
+    width: '100%'
+  },
+
+  requirementsHeader: {
+    alignItems: 'center',
+    marginBottom: 20,
+    paddingTop: 10
+  },
+
+  requirementsList: {
+    width: '100%',
+    paddingHorizontal: 10
+  },
+
+  backToHomeButton: {
+    backgroundColor: '#3498db',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 15,
+    borderRadius: 25,
+    marginTop: 10,
+    marginBottom: 10
   },
 });
 

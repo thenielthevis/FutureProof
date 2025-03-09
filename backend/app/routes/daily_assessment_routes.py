@@ -1,5 +1,5 @@
 from fastapi import APIRouter, HTTPException, Depends
-from ..services.daily_assessment_service import create_daily_assessment, get_daily_assessment, read_all_assessments, read_user_assessments
+from ..services.daily_assessment_service import create_daily_assessment, get_daily_assessment, read_all_assessments, read_user_assessments, check_assessment_requirements
 from ..services.user_service import UserService
 from ..dependencies import get_current_user
 from ..models.user_model import UserInDB
@@ -28,6 +28,16 @@ async def fetch_daily_assessment(current_user: UserInDB = Depends(get_current_us
         return daily_assessment
     except Exception as e:
         print("Error fetching daily assessment:", traceback.format_exc())  # Detailed traceback
+        raise HTTPException(status_code=500, detail="Internal Server Error")
+
+@router.get("/daily-assessment/check-requirements")
+async def check_requirements(current_user: UserInDB = Depends(get_current_user)):
+    """Check if user meets requirements for daily assessment."""
+    try:
+        requirements = await check_assessment_requirements(current_user.id)
+        return requirements
+    except Exception as e:
+        print("Error checking requirements:", traceback.format_exc())
         raise HTTPException(status_code=500, detail="Internal Server Error")
 
 @router.get("/daily-assessments/")
