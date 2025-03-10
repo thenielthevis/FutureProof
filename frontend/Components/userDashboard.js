@@ -971,9 +971,13 @@ const UserDashboard = ({ navigation }) => {
               <h3>Recommendations - ${assessment.username}</h3>
               <h4>Page 4 of 4</h4>
               <ul>
-                ${assessment.recommendations.map(rec => `
-                  <li>${rec}</li>
-                `).join('')}
+              ${assessment.recommendations.map(rec => `
+                <li>
+                  <strong>Recommendation:</strong> ${rec.recommendation || 'N/A'}<br>
+                  <strong>Scientific Basis:</strong> ${rec.basis || 'N/A'}<br>
+                  <strong>Reference:</strong> ${rec.reference || 'N/A'}
+                </li>
+              `).join('')}
               </ul>
             </div>
           </div>
