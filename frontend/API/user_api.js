@@ -400,3 +400,18 @@ export const sendReactivationOTP = async (email) => {
     throw error.response ? error.response.data : { detail: 'An error occurred' };
   }
 };
+
+// Get user registrations by day for the current month
+export const getDailyUserRegistrations = async (token) => {
+  try {
+    const response = await axios.get(`${API_URL}/user-daily-registrations`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    return response.data;
+  } catch (error) {
+    console.error('Error getting daily user registrations:', error.response ? error.response.data : error);
+    throw error.response ? error.response.data : { detail: 'An error occurred' };
+  }
+};

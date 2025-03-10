@@ -604,17 +604,14 @@ export default function Game() {
         <Animated.View {...panResponder.panHandlers} style={pan.getLayout()}>
           <Image source={require('../assets/icons/Side/pill.png')} style={styles.floatingIcon} />
         </Animated.View>
-        <TouchableOpacity onPress={() => navigation.navigate('achievements')}>
+        {/* <TouchableOpacity onPress={() => navigation.navigate('achievements')}>
           <Image source={require('../assets/icons/Side/achievements.png')} style={styles.floatingIcon} />
-        </TouchableOpacity>
-        <TouchableOpacity onPress={() => navigation.navigate('BMIGame')}>
-          <Image source={require('../assets/icons/Side/mini-game.png')} style={styles.floatingIcon} />
-        </TouchableOpacity>
-        <TouchableOpacity onPress={() => navigation.navigate('NormalGame')}>
+        </TouchableOpacity> */}
+        <TouchableOpacity onPress={() => navigation.navigate('MainMenu')}>
           <Image source={require('../assets/icons/Side/mini-game.png')} style={styles.floatingIcon} />
         </TouchableOpacity>
         <TouchableOpacity onPress={() => setTutorialModalVisible(true)}>
-          <Image source={require('../assets/icons/Side/help.png')} style={styles.floatingIcon} />
+          <Image source={require('../assets/icons/Side/help2.png')} style={styles.floatingIcon} />
         </TouchableOpacity>
       </View>
   
@@ -910,7 +907,7 @@ blanket: {
 },
 lowHealthImage: {
   position: 'absolute',
-  right: 1000, // Increased to move left
+  right: 900, // Increased to move left
   top: 20,
   bottom: 20,
   width: 150,

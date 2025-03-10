@@ -229,12 +229,16 @@ const Assessments = () => {
           <div style="font-family: Arial, sans-serif; padding: 20px; background: #fff; max-width: 900px; margin: 0 auto;">
             ${headerContent}
             
-            <div style="margin-top: 20px;">
-              <h3>Recommendations - ${assessment.username}</h3>
+            <div style="margin-top: 10px;">
+              <h3>Recommendations - ${assessment.username}</h4>
               <h4>Page 4 of 4</h4>
               <ul>
                 ${assessment.recommendations.map(rec => `
-                  <li>${rec}</li>
+                  <li>
+                    <strong>Recommendation:</strong> ${rec.recommendation || 'N/A'}<br>
+                    <strong>Scientific Basis:</strong> ${rec.basis || 'N/A'}<br>
+                    <strong>Reference:</strong> ${rec.reference || 'N/A'}
+                  </li>
                 `).join('')}
               </ul>
             </div>
@@ -505,7 +509,11 @@ const Assessments = () => {
             <h4>Page 4 of 4</h4>
             <ul>
               ${assessment.recommendations.map(rec => `
-                <li>${rec}</li>
+                <li>
+                  <strong>Recommendation:</strong> ${rec.recommendation || 'N/A'}<br>
+                  <strong>Scientific Basis:</strong> ${rec.basis || 'N/A'}<br>
+                  <strong>Reference:</strong> ${rec.reference || 'N/A'}
+                </li>
               `).join('')}
             </ul>
           </div>

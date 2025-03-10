@@ -27,10 +27,14 @@ const TutorialModal = ({ visible, onClose }) => {
       ]
     },
     {
-      title: "Daily Rewards & shops",
+      title: "Main Menu Icons",
       content: [
         { type: 'image', source: require('../assets/Tutorial/10.png') },
         { type: 'image', source: require('../assets/Tutorial/12.png') },
+        { type: 'image', source: require('../assets/Tutorial/20.png') },
+        { type: 'image', source: require('../assets/Tutorial/21.png') },
+        { type: 'image', source: require('../assets/Tutorial/22.png') },
+        { type: 'image', source: require('../assets/Tutorial/23.png') },
       ]
     },
     {
@@ -46,8 +50,16 @@ const TutorialModal = ({ visible, onClose }) => {
     {
       title: "Mini-games",
       content: [
-        { type: 'image', source: require('../assets/Tutorial/18.png') },
-        { type: 'image', source: require('../assets/Tutorial/19.png') },
+        { type: 'image', source: require('../assets/Tutorial/24.png') },
+        { type: 'image', source: require('../assets/Tutorial/25.png') },
+        { type: 'image', source: require('../assets/Tutorial/26.png') },
+        { type: 'image', source: require('../assets/Tutorial/27.png') },
+        { type: 'image', source: require('../assets/Tutorial/28.png') },
+        { type: 'image', source: require('../assets/Tutorial/29.png') },
+        { type: 'image', source: require('../assets/Tutorial/30.png') },
+        { type: 'image', source: require('../assets/Tutorial/31.png') },
+        { type: 'image', source: require('../assets/Tutorial/32.png') },
+        { type: 'image', source: require('../assets/Tutorial/33.png') },
       ]
     }
   ];

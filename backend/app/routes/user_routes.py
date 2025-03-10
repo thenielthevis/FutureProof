@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException, Depends
 from fastapi.security import OAuth2PasswordBearer
 from pydantic import BaseModel
-from app.services.user_service import (register_user, login_user, get_user_by_token, toggle_sleep_status, increase_medication, count_total_users, get_user_registrations, get_user_registrations_by_date, UserService, get_user_by_token_health_xp, get_avatar_details, disable_user, enable_user, get_all_users, disable_inactive_users, delete_disabled_users, fetch_all_users)
+from app.services.user_service import (register_user, login_user, get_user_by_token, toggle_sleep_status, increase_medication, count_total_users, get_user_registrations, get_user_registrations_by_date, UserService, get_user_by_token_health_xp, get_avatar_details, disable_user, enable_user, get_all_users, disable_inactive_users, delete_disabled_users, fetch_all_users, get_daily_user_registrations)
 from app.models.user_model import UserCreate, UserLogin, UserInDB
 from app.models.avatar_model import Avatar
 from app.mailtrap_client import send_otp_email
@@ -263,3 +263,42 @@ async def verify_reactivation_otp(request: ReactivationOTPRequest):
 async def verify_reactivation_otp_route(request: ReactivationOTPRequest):
     result = await verify_reactivation_otp(request.email, request.otp)
     return result
+
+@router.get("/user-daily-registrations")
+async def user_daily_registrations():
+    try:
+        registrations = await get_daily_user_registrations()
+        return registrations
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.post("/verify-otp/")
+async def verify_otp_route(request: OTPRequest):
+    try:
+        user = await db.users.find_one({"email": request.email})
+        if not user:
+            raise HTTPException(status_code=404, detail="User not found")
+        
+        if not user.get("otp"):
+            raise HTTPException(status_code=400, detail="No OTP found for this user")
+        
+        if user.get("otp") != request.otp:
+            raise HTTPException(status_code=400, detail="Invalid OTP")
+        
+        # Update user verification status and clear OTP
+        await db.users.update_one(
+            {"email": request.email},
+            {
+                "$set": {
+                    "verified": True,
+                    "otp": None
+                }
+            }
+        )
+        
+        return {"message": "OTP verified successfully"}
+    except HTTPException as he:
+        raise he
+    except Exception as e:
+        print("Error verifying OTP:", str(e))
+        raise HTTPException(status_code=500, detail="Internal server error")

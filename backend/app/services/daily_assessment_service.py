@@ -367,3 +367,32 @@ async def read_user_assessments(user_id: str):
         assessment.update(user_info)  # Merge user data into assessment
 
     return [convert_objectid_to_str(assessment) for assessment in assessments]
+
+async def check_assessment_requirements(user_id: str):
+    """Check if user meets all requirements for daily assessment."""
+    today = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
+    
+    # Check predictions
+    prediction = await predictions_collection.find_one({"user_id": str(user_id)})
+    has_predictions = bool(prediction)
+    
+    # Check today's tasks
+    tasks = await task_completions_collection.find(
+        {"user_id": str(user_id), "date_completed": {"$gte": today}}
+    ).to_list(None)
+    has_tasks = bool(tasks)
+    
+    # Check nutritional tracking
+    nutrition = await nutritional_tracking_collection.find_one(
+        {"user_id": str(user_id), "date_tracked": {"$gte": today}}
+    )
+    has_nutrition = bool(nutrition)
+    
+    return {
+        "requirements_met": all([has_predictions, has_tasks, has_nutrition]),
+        "requirements_status": {
+            "has_predictions": has_predictions,
+            "has_tasks": has_tasks,
+            "has_nutrition": has_nutrition
+        }
+    }

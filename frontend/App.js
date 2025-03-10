@@ -8,7 +8,6 @@ import Contacts from './Components/Contacts';
 import Features from './Components/Features';
 import About from './Components/About';
 import Login from './Components/Login';
-import Logout from './Components/Logout';
 import Register from './Components/Register';
 import Prediction from './Components/Prediction';
 import Navbar from './Navbar/Navbar';
@@ -30,9 +29,13 @@ import { UserLevelProvider } from './Context/UserLevelContext'; // Import the Us
 import PhysicalActivitiesCRUD from './Pages/PhysicalActivitiesCRUD';
 import MeditationCRUD from './Pages/MeditationCRUD';
 import UserDashboard from './Components/userDashboard';
-import BMIGame from './Components/BMIGame';
+import BMIGame from './Components/Game/BMIGame';
 import UsersManagement from './Pages/UsersManagement';
-import NormalGame from './Components/NormalGame';
+import MainMenu from './Components/Game/MainMenu';
+import UnderweightGame from './Components/Game/UnderweightGame';
+import NormalGame from './Components/Game/NormalGame';
+import OverweightGame from './Components/Game/OverweightGame';
+import ObeseGame from './Components/Game/ObeseGame';
 
 const Stack = createStackNavigator();
 const { width, height } = Dimensions.get('window');
@@ -64,7 +67,6 @@ export default function App() {
                   <Stack.Screen name="Profile" component={Profile} />
                   <Stack.Screen name="Game" component={Game} />
                   <Stack.Screen name="Login" component={Login} />
-                  <Stack.Screen name="Logout" component={Logout} />
                   <Stack.Screen name="Register" component={Register} />
                   <Stack.Screen name="Admin" component={Admin} />
                   <Stack.Screen name="AvatarCRUD" component={AvatarCRUD} />
@@ -81,7 +83,11 @@ export default function App() {
                   <Stack.Screen name="UserDashboard" component={UserDashboard} />
                   <Stack.Screen name="BMIGame" component={BMIGame} />
                   <Stack.Screen name="UsersManagement" component={UsersManagement} />
+                  <Stack.Screen name="MainMenu" component={MainMenu} options={{ headerShown: false }} />
+                  <Stack.Screen name="UnderweightGame" component={UnderweightGame} />
                   <Stack.Screen name="NormalGame" component={NormalGame} />
+                  <Stack.Screen name="OverweightGame" component={OverweightGame} />
+                  <Stack.Screen name="ObeseGame" component={ObeseGame} />
                 </Stack.Navigator>
               </NavigationContainer>
             </ScrollView>

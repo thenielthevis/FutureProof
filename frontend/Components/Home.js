@@ -45,6 +45,15 @@ const Home = ({ navigation }) => {
   const aboutRef = useRef();
   const featuresRef = useRef();
   const contactRef = useRef();
+  const [isLoggedIn, setIsLoggedIn] = useState(false); // Add this line
+
+  useEffect(() => {
+    const checkLoginStatus = async () => {
+      const token = await AsyncStorage.getItem('token');
+      setIsLoggedIn(!!token);
+    };
+    checkLoginStatus();
+  }, []);
 
   const scrollToSection = (section) => {
     let offset = 0;
@@ -374,9 +383,11 @@ const Home = ({ navigation }) => {
             <Text style={styles.subtitle}>
               FutureProof uses AI to provide predictive health insights and preventive wellness solutions, helping you stay ahead of potential health risks and optimize your well-being.
             </Text>
-            <TouchableOpacity style={styles.joinButton} onPress={() => navigation.navigate('UserDashboard')}>
-              <Text style={styles.joinButtonText}>Go to Dashboard</Text>
-            </TouchableOpacity>
+            {isLoggedIn && (
+              <TouchableOpacity style={styles.joinButton} onPress={() => navigation.navigate('UserDashboard')}>
+                <Text style={styles.joinButtonText}>Go to Dashboard</Text>
+              </TouchableOpacity>
+            )}
           </View>
 
           {/* 3D Model */}
@@ -1122,7 +1133,15 @@ const styles = StyleSheet.create({
     borderRadius: 5,
   },
   cancelButton: {
-    backgroundColor: '#ccc',
+    backgroundColor: 'rgba(25, 47, 66, 0.9)',
+    paddingVertical: 5,
+    paddingHorizontal: 10,
+    marginHorizontal: 10,
+    height: 50,
+    justifyContent: 'center',
+    alignItems: 'center',
+    width: 100,
+    borderRadius: 10,
   },
   buttonText: {
     fontSize: 16,

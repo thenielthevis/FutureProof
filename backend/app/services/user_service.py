@@ -40,11 +40,16 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
 
 async def register_user(user: UserCreate):
     existing_user = await db.users.find_one({"username": user.username})
-    if (existing_user):
-        return None
+    if existing_user:
+        raise HTTPException(status_code=400, detail="Username already exists")
+    
+    existing_email = await db.users.find_one({"email": user.email})
+    if existing_email:
+        raise HTTPException(status_code=400, detail="Email already exists")
     
     hashed_password = get_password_hash(user.password)
-    otp = str(random.randint(100000, 999999))  # Generate a 6-digit OTP
+    otp = str(random.randint(100000, 999999))  # Generate 6-digit OTP
+    
     user_in_db = UserInDB(
         username=user.username,
         email=user.email,
@@ -62,12 +67,17 @@ async def register_user(user: UserCreate):
         activeness=user.activeness,
         role=user.role,
         id=ObjectId(),
-        otp=otp,  # Add OTP field
-        verified=False  # Set verified to False initially
+        otp=otp,
+        verified=False
     )
-    await db.users.insert_one(user_in_db.dict(by_alias=True, exclude={"id"}))
-    send_otp_email(user.email, otp)  # Send OTP email
-    return user_in_db
+    
+    try:
+        await db.users.insert_one(user_in_db.dict(by_alias=True, exclude={"id"}))
+        send_otp_email(user.email, otp)  # Send OTP email
+        return user_in_db
+    except Exception as e:
+        print("Error registering user:", str(e))
+        raise HTTPException(status_code=500, detail="Failed to register user")
 
 async def authenticate_user(email: str, password: str):
     user = await db.users.find_one({"email": email})
@@ -399,20 +409,63 @@ async def disable_inactive_users():
     
     return {"message": "Inactive users disabled successfully"}
 
+async def get_daily_user_registrations():
+    db = get_database()
+    now = datetime.utcnow()
+    first_day_of_month = datetime(now.year, now.month, 1)
+    
+    # Create a pipeline to count registrations by day of month
+    pipeline = [
+        {
+            "$match": {
+                "registerDate": {"$gte": first_day_of_month}
+            }
+        },
+        {
+            "$group": {
+                "_id": {"$dayOfMonth": "$registerDate"},
+                "count": {"$sum": 1}
+            }
+        },
+        {
+            "$sort": {"_id": 1}
+        }
+    ]
+
+    results = await db.users.aggregate(pipeline).to_list(length=None)
+    
+    # Initialize an array with 31 days (all zeros)
+    daily_registrations = [0] * 31
+    
+    # Fill in the counts from our aggregation results
+    for result in results:
+        day_of_month = result["_id"] - 1  # Convert to 0-based index
+        if 0 <= day_of_month < 31:
+            daily_registrations[day_of_month] = result["count"]
+    
+    return {"daily_registrations": daily_registrations}
+
 class UserService:
     @staticmethod
-    async def update_user_battery(user_id: str, battery: int) -> UserInDB:
+    async def update_user_battery(user_id: str, battery_increase: int) -> UserInDB:
         try:
-            print(f"Updating battery for user_id: {user_id} with battery: {battery}")
             user = await db.users.find_one({"_id": ObjectId(user_id)})
             if not user:
                 raise Exception("User not found")
-            result = await db.users.update_one({"_id": ObjectId(user_id)}, {"$set": {"battery": battery}})
-            if result.modified_count == 1:
-                updated_user = await db.users.find_one({"_id": ObjectId(user_id)})
-                return UserInDB(**updated_user)
-            else:
-                raise Exception("No document was modified")
+
+            current_battery = user.get('battery', 0)
+            new_battery = min(current_battery + battery_increase, 100)  # Cap at 100
+
+            # Only update if there's an actual change
+            if new_battery != current_battery:
+                result = await db.users.update_one(
+                    {"_id": ObjectId(user_id)}, 
+                    {"$set": {"battery": new_battery}}
+                )
+                if result.modified_count == 0:
+                    print(f"Battery already at {current_battery}, no update needed")
+            
+            return UserInDB(**user)
         except Exception as e:
             print("Error in update_user_battery:", str(e))
             raise
@@ -490,3 +543,38 @@ class UserService:
             {"$set": {"coins": new_coins, "xp": new_xp, "level": new_level}}
         )
         return {"coins": new_coins, "xp": new_xp, "level": new_level}
+
+    # Add scheduled task to reset stats daily
+    @staticmethod
+    async def reset_daily_stats():
+        try:
+            # Reset health, sleep, battery, and medication to their default values
+            await db.users.update_many(
+                {},  # Match all users
+                {
+                    "$set": {
+                        "health": 0,      # Reset health to 0
+                        "sleep": 0,       # Reset sleep to 0
+                        "battery": 50,    # Reset battery to 50 (or whatever default you want)
+                        "medication": 0    # Reset medication to 0
+                    }
+                }
+            )
+            print("Daily stats reset completed successfully")
+        except Exception as e:
+            print("Error in reset_daily_stats:", str(e))
+            raise
+
+# Add this function to initialize the daily reset task
+async def init_daily_reset():
+    while True:
+        now = datetime.utcnow()
+        next_reset = now.replace(hour=0, minute=0, second=0, microsecond=0) + timedelta(days=1)
+        wait_seconds = (next_reset - now).total_seconds()
+        
+        await asyncio.sleep(wait_seconds)
+        await UserService.reset_daily_stats()
+
+# Add this to your startup code (typically in main.py or app.py)
+def start_daily_reset():
+    asyncio.create_task(init_daily_reset())
