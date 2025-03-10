@@ -75,6 +75,7 @@ const Home = ({ navigation }) => {
     new Animated.Value(1),
     new Animated.Value(1),
     new Animated.Value(1),
+    new Animated.Value(1),
     new Animated.Value(1)
   ]);
 
@@ -456,7 +457,7 @@ const Home = ({ navigation }) => {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>
             
-            The Minds behind FutureProof</Text>
+       Our Team</Text>
           <View style={styles.teamContainer}>
             <Animated.View style={[styles.teamMemberCard, activeCardIndex === 0 && styles.activeTeamCard, { transform: [{ scale: cardScales[0] }] }]}>
               <TouchableOpacity onPress={() => animateCard(0)}>
@@ -548,7 +549,37 @@ const Home = ({ navigation }) => {
                   Full Stack Developer
                 </Text>
                 <View style={styles.socialLinks}>
+
+                  
                 
+                </View>
+
+              </TouchableOpacity>
+            </Animated.View>
+          </View>
+        </View>
+
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Our Professor</Text>
+          <View style={styles.teamContainer}>
+            <Animated.View style={[styles.teamMemberCard, activeCardIndex === 4 && styles.activeTeamCard, { transform: [{ scale: cardScales[4] }] }]}>
+              <TouchableOpacity onPress={() => animateCard(4)}>
+                <View style={styles.imageWrapper}>
+                  <Image 
+                    source={require('../assets/member/prof.jpg')} 
+                    style={styles.teamMemberImage} 
+                  />
+                  <TouchableOpacity style={styles.overlay} activeOpacity={0.8}>
+                    <Text style={styles.overlayText}>Project Supervisor</Text>
+                  </TouchableOpacity>
+                </View>
+                <Text style={[styles.teamMemberName, activeCardIndex === 4 && styles.activeText]}>
+                  Mrs. Madriaga Pops
+                </Text>
+                <Text style={[styles.teamMemberRole, activeCardIndex === 4 && styles.activeText]}>
+                  Project Supervisor
+                </Text>
+                <View style={styles.socialLinks}>
                 </View>
               </TouchableOpacity>
             </Animated.View>
