@@ -45,6 +45,15 @@ const Home = ({ navigation }) => {
   const aboutRef = useRef();
   const featuresRef = useRef();
   const contactRef = useRef();
+  const [isLoggedIn, setIsLoggedIn] = useState(false); // Add this line
+
+  useEffect(() => {
+    const checkLoginStatus = async () => {
+      const token = await AsyncStorage.getItem('token');
+      setIsLoggedIn(!!token);
+    };
+    checkLoginStatus();
+  }, []);
 
   const scrollToSection = (section) => {
     let offset = 0;
@@ -373,9 +382,11 @@ const Home = ({ navigation }) => {
             <Text style={styles.subtitle}>
               FutureProof uses AI to provide predictive health insights and preventive wellness solutions, helping you stay ahead of potential health risks and optimize your well-being.
             </Text>
-            <TouchableOpacity style={styles.joinButton} onPress={() => navigation.navigate('UserDashboard')}>
-              <Text style={styles.joinButtonText}>Go to Dashboard</Text>
-            </TouchableOpacity>
+            {isLoggedIn && (
+              <TouchableOpacity style={styles.joinButton} onPress={() => navigation.navigate('UserDashboard')}>
+                <Text style={styles.joinButtonText}>Go to Dashboard</Text>
+              </TouchableOpacity>
+            )}
           </View>
 
           {/* 3D Model */}

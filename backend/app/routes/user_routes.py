@@ -271,3 +271,34 @@ async def user_daily_registrations():
         return registrations
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+@router.post("/verify-otp/")
+async def verify_otp_route(request: OTPRequest):
+    try:
+        user = await db.users.find_one({"email": request.email})
+        if not user:
+            raise HTTPException(status_code=404, detail="User not found")
+        
+        if not user.get("otp"):
+            raise HTTPException(status_code=400, detail="No OTP found for this user")
+        
+        if user.get("otp") != request.otp:
+            raise HTTPException(status_code=400, detail="Invalid OTP")
+        
+        # Update user verification status and clear OTP
+        await db.users.update_one(
+            {"email": request.email},
+            {
+                "$set": {
+                    "verified": True,
+                    "otp": None
+                }
+            }
+        )
+        
+        return {"message": "OTP verified successfully"}
+    except HTTPException as he:
+        raise he
+    except Exception as e:
+        print("Error verifying OTP:", str(e))
+        raise HTTPException(status_code=500, detail="Internal server error")

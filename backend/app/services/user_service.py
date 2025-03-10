@@ -40,11 +40,16 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
 
 async def register_user(user: UserCreate):
     existing_user = await db.users.find_one({"username": user.username})
-    if (existing_user):
-        return None
+    if existing_user:
+        raise HTTPException(status_code=400, detail="Username already exists")
+    
+    existing_email = await db.users.find_one({"email": user.email})
+    if existing_email:
+        raise HTTPException(status_code=400, detail="Email already exists")
     
     hashed_password = get_password_hash(user.password)
-    otp = str(random.randint(100000, 999999))  # Generate a 6-digit OTP
+    otp = str(random.randint(100000, 999999))  # Generate 6-digit OTP
+    
     user_in_db = UserInDB(
         username=user.username,
         email=user.email,
@@ -62,12 +67,17 @@ async def register_user(user: UserCreate):
         activeness=user.activeness,
         role=user.role,
         id=ObjectId(),
-        otp=otp,  # Add OTP field
-        verified=False  # Set verified to False initially
+        otp=otp,
+        verified=False
     )
-    await db.users.insert_one(user_in_db.dict(by_alias=True, exclude={"id"}))
-    send_otp_email(user.email, otp)  # Send OTP email
-    return user_in_db
+    
+    try:
+        await db.users.insert_one(user_in_db.dict(by_alias=True, exclude={"id"}))
+        send_otp_email(user.email, otp)  # Send OTP email
+        return user_in_db
+    except Exception as e:
+        print("Error registering user:", str(e))
+        raise HTTPException(status_code=500, detail="Failed to register user")
 
 async def authenticate_user(email: str, password: str):
     user = await db.users.find_one({"email": email})

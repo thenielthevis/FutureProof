@@ -20,12 +20,12 @@ const GAME_INFO = {
       'Each correct word earns coins.'
     ]
   },
-  'Food Dash: Eat Smart!': {
+  'Health Dash: Live Smart!': {
     route: 'NormalGame',
     color: '#81C784',
     image: require('../../assets/Game/food-dash-thumbnail.png'),
     description: 'Maintain your healthy lifestyle',
-    purpose: 'Food Dash: Eat Smart! helps players maintain a balanced diet through quick decision-making in a fun and engaging endless runner format.',
+    purpose: 'Health Dash: Live Smart! helps players maintain a balanced diet through quick decision-making in a fun and engaging endless runner format.',
     mechanics: [
       'Run through three lanes collecting healthy food items.',
       'Dodge obstacles and unhealthy food choices.',

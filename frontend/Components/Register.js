@@ -125,21 +125,22 @@ const Register = ({ navigation }) => {
   
     try {
       const response = await axios.post('http://localhost:8000/verify-otp/', {
-        email,
-        otp,
+        email: email,
+        otp: otp
       });
   
-      showToast('OTP verified successfully! 🎉', 'success');
-      setTimeout(() => {
-        navigation.navigate('Login');
-        setIsLoading(false);
-      }, 2000);
+      if (response.data.message) {
+        showToast('OTP verified successfully! 🎉', 'success');
+        setTimeout(() => {
+          navigation.navigate('Login');
+        }, 2000);
+      }
     } catch (error) {
       console.log('OTP verification error:', error);
-      const errorMessage =
-        error.response?.data?.detail || 'Invalid OTP. Please try again.';
+      const errorMessage = error.response?.data?.detail || 'Invalid OTP. Please try again.';
       setOtpError(errorMessage);
       showToast(errorMessage, 'error');
+    } finally {
       setIsLoading(false);
     }
   };
