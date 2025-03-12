@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import {
-  View, Text, TouchableOpacity, StyleSheet, TextInput, ScrollView, Modal, Alert, Platform, Animated
+  View, Text, TouchableOpacity, StyleSheet, TextInput, ScrollView, Modal, Alert, Platform, Animated, ActivityIndicator
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { readAssessments } from '../API/daily_assessment_api';
@@ -20,6 +20,7 @@ const Assessments = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [headerAnimation] = useState(new Animated.Value(0));
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     const fetchAssessments = async () => {
@@ -66,6 +67,7 @@ const Assessments = () => {
   };
 
   const handleExportPDF = async () => {
+    setIsLoading(true);
     try {
       // Convert logo URLs to base64
       const logo1Base64 = await convertImageToBase64("https://i.ibb.co/GQygLXT9/tuplogo.png");
@@ -230,17 +232,26 @@ const Assessments = () => {
             ${headerContent}
             
             <div style="margin-top: 10px;">
-              <h3>Recommendations - ${assessment.username}</h4>
+              <h3>Recommendations - ${assessment.username}</h3>
               <h4>Page 4 of 4</h4>
-              <ul>
-                ${assessment.recommendations.map(rec => `
-                  <li>
-                    <strong>Recommendation:</strong> ${rec.recommendation || 'N/A'}<br>
-                    <strong>Scientific Basis:</strong> ${rec.basis || 'N/A'}<br>
-                    <strong>Reference:</strong> ${rec.reference || 'N/A'}
-                  </li>
+              <div style="margin-top: 10px;">
+                ${assessment.recommendations.map((rec, index) => `
+                  <div style="margin-bottom: 10px; padding: 16px; border-radius: 8px;">
+                    <div style="margin-bottom: 12px;">
+                      <span style="font-weight: 600; color: #1a1a1a; font-size: 16px;">Recommendation ${index + 1}:</span>
+                      <p style="margin: 8px 0; line-height: 1.5;">${rec.recommendation || 'N/A'}</p>
+                    </div>
+                    <div style="margin-bottom: 12px;">
+                      <span style="font-weight: 600; color: #1a1a1a;">Scientific Basis:</span>
+                      <p style="margin: 8px 0; line-height: 1.5;">${rec.basis || 'N/A'}</p>
+                    </div>
+                    <div>
+                      <span style="font-weight: 600; color: #1a1a1a;">Reference:</span>
+                      <p style="margin: 8px 0; line-height: 1.5;">${rec.reference || 'N/A'}</p>
+                    </div>
+                  </div>
                 `).join('')}
-              </ul>
+              </div>
             </div>
           </div>
         `;
@@ -340,10 +351,13 @@ const Assessments = () => {
     } catch (error) {
       console.error('Error in handleExportPDF:', error);
       Alert.alert('Error', 'Something went wrong. Please try again.');
+    } finally {
+      setIsLoading(false);
     }
   };
 
   const handleExportUserPDF = async (assessment) => {
+    setIsLoading(true);
     try {
       // Convert logo URLs to base64
       const logo1Base64 = await convertImageToBase64("https://i.ibb.co/GQygLXT9/tuplogo.png");
@@ -445,7 +459,7 @@ const Assessments = () => {
           ${headerContent}
           
           <div style="margin-top: 10px;">
-            <h3>Prevention Progress - ${assessment.username}</h3>
+            <h3>Prevention Progress - ${assessment.username}</h4>
             <h4>Page 2 of 4</h4>
             <ul>
               ${assessment.updated_predictions.map(prediction => `
@@ -507,15 +521,24 @@ const Assessments = () => {
           <div style="margin-top: 10px;">
             <h3>Recommendations - ${assessment.username}</h3>
             <h4>Page 4 of 4</h4>
-            <ul>
-              ${assessment.recommendations.map(rec => `
-                <li>
-                  <strong>Recommendation:</strong> ${rec.recommendation || 'N/A'}<br>
-                  <strong>Scientific Basis:</strong> ${rec.basis || 'N/A'}<br>
-                  <strong>Reference:</strong> ${rec.reference || 'N/A'}
-                </li>
+            <div style="margin-top: 10px;">
+              ${assessment.recommendations.map((rec, index) => `
+                <div style="margin-bottom: 10px; padding: 16px; border-radius: 8px;">
+                  <div style="margin-bottom: 12px;">
+                    <span style="font-weight: 600; color: #1a1a1a; font-size: 16px;">Recommendation ${index + 1}:</span>
+                    <p style="margin: 8px 0; line-height: 1.5;">${rec.recommendation || 'N/A'}</p>
+                  </div>
+                  <div style="margin-bottom: 12px;">
+                    <span style="font-weight: 600; color: #1a1a1a;">Scientific Basis:</span>
+                    <p style="margin: 8px 0; line-height: 1.5;">${rec.basis || 'N/A'}</p>
+                  </div>
+                  <div>
+                    <span style="font-weight: 600; color: #1a1a1a;">Reference:</span>
+                    <p style="margin: 8px 0; line-height: 1.5;">${rec.reference || 'N/A'}</p>
+                  </div>
+                </div>
               `).join('')}
-            </ul>
+            </div>
           </div>
         </div>
       `;
@@ -611,6 +634,8 @@ const Assessments = () => {
     } catch (error) {
       console.error('Error in handleExportUserPDF:', error);
       Alert.alert('Error', 'Something went wrong. Please try again.');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -696,6 +721,16 @@ const Assessments = () => {
           </View>
         </ScrollView>
       </View>
+
+      {/* Add Loading Overlay */}
+      {isLoading && (
+        <View style={styles.loadingOverlay}>
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color="#10B981" />
+            <Text style={styles.loadingText}>Generating PDF...</Text>
+          </View>
+        </View>
+      )}
     </View>
   );
 };
@@ -949,7 +984,35 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.25,
     shadowRadius: 16,
     elevation: 10,
-  }
+  },
+  loadingOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 1000,
+  },
+  loadingContainer: {
+    backgroundColor: 'white',
+    padding: 20,
+    borderRadius: 10,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+  loadingText: {
+    marginTop: 10,
+    fontSize: 16,
+    color: '#4B5563',
+    fontWeight: '500',
+  },
 });
 
 export default Assessments;

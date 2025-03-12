@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import {
-  View, Text, TouchableOpacity, StyleSheet, TextInput, Image, ScrollView, Modal, Alert, Platform, Button, Picker, Animated
+  View, Text, TouchableOpacity, StyleSheet, TextInput, Image, ScrollView, Modal, Alert, Platform, Button, Picker, Animated, ActivityIndicator
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { createPhysicalActivity, getPhysicalActivities, getPhysicalActivityById, updatePhysicalActivity, deletePhysicalActivity } from '../API/physical_activities_api';
@@ -38,6 +38,7 @@ const PhysicalActivitiesCRUD = () => {
   const [headerAnimation] = useState(new Animated.Value(0));
   const [deleteModalVisible, setDeleteModalVisible] = useState(false);
   const [selectedActivity, setSelectedActivity] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
 
   // Fetch all activities on component mount
   useEffect(() => {
@@ -358,6 +359,7 @@ const PhysicalActivitiesCRUD = () => {
   };
 
   const handleExportPDF = async () => {
+    setIsLoading(true);
     try {
       // Convert all activity videos/images to base64 (if needed)
       const activitiesWithImages = await Promise.all(
@@ -570,6 +572,8 @@ const PhysicalActivitiesCRUD = () => {
     } catch (error) {
       console.error('Error in handleExportPDF:', error);
       Alert.alert('Error', 'Something went wrong. Please try again.');
+    } finally {
+      setIsLoading(false);
     }
   };
   
@@ -913,6 +917,15 @@ const PhysicalActivitiesCRUD = () => {
           </View>
         </Modal>
       </View>
+      {/* Add Loading Overlay */}
+      {isLoading && (
+        <View style={styles.loadingOverlay}>
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color="#10B981" />
+            <Text style={styles.loadingText}>Generating PDF...</Text>
+          </View>
+        </View>
+      )}
     </View>
   );
 };
@@ -1320,6 +1333,34 @@ const styles = StyleSheet.create({
   deleteModal_deleteButtonText: {
     color: 'white',
     fontWeight: '600',
+  },
+  loadingOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 1000,
+  },
+  loadingContainer: {
+    backgroundColor: 'white',
+    padding: 20,
+    borderRadius: 10,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+  loadingText: {
+    marginTop: 10,
+    fontSize: 16,
+    color: '#4B5563',
+    fontWeight: '500',
   },
 });
 

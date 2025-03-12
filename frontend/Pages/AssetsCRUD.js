@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import {
-  View, Text, TouchableOpacity, StyleSheet, TextInput, Image, ScrollView, Modal, Alert, Platform, Picker, Animated
+  View, Text, TouchableOpacity, StyleSheet, TextInput, Image, ScrollView, Modal, Alert, Platform, Picker, Animated, ActivityIndicator
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { createAsset, readAssets, updateAsset, deleteAsset } from '../API/assets_api';
@@ -34,6 +34,7 @@ const AssetCRUD = () => {
   const [filteredAssets, setFilteredAssets] = useState([]);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [headerAnimation] = useState(new Animated.Value(0));
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     const fetchAssets = async () => {
@@ -77,6 +78,7 @@ const AssetCRUD = () => {
   };
 
   const handleExportPDF = async () => {
+    setIsLoading(true);
     try {
       const assetsWithImages = await Promise.all(
         assets.map(async (asset) => {
@@ -262,6 +264,8 @@ const AssetCRUD = () => {
     } catch (error) {
       console.error('Error in handleExportPDF:', error);
       Alert.alert('Error', 'Something went wrong. Please try again.');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -833,6 +837,15 @@ const AssetCRUD = () => {
           </View>
         </Modal>
       </View>
+      {/* Add Loading Overlay */}
+      {isLoading && (
+        <View style={styles.loadingOverlay}>
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color="#10B981" />
+            <Text style={styles.loadingText}>Generating PDF...</Text>
+          </View>
+        </View>
+      )}
     </View>
   );
 };
@@ -1311,6 +1324,34 @@ const styles = StyleSheet.create({
   deleteModal_deleteButtonText: {
     color: 'white',
     fontWeight: '600',
+  },
+  loadingOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 1000,
+  },
+  loadingContainer: {
+    backgroundColor: 'white',
+    padding: 20,
+    borderRadius: 10,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+  loadingText: {
+    marginTop: 10,
+    fontSize: 16,
+    color: '#4B5563',
+    fontWeight: '500',
   },
 });
 

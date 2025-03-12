@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, FlatList, ScrollView, Animated, Platform, Alert } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, FlatList, ScrollView, Animated, Platform, Alert, ActivityIndicator } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { FontAwesome, FontAwesome5, Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -41,6 +41,7 @@ const Admin = () => {
   });
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [headerAnimation] = useState(new Animated.Value(0));
+  const [isLoading, setIsLoading] = useState(false);
 
   // Refs for chart components
   const dailyRegistrationsChartRef = useRef(null);
@@ -251,6 +252,7 @@ const Admin = () => {
   };
 
   const handleExportPDF = async () => {
+    setIsLoading(true);
     try {
       const logo1Base64 = await convertImageToBase64("https://i.ibb.co/GQygLXT9/tuplogo.png");
       const logo2Base64 = await convertImageToBase64("https://i.ibb.co/YBStKgFC/logo-2.png");
@@ -389,6 +391,8 @@ const Admin = () => {
     } catch (error) {
       console.error('Error in handleExportPDF:', error);
       Alert.alert('Error', 'Something went wrong. Please try again.');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -532,6 +536,14 @@ const Admin = () => {
           </View>
         </ScrollView>
       </View>
+      {isLoading && (
+        <View style={styles.loadingOverlay}>
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color="#10B981" />
+            <Text style={styles.loadingText}>Generating PDF...</Text>
+          </View>
+        </View>
+      )}
     </View>
   );
 };
@@ -737,6 +749,34 @@ const styles = StyleSheet.create({
   exportButtonText: {
     color: '#fff',
     textAlign: 'center',
+  },
+  loadingOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 1000,
+  },
+  loadingContainer: {
+    backgroundColor: 'white',
+    padding: 20,
+    borderRadius: 10,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+  loadingText: {
+    marginTop: 10,
+    fontSize: 16,
+    color: '#4B5563',
+    fontWeight: '500',
   },
 });
 

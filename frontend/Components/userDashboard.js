@@ -41,6 +41,7 @@ const UserDashboard = ({ navigation }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const sidebarAnimation = useState(new Animated.Value(250))[0];
   const contentMarginAnimation = useState(new Animated.Value(250))[0];
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -388,6 +389,7 @@ const UserDashboard = ({ navigation }) => {
   };
 
   const handleExportPDF = async () => {
+    setIsLoading(true);
     try {
       const logo1Base64 = await convertImageToBase64("https://i.ibb.co/GQygLXT9/tuplogo.png");
       const logo2Base64 = await convertImageToBase64("https://i.ibb.co/YBStKgFC/logo-2.png");
@@ -803,10 +805,13 @@ const UserDashboard = ({ navigation }) => {
     } catch (error) {
       console.error('Error in handleExportPDF:', error);
       Alert.alert('Error', 'Something went wrong. Please try again.');
+    } finally {
+      setIsLoading(false);
     }
   };
 
   const handleExportUserPDF = async (assessment) => {
+    setIsLoading(true);
       try {
         // Convert logo URLs to base64
         const logo1Base64 = await convertImageToBase64("https://i.ibb.co/GQygLXT9/tuplogo.png");
@@ -1074,6 +1079,8 @@ const UserDashboard = ({ navigation }) => {
       } catch (error) {
         console.error('Error in handleExportUserPDF:', error);
         Alert.alert('Error', 'Something went wrong. Please try again.');
+      } finally {
+        setIsLoading(false);
       }
     };
 
@@ -1493,6 +1500,15 @@ const UserDashboard = ({ navigation }) => {
           )}
         </ScrollView>
       </Animated.View>
+      {/* Add Loading Overlay */}
+      {isLoading && (
+        <View style={styles.loadingOverlayPDF}>
+          <View style={styles.loadingContainerPDF}>
+            <ActivityIndicator size="large" color="#10B981" />
+            <Text style={styles.loadingTextPDF}>Generating PDF...</Text>
+          </View>
+        </View>
+      )}
     </View>
   );
 };
@@ -2245,6 +2261,34 @@ const styles = StyleSheet.create({
   exportButtonText: {
     color: '#fff',
     textAlign: 'center',
+  },
+  loadingOverlayPDF: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 1000,
+  },
+  loadingContainerPDF: {
+    backgroundColor: 'white',
+    padding: 20,
+    borderRadius: 10,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+  loadingTextPDF: {
+    marginTop: 10,
+    fontSize: 16,
+    color: '#4B5563',
+    fontWeight: '500',
   },
 });
 

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import {
-  View, Text, TouchableOpacity, StyleSheet, TextInput, Image, ScrollView, Modal, Alert, Platform, Button, Animated
+  View, Text, TouchableOpacity, StyleSheet, TextInput, Image, ScrollView, Modal, Alert, Platform, Button, Animated, ActivityIndicator
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { createMeditationBreathingExercise, getMeditationBreathingExercises, updateMeditationBreathingExercise, deleteMeditationBreathingExercise } from '../API/meditation_api';
@@ -32,6 +32,7 @@ const MeditationCRUD = () => {
   const [headerAnimation] = useState(new Animated.Value(0));
   const [deleteModalVisible, setDeleteModalVisible] = useState(false);
   const [selectedMeditation, setSelectedMeditation] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     const fetchMeditations = async () => {
@@ -80,6 +81,7 @@ const MeditationCRUD = () => {
   };
 
   const handleExportPDF = async () => {
+    setIsLoading(true);
     try {
       // Convert all meditation videos/images to base64
       const meditationsWithImages = await Promise.all(
@@ -288,6 +290,8 @@ const MeditationCRUD = () => {
     } catch (error) {
       console.error('Error in handleExportPDF:', error);
       Alert.alert('Error', 'Something went wrong. Please try again.');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -767,54 +771,63 @@ const MeditationCRUD = () => {
           </View>
         </Modal>
 
-{/* Delete Confirmation Modal */}
-<Modal
-  visible={deleteModalVisible}
-  transparent
-  animationType="slide"
->
-  <View style={styles.deleteModal_overlay}>
-    <View style={styles.deleteModal_content}>
-      <View style={styles.deleteModal_header}>
-        <Text style={styles.deleteModal_headerText}>Confirm Delete</Text>
-      </View>
+      {/* Delete Confirmation Modal */}
+      <Modal
+        visible={deleteModalVisible}
+        transparent
+        animationType="slide"
+      >
+        <View style={styles.deleteModal_overlay}>
+          <View style={styles.deleteModal_content}>
+            <View style={styles.deleteModal_header}>
+              <Text style={styles.deleteModal_headerText}>Confirm Delete</Text>
+            </View>
 
-      <View style={styles.deleteModal_body}>
-        <Text style={styles.deleteModal_text}>
-          Are you sure you want to delete this meditation?
-        </Text>
-      </View>
+            <View style={styles.deleteModal_body}>
+              <Text style={styles.deleteModal_text}>
+                Are you sure you want to delete this meditation?
+              </Text>
+            </View>
 
-      <View style={styles.deleteModal_footer}>
-        <TouchableOpacity 
-          onPress={() => setDeleteModalVisible(false)} 
-          style={styles.deleteModal_cancelButton}
-        >
-          <Text style={styles.deleteModal_cancelButtonText}>Cancel</Text>
-        </TouchableOpacity>
+            <View style={styles.deleteModal_footer}>
+              <TouchableOpacity 
+                onPress={() => setDeleteModalVisible(false)} 
+                style={styles.deleteModal_cancelButton}
+              >
+                <Text style={styles.deleteModal_cancelButtonText}>Cancel</Text>
+              </TouchableOpacity>
 
-        <TouchableOpacity 
-          onPress={() => {
-            if (selectedMeditation) {
-              handleDeleteMeditation(selectedMeditation);
-              setDeleteModalVisible(false);
-            } else {
-              Toast.show({
-                type: 'error',
-                text1: 'Error',
-                text2: 'No meditation selected for deletion',
-              });
-            }
-          }} 
-          style={styles.deleteModal_deleteButton}
-        >
-          <Text style={styles.deleteModal_deleteButtonText}>Delete</Text>
-        </TouchableOpacity>
+              <TouchableOpacity 
+                onPress={() => {
+                  if (selectedMeditation) {
+                    handleDeleteMeditation(selectedMeditation);
+                    setDeleteModalVisible(false);
+                  } else {
+                    Toast.show({
+                      type: 'error',
+                      text1: 'Error',
+                      text2: 'No meditation selected for deletion',
+                    });
+                  }
+                }} 
+                style={styles.deleteModal_deleteButton}
+              >
+                <Text style={styles.deleteModal_deleteButtonText}>Delete</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
       </View>
-    </View>
-  </View>
-</Modal>
-      </View>
+      {/* Add Loading Overlay */}
+      {isLoading && (
+        <View style={styles.loadingOverlay}>
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color="#10B981" />
+            <Text style={styles.loadingText}>Generating PDF...</Text>
+          </View>
+        </View>
+      )}
     </View>
   );
 };
@@ -1321,6 +1334,34 @@ const styles = StyleSheet.create({
   deleteModal_deleteButtonText: {
     color: 'white',
     fontWeight: '600',
+  },
+  loadingOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 1000,
+  },
+  loadingContainer: {
+    backgroundColor: 'white',
+    padding: 20,
+    borderRadius: 10,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+  loadingText: {
+    marginTop: 10,
+    fontSize: 16,
+    color: '#4B5563',
+    fontWeight: '500',
   },
 });
 

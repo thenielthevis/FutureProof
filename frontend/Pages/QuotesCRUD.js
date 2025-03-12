@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
-  View, Text, TouchableOpacity, StyleSheet, TextInput, ScrollView, Modal, Alert, Platform, Animated
+  View, Text, TouchableOpacity, StyleSheet, TextInput, ScrollView, Modal, Alert, Platform, Animated, ActivityIndicator
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { createQuote, readQuotes, updateQuote, deleteQuote } from '../API/quotes_api';
@@ -26,6 +26,7 @@ const QuotesCRUD = () => {
   const [headerAnimation] = useState(new Animated.Value(0));
   const [deleteModalVisible, setDeleteModalVisible] = useState(false);
   const [selectedQuote, setSelectedQuote] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     const fetchQuotes = async () => {
@@ -48,6 +49,7 @@ const QuotesCRUD = () => {
   }, []);
 
   const handleExportPDF = async () => {
+    setIsLoading(true);
     try {
       const logo1Base64 = await convertImageToBase64("https://i.ibb.co/GQygLXT9/tuplogo.png");
       const logo2Base64 = await convertImageToBase64("https://i.ibb.co/YBStKgFC/logo-2.png");
@@ -210,6 +212,8 @@ const QuotesCRUD = () => {
     } catch (error) {
       console.error('Error in handleExportPDF:', error);
       Alert.alert('Error', 'Something went wrong. Please try again.');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -522,6 +526,15 @@ const QuotesCRUD = () => {
           </View>
         </Modal>
       </View>
+      {/* Add Loading Overlay */}
+      {isLoading && (
+        <View style={styles.loadingOverlay}>
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color="#10B981" />
+            <Text style={styles.loadingText}>Generating PDF...</Text>
+          </View>
+        </View>
+      )}
     </View>
   );
 };
@@ -839,6 +852,34 @@ const styles = StyleSheet.create({
   submitButtonText: {
     color: 'white',
     fontWeight: '600',
+  },
+  loadingOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 1000,
+  },
+  loadingContainer: {
+    backgroundColor: 'white',
+    padding: 20,
+    borderRadius: 10,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+  loadingText: {
+    marginTop: 10,
+    fontSize: 16,
+    color: '#4B5563',
+    fontWeight: '500',
   },
   ...additionalStyles
 });
