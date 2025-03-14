@@ -415,3 +415,49 @@ export const getDailyUserRegistrations = async (token) => {
     throw error.response ? error.response.data : { detail: 'An error occurred' };
   }
 };
+
+// Update user profile information
+export const updateUserProfile = async (token, profileData) => {
+  try {
+    // Convert numeric strings to numbers
+    const formattedData = {
+      ...profileData,
+      age: parseInt(profileData.age) || null,
+      height: parseFloat(profileData.height) || null,
+      weight: parseFloat(profileData.weight) || null,
+      // Ensure arrays are properly formatted
+      vices: Array.isArray(profileData.vices) ? profileData.vices : [],
+      genetic_diseases: Array.isArray(profileData.genetic_diseases) ? profileData.genetic_diseases : [],
+      lifestyle: Array.isArray(profileData.lifestyle) ? profileData.lifestyle : [],
+      food_intake: Array.isArray(profileData.food_intake) ? profileData.food_intake : []
+    };
+
+    console.log('Sending profile update:', formattedData); // Debug log
+
+    const response = await axios.put(`${API_URL}/user/profile`, formattedData, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+    });
+    return response.data;
+  } catch (error) {
+    console.error('Error updating profile:', error.response ? error.response.data : error);
+    throw error.response ? error.response.data : { detail: 'An error occurred' };
+  }
+};
+
+// Reset user prediction
+export const resetUserPrediction = async (token) => {
+  try {
+    const response = await axios.post(`${API_URL}/user/reset-prediction`, {}, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    return response.data;
+  } catch (error) {
+    console.error('Error resetting prediction:', error.response ? error.response.data : error);
+    throw error.response ? error.response.data : { detail: 'An error occurred' };
+  }
+};

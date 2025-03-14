@@ -86,6 +86,20 @@ class UserInDB(ObjectIdModel):
         }
         arbitrary_types_allowed = True
 
+# Add this new model for profile updates
+class UserProfileUpdate(BaseModel):
+    age: Optional[int] = None
+    gender: Optional[str] = None
+    height: Optional[float] = None
+    weight: Optional[float] = None
+    environment: Optional[str] = None
+    vices: Optional[List[str]] = None
+    genetic_diseases: Optional[List[str]] = None
+    lifestyle: Optional[List[str]] = None
+    food_intake: Optional[List[str]] = None
+    sleep_hours: Optional[str] = None
+    activeness: Optional[str] = None
+
 # This model is for the login input
 class UserLogin(BaseModel):
     email: EmailStr

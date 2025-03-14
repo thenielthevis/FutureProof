@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException, Depends
 from fastapi.security import OAuth2PasswordBearer
 from pydantic import BaseModel
-from app.services.user_service import (register_user, login_user, get_user_by_token, toggle_sleep_status, increase_medication, count_total_users, get_user_registrations, get_user_registrations_by_date, UserService, get_user_by_token_health_xp, get_avatar_details, disable_user, enable_user, get_all_users, disable_inactive_users, delete_disabled_users, fetch_all_users, get_daily_user_registrations)
+from app.services.user_service import (register_user, login_user, get_user_by_token, toggle_sleep_status, increase_medication, count_total_users, get_user_registrations, get_user_registrations_by_date, UserService, get_user_by_token_health_xp, get_avatar_details, disable_user, enable_user, get_all_users, disable_inactive_users, delete_disabled_users, fetch_all_users, get_daily_user_registrations, update_user_profile_service, reset_prediction_service)
 from app.models.user_model import UserCreate, UserLogin, UserInDB
 from app.models.avatar_model import Avatar
 from app.mailtrap_client import send_otp_email
@@ -9,6 +9,7 @@ from typing import List, Optional
 from bson import ObjectId
 from app.dependencies import get_current_user
 from app.config import get_database
+from app.models.user_model import UserProfileUpdate  # Add this import
 
 router = APIRouter()
 
@@ -302,3 +303,25 @@ async def verify_otp_route(request: OTPRequest):
     except Exception as e:
         print("Error verifying OTP:", str(e))
         raise HTTPException(status_code=500, detail="Internal server error")
+
+@router.put("/user/profile")
+async def update_user_profile(
+    profile_update: UserProfileUpdate,  # Change to use the new model
+    current_user: UserInDB = Depends(get_current_user)
+):
+    try:
+        updated_user = await update_user_profile_service(
+            str(current_user.id), 
+            profile_update.dict(exclude_unset=True)  # Only include set values
+        )
+        return updated_user
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@router.post("/user/reset-prediction")
+async def reset_user_prediction(current_user: UserInDB = Depends(get_current_user)):
+    try:
+        result = await reset_prediction_service(str(current_user.id))
+        return result
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))

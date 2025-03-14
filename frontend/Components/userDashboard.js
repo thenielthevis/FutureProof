@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, Image, ActivityIndicator, TouchableOpacity, Dimensions, Animated, TextInput, Alert, Platform } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Image, ActivityIndicator, TouchableOpacity, Dimensions, Animated, TextInput, Alert, Platform, Modal } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { getUser } from '../API/user_api';
+import { getUser, updateUserProfile, resetUserPrediction } from '../API/user_api';
 import { getAvatar } from '../API/avatar_api';
 import { getPrediction } from '../API/prediction_api';
 import { MaterialIcons, Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import { FontAwesome, FontAwesome5 } from '@expo/vector-icons';
+import { FontAwesome, FontAwesome5 } from 'react-native-vector-icons';
 import { LineChart, ProgressChart, PieChart } from 'react-native-chart-kit';
 import { getTaskCompletionsByUser, getTodayTaskCompletionsByUser } from '../API/task_completion_api';
 import { getTotalOwnedAssetsCount } from '../API/assets_api';
@@ -42,6 +42,47 @@ const UserDashboard = ({ navigation }) => {
   const sidebarAnimation = useState(new Animated.Value(250))[0];
   const contentMarginAnimation = useState(new Animated.Value(250))[0];
   const [isLoading, setIsLoading] = useState(false);
+  const [editModalVisible, setEditModalVisible] = useState(false);
+  const [editedUser, setEditedUser] = useState({
+    age: '',
+    gender: '',
+    height: '',
+    weight: '',
+    environment: '',
+    vices: [],
+    genetic_diseases: [],
+    lifestyle: [],
+    food_intake: [],
+    sleep_hours: '',
+    activeness: ''
+  });
+
+  // Update the options arrays to match Register.js
+  const environmentOptions = ['Hushed', 'Quiet', 'Moderate', 'Loud', 'Deafening', 'Other'];
+  const sleepOptions = ['1-2 hrs', '3-4 hrs', '5-6 hrs', '7-8 hrs', '9-10 hrs', '11-12 hrs', 'Other'];
+  const activityLevels = ['Sedentary', 'Light', 'Moderate', 'Vigorous', 'Other'];
+  const viceOptions = ['Alcoholism', 'Smoking', 'Substance Abuse', 'Digital', 'None', 'Other'];
+  const lifestyleOptions = [
+    'Physical Activity',
+    'Healthy Eating',
+    'Stress Management',
+    'Regular Check-ups',
+    'Social Interaction',
+    'Other'
+  ];
+  const foodIntakeOptions = ['Vegetables', 'Fruits', 'Grains', 'Dairy', 'Protein Foods', 'Other'];
+  const genderOptions = ['Male', 'Female', 'Other'];
+
+  // Add state for "Other" inputs
+  const [otherInputs, setOtherInputs] = useState({
+    environment: '',
+    sleepHours: '',
+    activeness: '',
+    vices: '',
+    lifestyle: '',
+    foodIntake: '',
+    gender: '',
+  });
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -1080,6 +1121,373 @@ const UserDashboard = ({ navigation }) => {
       }
     };
 
+  const handleEditProfile = () => {
+    setEditedUser({
+      age: user.age || '',
+      gender: user.gender || '',
+      height: user.height || '',
+      weight: user.weight || '',
+      environment: user.environment || '',
+      vices: user.vices || [],
+      genetic_diseases: user.genetic_diseases || [],
+      lifestyle: user.lifestyle || [],
+      food_intake: user.food_intake || [],
+      sleep_hours: user.sleep_hours || '',
+      activeness: user.activeness || ''
+    });
+    setEditModalVisible(true);
+  };
+
+  const handleUpdateProfile = async () => {
+    try {
+      const token = await AsyncStorage.getItem('token');
+      const updatedUser = await updateUserProfile(token, editedUser);
+      setUser(updatedUser);
+      setEditModalVisible(false);
+      
+      // After updating profile, reset prediction
+      const resetResponse = await resetUserPrediction(token);
+      
+      Toast.show({
+        type: 'success',
+        text1: 'Profile Updated',
+        text2: 'Your profile has been updated and prediction reset.'
+      });
+    } catch (error) {
+      Toast.show({
+        type: 'error',
+        text1: 'Error',
+        text2: error.message || 'Failed to update profile'
+      });
+    }
+  };
+
+  const renderEditProfileModal = () => (
+    <Modal
+      animationType="slide"
+      transparent={true}
+      visible={editModalVisible}
+      onRequestClose={() => setEditModalVisible(false)}
+    >
+      <View style={styles.modalOverlay}>
+        <View style={styles.modalContent}>
+          <ScrollView style={styles.modalBody}>
+            {/* Basic Information */}
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>Basic Information</Text>
+              
+              <Text style={styles.inputLabel}>Age</Text>
+              <TextInput
+                style={styles.input}
+                value={String(editedUser.age)}
+                onChangeText={(text) => setEditedUser({...editedUser, age: parseInt(text) || ''})}
+                keyboardType="numeric"
+              />
+
+              <Text style={styles.inputLabel}>Gender</Text>
+              <View style={styles.radioGroup}>
+                {genderOptions.map((option) => (
+                  <TouchableOpacity
+                    key={option}
+                    style={[
+                      styles.radioButton,
+                      editedUser.gender === option && styles.radioButtonSelected
+                    ]}
+                    onPress={() => setEditedUser({...editedUser, gender: option})}
+                  >
+                    <Text style={styles.radioText}>{option}</Text>
+                  </TouchableOpacity>
+                ))}
+                {editedUser.gender === 'Other' && (
+                  <TextInput
+                    style={styles.otherInput}
+                    value={otherInputs.gender}
+                    onChangeText={(text) => {
+                      setOtherInputs({...otherInputs, gender: text});
+                      setEditedUser({...editedUser, gender: text});
+                    }}
+                    placeholder="Specify gender..."
+                  />
+                )}
+              </View>
+
+              <Text style={styles.inputLabel}>Height (cm)</Text>
+              <TextInput
+                style={styles.input}
+                value={String(editedUser.height)}
+                onChangeText={(text) => setEditedUser({...editedUser, height: parseFloat(text) || ''})}
+                keyboardType="numeric"
+              />
+
+              <Text style={styles.inputLabel}>Weight (kg)</Text>
+              <TextInput
+                style={styles.input}
+                value={String(editedUser.weight)}
+                onChangeText={(text) => setEditedUser({...editedUser, weight: parseFloat(text) || ''})}
+                keyboardType="numeric"
+              />
+            </View>
+
+            {/* Environment */}
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>Environment</Text>
+              <View style={styles.chipGroup}>
+                {environmentOptions.map((option) => (
+                  <TouchableOpacity
+                    key={option}
+                    style={[
+                      styles.chip,
+                      editedUser.environment === option && styles.chipSelected
+                    ]}
+                    onPress={() => setEditedUser({...editedUser, environment: option})}
+                  >
+                    <Text style={[
+                      styles.chipText,
+                      editedUser.environment === option && styles.chipTextSelected
+                    ]}>
+                      {option}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+                {editedUser.environment === 'Other' && (
+                  <TextInput
+                    style={styles.otherInput}
+                    value={otherInputs.environment}
+                    onChangeText={(text) => {
+                      setOtherInputs({...otherInputs, environment: text});
+                      setEditedUser({...editedUser, environment: text});
+                    }}
+                    placeholder="Specify environment..."
+                  />
+                )}
+              </View>
+            </View>
+
+            {/* Vices */}
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>Vices</Text>
+              <View style={styles.chipGroup}>
+                {viceOptions.map((option) => (
+                  <TouchableOpacity
+                    key={option}
+                    style={[
+                      styles.chip,
+                      editedUser.vices.includes(option) && styles.chipSelected
+                    ]}
+                    onPress={() => {
+                      const newVices = editedUser.vices.includes(option)
+                        ? editedUser.vices.filter(v => v !== option)
+                        : [...editedUser.vices, option];
+                      setEditedUser({...editedUser, vices: newVices});
+                    }}
+                  >
+                    <Text style={[
+                      styles.chipText,
+                      editedUser.vices.includes(option) && styles.chipTextSelected
+                    ]}>
+                      {option}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+                {editedUser.vices.includes('Other') && (
+                  <TextInput
+                    style={styles.otherInput}
+                    value={otherInputs.vices}
+                    onChangeText={(text) => {
+                      setOtherInputs({...otherInputs, vices: text});
+                      setEditedUser({...editedUser, vices: [...editedUser.vices.filter(v => v !== 'Other'), text]});
+                    }}
+                    placeholder="Specify vices..."
+                  />
+                )}
+              </View>
+            </View>
+
+            {/* Genetic Diseases */}
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>Genetic Diseases</Text>
+              <TextInput
+                style={[styles.input, styles.textArea]}
+                value={editedUser.genetic_diseases.join(', ')}
+                onChangeText={(text) => setEditedUser({
+                  ...editedUser,
+                  genetic_diseases: text.split(',').map(item => item.trim()).filter(Boolean)
+                })}
+                placeholder="Enter diseases separated by commas"
+                multiline
+              />
+            </View>
+
+            {/* Lifestyle */}
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>Lifestyle</Text>
+              <View style={styles.chipGroup}>
+                {lifestyleOptions.map((option) => (
+                  <TouchableOpacity
+                    key={option}
+                    style={[
+                      styles.chip,
+                      editedUser.lifestyle.includes(option) && styles.chipSelected
+                    ]}
+                    onPress={() => {
+                      const newLifestyle = editedUser.lifestyle.includes(option)
+                        ? editedUser.lifestyle.filter(l => l !== option)
+                        : [...editedUser.lifestyle, option];
+                      setEditedUser({...editedUser, lifestyle: newLifestyle});
+                    }}
+                  >
+                    <Text style={[
+                      styles.chipText,
+                      editedUser.lifestyle.includes(option) && styles.chipTextSelected
+                    ]}>
+                      {option}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+                {editedUser.lifestyle.includes('Other') && (
+                  <TextInput
+                    style={styles.otherInput}
+                    value={otherInputs.lifestyle}
+                    onChangeText={(text) => {
+                      setOtherInputs({...otherInputs, lifestyle: text});
+                      setEditedUser({...editedUser, lifestyle: [...editedUser.lifestyle.filter(l => l !== 'Other'), text]});
+                    }}
+                    placeholder="Specify lifestyle..."
+                  />
+                )}
+              </View>
+            </View>
+
+            {/* Food Intake */}
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>Food Intake</Text>
+              <View style={styles.chipGroup}>
+                {foodIntakeOptions.map((option) => (
+                  <TouchableOpacity
+                    key={option}
+                    style={[
+                      styles.chip,
+                      editedUser.food_intake.includes(option) && styles.chipSelected
+                    ]}
+                    onPress={() => {
+                      const newFoodIntake = editedUser.food_intake.includes(option)
+                        ? editedUser.food_intake.filter(f => f !== option)
+                        : [...editedUser.food_intake, option];
+                      setEditedUser({...editedUser, food_intake: newFoodIntake});
+                    }}
+                  >
+                    <Text style={[
+                      styles.chipText,
+                      editedUser.food_intake.includes(option) && styles.chipTextSelected
+                    ]}>
+                      {option}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+                {editedUser.food_intake.includes('Other') && (
+                  <TextInput
+                    style={styles.otherInput}
+                    value={otherInputs.foodIntake}
+                    onChangeText={(text) => {
+                      setOtherInputs({...otherInputs, foodIntake: text});
+                      setEditedUser({...editedUser, food_intake: [...editedUser.food_intake.filter(f => f !== 'Other'), text]});
+                    }}
+                    placeholder="Specify food intake..."
+                  />
+                )}
+              </View>
+            </View>
+
+            {/* Sleep Hours */}
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>Sleep Hours</Text>
+              <View style={styles.chipGroup}>
+                {sleepOptions.map((option) => (
+                  <TouchableOpacity
+                    key={option}
+                    style={[
+                      styles.chip,
+                      editedUser.sleep_hours === option && styles.chipSelected
+                    ]}
+                    onPress={() => setEditedUser({...editedUser, sleep_hours: option})}
+                  >
+                    <Text style={[
+                      styles.chipText,
+                      editedUser.sleep_hours === option && styles.chipTextSelected
+                    ]}>
+                      {option}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+                {editedUser.sleep_hours === 'Other' && (
+                  <TextInput
+                    style={styles.otherInput}
+                    value={otherInputs.sleepHours}
+                    onChangeText={(text) => {
+                      setOtherInputs({...otherInputs, sleepHours: text});
+                      setEditedUser({...editedUser, sleep_hours: text});
+                    }}
+                    placeholder="Specify sleep hours..."
+                  />
+                )}
+              </View>
+            </View>
+
+            {/* Activeness */}
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>Activity Level</Text>
+              <View style={styles.chipGroup}>
+                {activityLevels.map((option) => (
+                  <TouchableOpacity
+                    key={option}
+                    style={[
+                      styles.chip,
+                      editedUser.activeness === option && styles.chipSelected
+                    ]}
+                    onPress={() => setEditedUser({...editedUser, activeness: option})}
+                  >
+                    <Text style={[
+                      styles.chipText,
+                      editedUser.activeness === option && styles.chipTextSelected
+                    ]}>
+                      {option}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+                {editedUser.activeness === 'Other' && (
+                  <TextInput
+                    style={styles.otherInput}
+                    value={otherInputs.activeness}
+                    onChangeText={(text) => {
+                      setOtherInputs({...otherInputs, activeness: text});
+                      setEditedUser({...editedUser, activeness: text});
+                    }}
+                    placeholder="Specify activity level..."
+                  />
+                )}
+              </View>
+            </View>
+          </ScrollView>
+
+          <View style={styles.modalFooter}>
+            <TouchableOpacity
+              style={styles.cancelButton}
+              onPress={() => setEditModalVisible(false)}
+            >
+              <Text style={styles.cancelButtonText}>Cancel</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.updateButton}
+              onPress={handleUpdateProfile}
+            >
+              <Text style={styles.updateButtonText}>Update Profile</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </View>
+    </Modal>
+  );
+
   if (loading) {
     return (
       <LinearGradient colors={['#e8f5e9', '#c8e6c9']} style={styles.loadingContainer}>
@@ -1112,6 +1520,21 @@ const UserDashboard = ({ navigation }) => {
         strokeWidth: 2,
       },
     ],
+  };
+
+  // Update the display sections for list data
+  const renderListItems = (items) => {
+    if (!items || !items.length) return 'None specified';
+    return (
+      <View style={styles.listContainer}>
+        {items.map((item, index) => (
+          <View key={index} style={styles.listItem}>
+            <Text style={styles.listItemBullet}>•</Text>
+            <Text style={styles.listItemText}>{item}</Text>
+          </View>
+        ))}
+      </View>
+    );
   };
 
   return (
@@ -1270,7 +1693,7 @@ const UserDashboard = ({ navigation }) => {
                     <Ionicons name="calendar-outline" size={24} color="#3a86ff" />
                     <Text style={styles.lifestyleTitle}>Daily Habits</Text>
                   </View>
-                  <Text style={styles.lifestyleText}>{user.lifestyle || 'No lifestyle data available'}</Text>
+                  {renderListItems(user.lifestyle)}
                 </View>
                 
                 <View style={styles.lifestyleCard}>
@@ -1278,7 +1701,7 @@ const UserDashboard = ({ navigation }) => {
                     <Ionicons name="nutrition-outline" size={24} color="#3a86ff" />
                     <Text style={styles.lifestyleTitle}>Nutrition</Text>
                   </View>
-                  <Text style={styles.lifestyleText}>{user.food_intake || 'No nutrition data available'}</Text>
+                  {renderListItems(user.food_intake)}
                 </View>
                 
                 <View style={styles.lifestyleCard}>
@@ -1286,7 +1709,23 @@ const UserDashboard = ({ navigation }) => {
                     <Ionicons name="bed-outline" size={24} color="#3a86ff" />
                     <Text style={styles.lifestyleTitle}>Sleep</Text>
                   </View>
-                  <Text style={styles.lifestyleText}>{user.sleep_hours || '>6 Hours'}</Text>
+                  <Text style={styles.medicalText}>{user.sleep_hours || 'No sleep data available'}</Text>
+                </View>
+
+                <View style={styles.lifestyleCard}>
+                  <View style={styles.lifestyleHeader}>
+                    <Ionicons name="bicycle-outline" size={24} color="#3a86ff" />
+                    <Text style={styles.lifestyleTitle}>Activeness Level</Text>
+                  </View>
+                  <Text style={styles.medicalText}>{user.activeness || 'No activeness data available'}</Text>
+                </View>
+
+                <View style={styles.medicalCard}>
+                  <View style={styles.medicalHeader}>
+                    <Ionicons name="warning-outline" size={24} color="#3a86ff" />
+                    <Text style={styles.medicalTitle}>Vices/Addictions</Text>
+                  </View>
+                  <Text style={styles.medicalText}>{user.vices || 'No risk factors recorded'}</Text>
                 </View>
               </View>
 
@@ -1295,18 +1734,18 @@ const UserDashboard = ({ navigation }) => {
                 <View style={styles.medicalCard}>
                   <View style={styles.medicalHeader}>
                     <Ionicons name="medical-outline" size={24} color="#3a86ff" />
+                    <Text style={styles.medicalTitle}>Genetical Disease</Text>
                   </View>
                   <Text style={styles.medicalText}>{user.genetic_diseases || 'No genetic data available'}</Text>
                 </View>
-                
-                <View style={styles.medicalCard}>
-                  <View style={styles.medicalHeader}>
-                    <Ionicons name="warning-outline" size={24} color="#3a86ff" />
-                    <Text style={styles.medicalTitle}>Risk Factors</Text>
-                  </View>
-                  <Text style={styles.medicalText}>{user.vices || 'No risk factors recorded'}</Text>
-                </View>
               </View>
+              <TouchableOpacity 
+                style={styles.editButton}
+                onPress={handleEditProfile}
+              >
+                <Text style={styles.editButtonText}>Edit Profile</Text>
+              </TouchableOpacity>
+              {renderEditProfileModal()}
               <TouchableOpacity style={styles.exportButton} onPress={handleExportPDF}>
                 <Text style={styles.exportButtonText}>Export PDF</Text>
               </TouchableOpacity>
@@ -1507,6 +1946,39 @@ const UserDashboard = ({ navigation }) => {
       )}
     </View>
   );
+};
+
+const additionalStyles = {
+  listContainer: {
+    marginTop: 5,
+  },
+  listItem: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    marginBottom: 5,
+    paddingLeft: 5,
+  },
+  listItemBullet: {
+    color: '#2e7d32',
+    marginRight: 8,
+    fontSize: 16,
+  },
+  listItemText: {
+    flex: 1,
+    color: '#689f38',
+    fontSize: 16,
+  },
+  otherInput: {
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: 5,
+    padding: 8,
+    marginTop: 5,
+    width: '100%',
+  },
+  chipTextSelected: {
+    color: '#ffffff',
+  },
 };
 
 const styles = StyleSheet.create({
@@ -2286,6 +2758,103 @@ const styles = StyleSheet.create({
     color: '#4B5563',
     fontWeight: '500',
   },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  modalContent: {
+    backgroundColor: 'white',
+    borderRadius: 10,
+    padding: 20,
+    width: '100%',
+    maxWidth: 500,
+    maxHeight: '90%',
+  },
+  modalBody: {
+    flex: 1,
+  },
+  section: {
+    marginBottom: 20,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 10,
+  },
+  input: {
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: 5,
+    padding: 10,
+    marginBottom: 10,
+  },
+  textArea: {
+    height: 100,
+    textAlignVertical: 'top',
+  },
+  chipGroup: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    marginBottom: 10,
+  },
+  chip: {
+    backgroundColor: '#f0f0f0',
+    borderRadius: 20,
+    padding: 8,
+    margin: 4,
+  },
+  chipSelected: {
+    backgroundColor: '#2e7d32',
+  },
+  chipText: {
+    color: '#333',
+  },
+  modalFooter: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    marginTop: 20,
+  },
+  cancelButton: {
+    backgroundColor: '#f0f0f0',
+    padding: 10,
+    borderRadius: 5,
+    marginRight: 10,
+  },
+  updateButton: {
+    backgroundColor: '#2e7d32',
+    padding: 10,
+    borderRadius: 5,
+  },
+  updateButtonText: {
+    color: 'white',
+  },
+  editButton: {
+    backgroundColor: '#2e7d32',
+    padding: 10,
+    borderRadius: 5,
+    marginTop: 10,
+  },
+  editButtonText: {
+    color: 'white',
+    textAlign: 'center',
+  },
+  radioGroup: {
+    flexDirection: 'row',
+    marginBottom: 10,
+  },
+  radioButton: {
+    backgroundColor: '#f0f0f0',
+    padding: 8,
+    borderRadius: 5,
+    marginRight: 10,
+  },
+  radioButtonSelected: {
+    backgroundColor: '#2e7d32',
+  },
+  ...additionalStyles
 });
 
 export default UserDashboard;

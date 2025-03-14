@@ -565,6 +565,51 @@ class UserService:
             print("Error in reset_daily_stats:", str(e))
             raise
 
+# Move these functions outside the UserService class
+async def update_user_profile_service(user_id: str, profile_data: dict):
+    try:
+        # Get current user data
+        current_user = await db.users.find_one({"_id": ObjectId(user_id)})
+        if not current_user:
+            raise HTTPException(status_code=404, detail="User not found")
+
+        # Update only the provided fields
+        update_data = {}
+        for key, value in profile_data.items():
+            if value is not None:  # Only update fields that are provided
+                update_data[key] = value
+
+        if not update_data:
+            return UserInDB(**current_user)
+
+        # Update the user document
+        result = await db.users.update_one(
+            {"_id": ObjectId(user_id)},
+            {"$set": update_data}
+        )
+
+        if result.modified_count == 0:
+            raise HTTPException(status_code=404, detail="No changes made")
+
+        # Fetch and return the updated user
+        updated_user = await db.users.find_one({"_id": ObjectId(user_id)})
+        return UserInDB(**updated_user)
+
+    except Exception as e:
+        print("Error in update_user_profile_service:", str(e))  # Add logging
+        raise HTTPException(status_code=400, detail=str(e))
+
+async def reset_prediction_service(user_id: str):
+    try:
+        # Clear the user's prediction data
+        await db.users.update_one(
+            {"_id": ObjectId(user_id)},
+            {"$set": {"predictions": []}}
+        )
+        return {"message": "Prediction data reset successfully"}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
 # Add this function to initialize the daily reset task
 async def init_daily_reset():
     while True:
