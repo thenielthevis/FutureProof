@@ -7,6 +7,7 @@ from ..models.prediction_model import PredictionInDB
 from app.config import get_database
 from dotenv import load_dotenv
 from pymongo import MongoClient
+from datetime import datetime
 
 # Load environment variables from .env file
 load_dotenv()
@@ -44,14 +45,6 @@ def format_user_info(user: UserInDB) -> str:
     )
 
 async def predict_disease(user: UserInDB) -> dict:
-    # Ensure the predictions collection has a unique index on user_id
-    await predictions_collection.create_index("user_id", unique=True)
-
-    # Check if prediction already exists for the user
-    existing_prediction = await predictions_collection.find_one({"user_id": str(user.id)})
-    if existing_prediction:
-        return existing_prediction  # Return existing prediction
-
     # Format the user information into a prompt
     prompt = format_user_info(user)
 
@@ -113,9 +106,10 @@ async def predict_disease(user: UserInDB) -> dict:
             elif current_section == 'recommendations' and line.startswith('*'):
                 recommendations.append(line[1:].strip())
 
-        # Create the prediction result
+        # Create the prediction result with timestamp
         prediction_result = {
-            "user_id": str(user.id),  # Ensure user_id is a string
+            "user_id": str(user.id),
+            "created_at": datetime.utcnow(),
             "user_info": {
                 "header": "Summary of User Information",
                 "details": f"The user, {user.username}, is a {user.age}-year-old {user.gender} with a {user.activeness} lifestyle, "
@@ -128,12 +122,21 @@ async def predict_disease(user: UserInDB) -> dict:
             "recommendations": recommendations or []
         }
 
-        # Store the prediction result in the database
+        # Store the new prediction
         await predictions_collection.insert_one(prediction_result)
 
         return prediction_result
     else:
         raise Exception(f"GroqCloud API error: {response.status_code} - {response.text}")
+
+async def get_latest_prediction(user_id: str) -> dict:
+    prediction = await predictions_collection.find_one(
+        {"user_id": user_id},
+        sort=[("created_at", -1)]
+    )
+    if prediction:
+        return prediction
+    return None  # Explicitly return None if no prediction found
 
 async def get_most_predicted_disease() -> str:
     pipeline = [
@@ -156,3 +159,9 @@ async def get_top_predicted_diseases() -> list:
     ]
     result = await predictions_collection.aggregate(pipeline).to_list(length=5)
     return [{"condition": item["_id"], "count": item["count"]} for item in result]
+
+async def get_all_user_predictions(user_id: str) -> list:
+    predictions = await predictions_collection.find(
+        {"user_id": user_id}
+    ).sort("created_at", -1).to_list(length=None)
+    return predictions

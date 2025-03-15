@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, ScrollView, Image, ActivityIndicator, Touchable
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getUser, updateUserProfile, resetUserPrediction } from '../API/user_api';
 import { getAvatar } from '../API/avatar_api';
-import { getPrediction } from '../API/prediction_api';
+import { getPrediction, getUserPredictions, createNewPrediction } from '../API/prediction_api';
 import { MaterialIcons, Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { FontAwesome, FontAwesome5 } from 'react-native-vector-icons';
@@ -18,9 +18,38 @@ import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import Toast from 'react-native-toast-message';
 import Chart from 'chart.js/auto';
+import Icon from 'react-native-vector-icons/FontAwesome';
 
 const screenWidth = Dimensions.get('window').width;
 const isMobile = screenWidth < 768;
+
+const formatDate = (dateString) => {
+  try {
+    if (!dateString) {
+      return 'No date available';
+    }
+
+    // Parse MongoDB ISO date string
+    const date = new Date(dateString);
+    
+    if (isNaN(date.getTime())) {
+      console.error('Invalid date:', dateString);
+      return 'No date available';
+    }
+
+    // Format as MM/DD/YYYY HH:mm
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const year = date.getFullYear();
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+
+    return `${month}/${day}/${year} ${hours}:${minutes}`;
+  } catch (error) {
+    console.error('Error formatting date:', error, 'dateString:', dateString);
+    return 'No date available';
+  }
+};
 
 const UserDashboard = ({ navigation }) => {
   const [user, setUser] = useState({});
@@ -56,6 +85,9 @@ const UserDashboard = ({ navigation }) => {
     sleep_hours: '',
     activeness: ''
   });
+
+  // Add new state for all predictions
+  const [allPredictions, setAllPredictions] = useState([]);
 
   // Update the options arrays to match Register.js
   const environmentOptions = ['Hushed', 'Quiet', 'Moderate', 'Loud', 'Deafening', 'Other'];
@@ -230,6 +262,67 @@ const UserDashboard = ({ navigation }) => {
     };
     fetchAssessments();
   }, []);
+
+  useEffect(() => {
+    const fetchPredictions = async () => {
+      try {
+        const token = await AsyncStorage.getItem('token');
+        if (!token) {
+          setError('No token found');
+          setLoading(false);
+          return;
+        }
+
+        // Get all predictions
+        const predictionsData = await getUserPredictions(token);
+        setAllPredictions(predictionsData);
+
+        // Set latest prediction
+        if (predictionsData.length > 0) {
+          setPrediction(predictionsData[0]);
+        }
+      } catch (err) {
+        setError(err.detail || 'An error occurred');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchPredictions();
+  }, []);
+
+  const handleRefreshPrediction = async () => {
+    setLoading(true);
+    try {
+      const token = await AsyncStorage.getItem('token');
+      if (!token) {
+        setError('No token found');
+        return;
+      }
+      // Force create new prediction
+      const newPrediction = await createNewPrediction(token);
+      setPrediction(newPrediction);
+      
+      // Refresh all predictions list
+      const predictionsData = await getUserPredictions(token);
+      setAllPredictions(predictionsData);
+      
+      Toast.show({
+        type: 'success',
+        text1: 'Success',
+        text2: 'New prediction created successfully'
+      });
+    } catch (err) {
+      setError(err.detail || 'An error occurred');
+      Toast.show({
+        type: 'error',
+        text1: 'Error',
+        text2: 'Failed to create new prediction'
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const calculateBMI = (height, weight) => {
     const heightInMeters = height / 100;
@@ -1016,11 +1109,24 @@ const UserDashboard = ({ navigation }) => {
             <div style="margin-top: 10px;">
               <h3>Recommendations - ${assessment.username}</h3>
               <h4>Page 4 of 4</h4>
-              <ul>
-                ${assessment.recommendations.map(rec => `
-                  <li>${rec}</li>
+              <div style="margin-top: 10px;">
+                ${assessment.recommendations.map((rec, index) => `
+                  <div style="margin-bottom: 10px; padding: 16px; border-radius: 8px;">
+                    <div style="margin-bottom: 12px;">
+                      <span style="font-weight: 600; color: #1a1a1a; font-size: 16px;">Recommendation ${index + 1}:</span>
+                      <p style="margin: 8px 0; line-height: 1.5;">${rec.recommendation || 'N/A'}</p>
+                    </div>
+                    <div style="margin-bottom: 12px;">
+                      <span style="font-weight: 600; color: #1a1a1a;">Scientific Basis:</span>
+                      <p style="margin: 8px 0; line-height: 1.5;">${rec.basis || 'N/A'}</p>
+                    </div>
+                    <div>
+                      <span style="font-weight: 600; color: #1a1a1a;">Reference:</span>
+                      <p style="margin: 8px 0; line-height: 1.5;">${rec.reference || 'N/A'}</p>
+                    </div>
+                  </div>
                 `).join('')}
-              </ul>
+              </div>
             </div>
           </div>
         `;
@@ -1120,6 +1226,314 @@ const UserDashboard = ({ navigation }) => {
         setIsLoading(false);
       }
     };
+
+  const handleExportSinglePrediction = async (predictionData, index) => {
+    setIsLoading(true);
+    try {
+      const logo1Base64 = await convertImageToBase64("https://i.ibb.co/GQygLXT9/tuplogo.png");
+      const logo2Base64 = await convertImageToBase64("https://i.ibb.co/YBStKgFC/logo-2.png");
+
+      // Create header content
+      const headerContent = `
+        <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 2px solid #f0f0f0; padding-bottom: 10px;">
+          <img src="${logo1Base64}" alt="Logo 1" style="height: 60px; width: auto;">
+          <div style="flex: 1; text-align: center; margin-top: 15px;">
+            <h1 style="font-size: 18px; margin: 0;">FUTUREPROOF: A Gamified AI Platform for Predictive Health and Preventive Wellness</h1>
+            <br>
+            <h2 style="font-size: 16px; margin: 0;">Health Prediction Report</h2>
+            <h4 style="font-size: 14px; margin: 5px 0 0;">${new Date().toLocaleDateString()}</h4>
+          </div>
+          <img src="${logo2Base64}" alt="Logo 2" style="height: 60px; width: auto;">
+        </div>
+      `;
+
+      // First page with mission and vision
+      const firstPageContent = `
+        <div style="font-family: Arial, sans-serif; padding: 20px; background: #fff; max-width: 900px; margin: 0 auto;">
+          ${headerContent}
+          <div style="margin-top: 20px;">
+            <h3>Our Mission</h3>
+            <p>FutureProof empowers individuals with AI-driven, gamified health insights for proactive well-being. By integrating genetic, lifestyle, and environmental data, we deliver personalized, preventive care solutions.</p>
+            <h3>Our Vision</h3>
+            <p>We envision a future where predictive healthcare transforms lives, making well-being accessible, engaging, and proactive through AI and gamification.</p>
+          </div>
+        </div>
+      `;
+
+      // Create prediction details page
+      const predictionDetailsPage = `
+        <div style="font-family: Arial, sans-serif; padding: 20px; background: #fff; max-width: 900px; margin: 0 auto;">
+          ${headerContent}
+          <div style="margin-top: 20px;">
+            <h3>User Health Information</h3>
+            <p>${predictionData.user_info?.details || 'No details available'}</p>
+            
+            <h3>Risk Analysis</h3>
+            <table style="width: 100%; border-collapse: collapse; margin-top: 20px;">
+              <tr>
+                <th style="padding: 12px; border: 1px solid #ddd; text-align: left; background-color: #f8f9fa;">Health Condition</th>
+                <th style="padding: 12px; border: 1px solid #ddd; text-align: left; background-color: #f8f9fa;">Risk Level</th>
+              </tr>
+              ${predictionData.predicted_diseases?.map(disease => `
+                <tr>
+                  <td style="padding: 12px; border: 1px solid #ddd;">${disease.condition}</td>
+                  <td style="padding: 12px; border: 1px solid #ddd;">${disease.details}</td>
+                </tr>
+              `).join('') || '<tr><td colspan="2" style="padding: 12px; border: 1px solid #ddd;">No prediction data available</td></tr>'}
+            </table>
+
+            <h3>Recommendations</h3>
+            <ul>
+              ${predictionData.recommendations?.map(rec => `<li>${rec}</li>`).join('') || '<li>No recommendations available</li>'}
+            </ul>
+          </div>
+        </div>
+      `;
+
+      // Combine all pages
+      const allPages = [
+        firstPageContent,
+        predictionDetailsPage
+      ].join('<div style="page-break-after: always;"></div>');
+
+      if (Platform.OS === 'web') {
+        try {
+          // For web platform - use jsPDF directly with separate pages
+          const pdf = new jsPDF('p', 'pt', 'a4');
+          
+          // Function to add a page to the PDF
+          const addPageToPdf = async (htmlContent, pageNum) => {
+            const container = document.createElement('div');
+            container.style.width = '595.28pt';
+            container.style.position = 'absolute';
+            container.style.left = '-9999px';
+            container.innerHTML = htmlContent;
+            document.body.appendChild(container);
+            
+            try {
+              await Promise.all(
+                Array.from(container.querySelectorAll('img')).map(img => {
+                  if (img.complete) return Promise.resolve();
+                  return new Promise(resolve => {
+                    img.onload = resolve;
+                    img.onerror = resolve;
+                  });
+                })
+              );
+              
+              const canvas = await html2canvas(container, {
+                scale: 1.0,
+                useCORS: true,
+                logging: false
+              });
+              
+              const pdfWidth = pdf.internal.pageSize.getWidth();
+              
+              if (pageNum > 0) pdf.addPage();
+              
+              pdf.addImage(
+                canvas.toDataURL('image/jpeg', 1.0),
+                'JPEG',
+                0, 0,
+                pdfWidth,
+                canvas.height * (pdfWidth / canvas.width)
+              );
+            } finally {
+              document.body.removeChild(container);
+            }
+          };
+          
+          // Process each page
+          const pages = [firstPageContent, predictionDetailsPage];
+          for (let i = 0; i < pages.length; i++) {
+            await addPageToPdf(pages[i], i);
+          }
+          
+          // Update filename to use prediction number instead of date
+          const predictionNumber = allPredictions.length - index;
+          const fileName = `prediction-report-${predictionNumber}.pdf`;
+          pdf.save(fileName);
+        } catch (err) {
+          console.error('Error generating PDF:', err);
+          Alert.alert('Error', 'Failed to generate PDF. Please try again.');
+        }
+      } else {
+        const { uri } = await Print.printToFileAsync({
+          html: allPages,
+          base64: false
+        });
+        await shareAsync(uri, { UTI: '.pdf', mimeType: 'application/pdf' });
+      }
+
+      Toast.show({
+        type: 'success',
+        text1: 'Success',
+        text2: 'Prediction report exported successfully'
+      });
+    } catch (error) {
+      console.error('Error in handleExportSinglePrediction:', error);
+      Toast.show({
+        type: 'error',
+        text1: 'Error',
+        text2: 'Failed to export prediction report'
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleExportAllPredictions = async () => {
+    setIsLoading(true);
+    try {
+      const logo1Base64 = await convertImageToBase64("https://i.ibb.co/GQygLXT9/tuplogo.png");
+      const logo2Base64 = await convertImageToBase64("https://i.ibb.co/YBStKgFC/logo-2.png");
+
+      // Create header content
+      const headerContent = `
+        <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 2px solid #f0f0f0; padding-bottom: 10px;">
+          <img src="${logo1Base64}" alt="Logo 1" style="height: 60px; width: auto;">
+          <div style="flex: 1; text-align: center; margin-top: 15px;">
+            <h1 style="font-size: 18px; margin: 0;">FUTUREPROOF: A Gamified AI Platform for Predictive Health and Preventive Wellness</h1>
+            <br>
+            <h2 style="font-size: 16px; margin: 0;">All Predictions Report</h2>
+            <h4 style="font-size: 14px; margin: 5px 0 0;">${new Date().toLocaleDateString()}</h4>
+          </div>
+          <img src="${logo2Base64}" alt="Logo 2" style="height: 60px; width: auto;">
+        </div>
+      `;
+
+      // First page with mission and vision
+      const firstPageContent = `
+        <div style="font-family: Arial, sans-serif; padding: 20px; background: #fff; max-width: 900px; margin: 0 auto;">
+          ${headerContent}
+          <div style="margin-top: 20px;">
+            <h3>Our Mission</h3>
+            <p>FutureProof empowers individuals with AI-driven, gamified health insights for proactive well-being. By integrating genetic, lifestyle, and environmental data, we deliver personalized, preventive care solutions.</p>
+            <h3>Our Vision</h3>
+            <p>We envision a future where predictive healthcare transforms lives, making well-being accessible, engaging, and proactive through AI and gamification.</p>
+          </div>
+        </div>
+      `;
+
+      // Create prediction pages
+      const predictionPages = allPredictions.map((pred, index) => `
+        <div style="font-family: Arial, sans-serif; padding: 20px; background: #fff; max-width: 900px; margin: 0 auto;">
+          ${headerContent}
+          <div style="margin-top: 20px;">
+            <h3>Prediction ${index + 1} - ${formatDate(pred.created_at)}</h3>
+            
+            <h4>User Health Information</h4>
+            <p>${pred.user_info?.details || 'No details available'}</p>
+            
+            <h4>Risk Analysis</h4>
+            <table style="width: 100%; border-collapse: collapse; margin-top: 20px;">
+              <tr>
+                <th style="padding: 12px; border: 1px solid #ddd; text-align: left; background-color: #f8f9fa;">Health Condition</th>
+                <th style="padding: 12px; border: 1px solid #ddd; text-align: left; background-color: #f8f9fa;">Risk Level</th>
+              </tr>
+              ${pred.predicted_diseases?.map(disease => `
+                <tr>
+                  <td style="padding: 12px; border: 1px solid #ddd;">${disease.condition}</td>
+                  <td style="padding: 12px; border: 1px solid #ddd;">${disease.details}</td>
+                </tr>
+              `).join('') || '<tr><td colspan="2" style="padding: 12px; border: 1px solid #ddd;">No prediction data available</td></tr>'}
+            </table>
+
+            <h4>Recommendations</h4>
+            <ul>
+              ${pred.recommendations?.map(rec => `<li>${rec}</li>`).join('') || '<li>No recommendations available</li>'}
+            </ul>
+          </div>
+        </div>
+      `);
+
+      // Combine all pages
+      const allPages = [
+        firstPageContent,
+        ...predictionPages
+      ].join('<div style="page-break-after: always;"></div>');
+
+      if (Platform.OS === 'web') {
+        try {
+          const pdf = new jsPDF('p', 'pt', 'a4');
+          
+          // Function to add a page to the PDF
+          const addPageToPdf = async (htmlContent, pageNum) => {
+            const container = document.createElement('div');
+            container.style.width = '595.28pt';
+            container.style.position = 'absolute';
+            container.style.left = '-9999px';
+            container.innerHTML = htmlContent;
+            document.body.appendChild(container);
+            
+            try {
+              await Promise.all(
+                Array.from(container.querySelectorAll('img')).map(img => {
+                  if (img.complete) return Promise.resolve();
+                  return new Promise(resolve => {
+                    img.onload = resolve;
+                    img.onerror = resolve;
+                  });
+                })
+              );
+              
+              const canvas = await html2canvas(container, {
+                scale: 1.0,
+                useCORS: true,
+                logging: false
+              });
+              
+              const pdfWidth = pdf.internal.pageSize.getWidth();
+              
+              if (pageNum > 0) pdf.addPage();
+              
+              pdf.addImage(
+                canvas.toDataURL('image/jpeg', 1.0),
+                'JPEG',
+                0, 0,
+                pdfWidth,
+                canvas.height * (pdfWidth / canvas.width)
+              );
+            } finally {
+              document.body.removeChild(container);
+            }
+          };
+          
+          // Process each page
+          const pages = [firstPageContent, ...predictionPages];
+          for (let i = 0; i < pages.length; i++) {
+            await addPageToPdf(pages[i], i);
+          }
+          
+          pdf.save(`all-predictions-${new Date().toLocaleDateString().replace(/\//g, '-')}.pdf`);
+        } catch (err) {
+          console.error('Error generating PDF:', err);
+          Alert.alert('Error', 'Failed to generate PDF. Please try again.');
+        }
+      } else {
+        const { uri } = await Print.printToFileAsync({
+          html: allPages,
+          base64: false
+        });
+        await shareAsync(uri, { UTI: '.pdf', mimeType: 'application/pdf' });
+      }
+
+      Toast.show({
+        type: 'success',
+        text1: 'Success',
+        text2: 'All predictions exported successfully'
+      });
+    } catch (error) {
+      console.error('Error in handleExportAllPredictions:', error);
+      Toast.show({
+        type: 'error',
+        text1: 'Error',
+        text2: 'Failed to export predictions'
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const handleEditProfile = () => {
     setEditedUser({
@@ -1635,6 +2049,10 @@ const UserDashboard = ({ navigation }) => {
                   </View>
                 </LinearGradient>
               </View>
+              
+              <TouchableOpacity style={styles.exportButton} onPress={handleExportPDF}>
+                <Text style={styles.exportButtonText}>Export PDF</Text>
+              </TouchableOpacity>
 
               <View style={styles.statsRow}>
                 <View style={[styles.statCard, { backgroundColor: '#ffffff' }]}>
@@ -1746,17 +2164,60 @@ const UserDashboard = ({ navigation }) => {
                 <Text style={styles.editButtonText}>Edit Profile</Text>
               </TouchableOpacity>
               {renderEditProfileModal()}
-              <TouchableOpacity style={styles.exportButton} onPress={handleExportPDF}>
-                <Text style={styles.exportButtonText}>Export PDF</Text>
-              </TouchableOpacity>
             </View>
           )}
 
           {activeTab === 'prediction' && (
             <View style={styles.tabContent}>
+              <Text style={styles.sectionTitle}>Latest Prediction</Text>
               {formatPrediction(prediction)}
+              
+              {/* List of All Predictions */}
+              <View style={styles.allPredictionsContainer}>
+                <View style={styles.predictionsHeader}>
+                  <Text style={styles.sectionTitle}>Prediction History</Text>
+                  <TouchableOpacity
+                    style={styles.exportAllButton}
+                    onPress={handleExportAllPredictions}
+                  >
+                    <Icon name="download" size={18} color="#fff" />
+                    <Text style={styles.exportAllButtonText}>Export All</Text>
+                  </TouchableOpacity>
+                </View>
+                
+                <ScrollView style={styles.predictionsScrollView}>
+                  {allPredictions.map((pred, index) => (
+                    <View key={index} style={styles.predictionHistoryCard}>
+                      <View style={styles.predictionHistoryHeader}>
+                        <Text style={styles.predictionDate}>
+                          Prediction #{allPredictions.length - index}
+                        </Text>
+                        <TouchableOpacity
+                          style={styles.exportPredictionButton}
+                          onPress={() => handleExportSinglePrediction(pred, index)}
+                        >
+                          <Icon name="download" size={18} color="#fff" />
+                          <Text style={styles.updateButtonText}>Export</Text>
+                        </TouchableOpacity>
+                      </View>
+                      <View style={styles.predictionSummary}>
+                        <Text style={styles.predictionSummaryText}>
+                          Number of identified risks: {pred.predicted_diseases?.length || 0}
+                        </Text>
+                      </View>
+                    </View>
+                  ))}
+                </ScrollView>
+              </View>
+              <TouchableOpacity
+                style={styles.refreshButton}
+                onPress={handleRefreshPrediction}
+              >
+                <Icon name="refresh" size={20} color="#fff" />
+                <Text style={styles.updateButtonText}>Update Prediction</Text>
+              </TouchableOpacity>
               <TouchableOpacity style={styles.exportButton} onPress={handleExportPDF}>
-                <Text style={styles.exportButtonText}>Export PDF</Text>
+                <Text style={styles.exportButtonText}>Export PDF Charts</Text>
               </TouchableOpacity>
             </View>
           )}
@@ -1896,41 +2357,39 @@ const UserDashboard = ({ navigation }) => {
                 </View>
               </View>
 
-              {/* Table Structure */}
-              <ScrollView horizontal>
-                <View style={styles.assessmentTableContainer}>
-                  {/* Table Header */}
-                  <View style={styles.assessmentTableHeader}>
-                    <Text style={styles.assessmentTableHeaderText}>Date</Text>
-                    <Text style={styles.assessmentTableHeaderText}>Action</Text>
-                  </View>
-
-                  {/* Table Data */}
-                  {filteredAssessments.length > 0 ? (
-                    filteredAssessments.map((assessment, index) => (
-                      <View key={index} style={styles.assessmentTableRow}>
-                        {/* Date Column */}
-                        <Text style={styles.assessmentTableCell}>
-                          {new Date(assessment.date).toLocaleDateString()}
-                        </Text>
-
-                        {/* Action Button Column */}
-                        <View style={styles.assessmentTableActionCell}>
-                          <TouchableOpacity
-                            style={styles.assessmentExportButton}
-                            onPress={() => handleExportUserPDF(assessment)}
-                          >
-                            <Ionicons name="download-outline" size={16} color="white" />
-                            <Text style={styles.assessmentExportButtonText}>Export</Text>
-                          </TouchableOpacity>
-                        </View>
-                      </View>
-                    ))
-                  ) : (
-                    <Text style={styles.assessmentNoAssessmentsText}>No assessments found</Text>
-                  )}
+              {/* Table Structure - Remove ScrollView */}
+              <View style={styles.assessmentTableContainer}>
+                {/* Table Header */}
+                <View style={styles.assessmentTableHeader}>
+                  <Text style={styles.assessmentTableHeaderText}>Date</Text>
+                  <Text style={[styles.assessmentTableHeaderText, styles.actionColumn]}>Action</Text>
                 </View>
-              </ScrollView>
+
+                {/* Table Data */}
+                {filteredAssessments.length > 0 ? (
+                  filteredAssessments.map((assessment, index) => (
+                    <View key={index} style={styles.assessmentTableRow}>
+                      {/* Date Column */}
+                      <Text style={styles.assessmentTableCell}>
+                        {new Date(assessment.date).toLocaleDateString()}
+                      </Text>
+
+                      {/* Action Button Column */}
+                      <View style={[styles.assessmentTableActionCell, styles.actionColumn]}>
+                        <TouchableOpacity
+                          style={styles.assessmentExportButton}
+                          onPress={() => handleExportUserPDF(assessment)}
+                        >
+                          <Ionicons name="download-outline" size={16} color="white" />
+                          <Text style={styles.assessmentExportButtonText}>Export</Text>
+                        </TouchableOpacity>
+                      </View>
+                    </View>
+                  ))
+                ) : (
+                  <Text style={styles.assessmentNoAssessmentsText}>No assessments found</Text>
+                )}
+              </View>
             </View>
           )}
         </ScrollView>
@@ -1978,6 +2437,73 @@ const additionalStyles = {
   },
   chipTextSelected: {
     color: '#ffffff',
+  },
+  allPredictionsContainer: {
+    marginTop: 20,
+    backgroundColor: '#ffffff',
+    borderRadius: 10,
+    padding: 15,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  predictionsScrollView: {
+    maxHeight: 300,
+  },
+  predictionHistoryCard: {
+    backgroundColor: '#f8f9fa',
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 10,
+    borderWidth: 1,
+    borderColor: '#e9ecef',
+  },
+  predictionHistoryHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  predictionDate: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#2e7d32',
+  },
+  exportPredictionButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#2e7d32',
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 5,
+  },
+  predictionSummary: {
+    marginTop: 5,
+  },
+  predictionSummaryText: {
+    fontSize: 14,
+    color: '#666',
+  },
+  predictionsHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 15,
+  },
+  exportAllButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#2e7d32',
+    paddingVertical: 8,
+    paddingHorizontal: 15,
+    borderRadius: 5,
+  },
+  exportAllButtonText: {
+    color: '#fff',
+    marginLeft: 8,
+    fontSize: 16,
   },
 };
 
@@ -2624,6 +3150,7 @@ const styles = StyleSheet.create({
   assessmentTabContent: {
     flex: 1,
     padding: 20,
+    width: '100%',
   },
   assessmentSectionTitle: {
     fontSize: 22,
@@ -2636,6 +3163,8 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between', // Ensures space between export & search
     alignItems: 'center',
     marginBottom: 15,
+    flexWrap: 'wrap',
+    gap: 10,
   },
   assessmentExportButton: {
     flexDirection: 'row',
@@ -2653,6 +3182,8 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   assessmentSearchContainer: {
+    flex: 1,
+    minWidth: 250,
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#fff',
@@ -2668,50 +3199,50 @@ const styles = StyleSheet.create({
   },
   assessmentSearchButton: {
     padding: 10,
-    backgroundColor: '#007bff',
+    backgroundColor: '#28a745',
     borderRadius: 5,
   },
   assessmentTableContainer: {
+    flex: 1,
     width: '100%',
-    minWidth: '78vw', // Makes table take full width
     backgroundColor: '#fff',
     borderRadius: 8,
     overflow: 'hidden',
     borderWidth: 1,
     borderColor: '#ddd',
-    alignSelf: 'center',
   },
   assessmentTableHeader: {
     flexDirection: 'row',
-    backgroundColor: '#007bff',
+    backgroundColor: '#28a745',
     paddingVertical: 12,
+    paddingHorizontal: 10,
   },
   assessmentTableHeaderText: {
-    flex: 2, // Adjusts based on other column widths
+    flex: 3,
     fontSize: 16,
     fontWeight: 'bold',
     color: 'white',
-    textAlign: 'center',
   },
   assessmentTableRow: {
     flexDirection: 'row',
     borderBottomWidth: 1,
     borderBottomColor: '#ddd',
     paddingVertical: 12,
-    alignItems: 'center', // Centers content vertically
+    paddingHorizontal: 10,
+    alignItems: 'center',
   },
   assessmentTableCell: {
-    flex: 2, // Makes sure date takes more space
-    textAlign: 'center',
+    flex: 3,
     fontSize: 16,
-    paddingVertical: 10,
     color: '#333',
   },
   assessmentTableActionCell: {
-    flex: 1, // Smaller column for button
-    justifyContent: 'center',
-    alignItems: 'center',
-  },    
+    flex: 1,
+    alignItems: 'flex-start',
+  },
+  actionColumn: {
+    flex: 1,
+  },
   assessmentNoAssessmentsText: {
     padding: 20,
     textAlign: 'center',
@@ -2830,6 +3361,7 @@ const styles = StyleSheet.create({
   },
   updateButtonText: {
     color: 'white',
+    marginLeft: 5,
   },
   editButton: {
     backgroundColor: '#2e7d32',
@@ -2853,6 +3385,17 @@ const styles = StyleSheet.create({
   },
   radioButtonSelected: {
     backgroundColor: '#2e7d32',
+  },
+  refreshButton: {
+    backgroundColor: '#2E7D32',
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 5,
+    alignSelf: 'flex-end',
+    marginBottom: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 10,
   },
   ...additionalStyles
 });

@@ -1,6 +1,7 @@
 from pydantic import BaseModel, Field
 from typing import List
 from bson import ObjectId
+from datetime import datetime
 
 class DiseasePrediction(BaseModel):
     condition: str
@@ -20,6 +21,10 @@ class PredictionResponse(BaseModel):
 class PredictionInDB(PredictionResponse):
     id: ObjectId = Field(default_factory=ObjectId, alias="_id")
     user_id: str
+    created_at: datetime = Field(default_factory=datetime.utcnow)
 
     class Config:
         arbitrary_types_allowed = True
+        json_encoders = {
+            datetime: lambda dt: dt.isoformat()  # Ensure consistent date formatting
+        }
