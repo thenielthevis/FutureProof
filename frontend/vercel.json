@@ -1,8 +1,11 @@
 {
-  "buildCommand": "npm install && npm run build",
+  "buildCommand": "npm run build",
   "outputDirectory": "web-build",
-  "rewrites": [
-    { "source": "/(.*)", "destination": "/index.html" }
-  ],
-  "installCommand": "npm install"
+  "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }],
+  "env": {
+    "EXPO_PUBLIC_API_URL": "https://futureproof-backend.onrender.com"
+  },
+  "installCommand": "npm install",
+  "framework": null,
+  "nodeVersion": "18.x"
 }
