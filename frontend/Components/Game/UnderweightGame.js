@@ -132,7 +132,7 @@ const UnderweightGame = ({ setGameCompleted, setBmiCategory }) => {
 
   const playEatingSound = async () => {
     const { sound } = await Audio.Sound.createAsync(
-      require('../../assets/food/eating.mp3')
+      require('../../assets/sound-effects/eating.mp3')
     );
     setSound(sound);
     await sound.playAsync();

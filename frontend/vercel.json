@@ -9,20 +9,33 @@
     "framework": null,
     "routes": [
       {
+        "src": "/assets/(.*\\.mp3)",
+        "headers": { 
+          "cache-control": "public, max-age=31536000, immutable",
+          "content-type": "audio/mpeg"
+        },
+        "continue": true
+      },
+      {
+        "src": "/assets/sound-effects/(.*\\.mp3)",
+        "headers": { 
+          "cache-control": "public, max-age=31536000, immutable",
+          "content-type": "audio/mpeg"
+        },
+        "continue": true
+      },
+      {
         "src": "/assets/(.*)",
-        "dest": "/assets/$1"
+        "headers": { "cache-control": "public, max-age=31536000, immutable" },
+        "continue": true
       },
       {
-        "src": "/public/(.*)",
-        "dest": "/public/$1"
+        "src": "/videos/(.*\\.mp4)",
+        "headers": { "cache-control": "public, max-age=31536000, immutable" },
+        "continue": true
       },
       {
-        "src": "/videos/(.*)",
-        "dest": "/videos/$1"
+        "handle": "filesystem"
       }
-    ],
-    "staticFiles": {
-      "include": ["assets/**", "public/**", "videos/**"]
-    }
-  }
-  
+    ]
+}

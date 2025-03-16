@@ -82,7 +82,7 @@ const MeditationBreathingModal = ({ visible, onClose, onBack }) => {
         await TrackPlayer.setupPlayer();
         await TrackPlayer.add({
           id: '1',
-          url: require('../assets/relaxing-music.mp3'),
+          url: require('../assets/sound-effects/relaxing-music.mp3'),
           title: 'Relaxing Music',
           artist: 'Unknown',
         });

@@ -320,7 +320,7 @@ const handleNextFoodSet = () => {
   };
 
     const playEatingSound = async () => {
-     const { sound } = await Audio.Sound.createAsync(require('../../assets/food/eating.mp3'));
+     const { sound } = await Audio.Sound.createAsync(require('../../assets/sound-effects/eating.mp3'));
       setSound(sound);
       await sound.playAsync();
    };
