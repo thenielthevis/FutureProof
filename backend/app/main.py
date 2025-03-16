@@ -11,18 +11,22 @@ app = FastAPI()
 
 # CORS configuration
 origins = [
-    "http://localhost:8081",  # React Native / Expo
-    "http://127.0.0.1:8000",  # Backend itself (for local testing)
-    "http://localhost",       # Localhost for web testing
-    "http://172.34.6.61:8000", # Your machine's IP
-    "http://10.0.2.2:8000",   # Android emulator accessing backend
-    "http://172.34.6.61:8081",
+    "http://localhost:8081",      # React Native / Expo
+    "http://localhost:19006",     # Expo web
+    "http://localhost:19000",     # Expo development
+    "http://localhost:19001",     # Expo development alternate
+    "http://localhost:19002",     # Expo dev tools
+    "http://192.168.68.65:8081", # Your local IP for Expo
+    "http://192.168.68.65:19006",# Your local IP for Expo web
+    "http://192.168.68.65:19000",# Your local IP for Expo development
+    "http://10.0.2.2:8081",      # Android emulator
+    "exp://192.168.68.65:19000"  # Expo development URL
 ]
 
 # Add CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # List of allowed origins
+    allow_origins=origins,        # Use the origins list instead of "*"
     allow_credentials=True,
     allow_methods=["*"],  # Allows all methods (GET, POST, PUT, DELETE, etc.)
     allow_headers=["*"],  # Allows all headers

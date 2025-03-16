@@ -2,10 +2,9 @@ import axios from 'axios';
 import { Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-// Set the API base URL based on the platform
 const API_URL = Platform.OS === 'android' 
-  ? 'http://192.168.68.65:8000'  // Android Emulator
-  : 'http://localhost:8000';  // iOS Simulator and Web
+  ? process.env.EXPO_PUBLIC_API_URL_ANDROID
+  : process.env.EXPO_PUBLIC_API_URL_IOS_WEB;
 
 // Create a new achievement
 export const createAchievement = async (achievementData) => {

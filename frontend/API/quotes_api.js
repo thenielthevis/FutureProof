@@ -3,10 +3,9 @@ import { Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import jwtDecode from 'jwt-decode'; // Fix import statement
 
-// Set the API base URL based on the platform
 const API_URL = Platform.OS === 'android' 
-  ? 'http://192.168.68.65:8000'  // Android Emulator
-  : 'http://localhost:8000';  // iOS Simulator and Web
+  ? process.env.EXPO_PUBLIC_API_URL_ANDROID
+  : process.env.EXPO_PUBLIC_API_URL_IOS_WEB;
 
 // Fetch all quotes
 export const readQuotes = async () => { // Fix function name

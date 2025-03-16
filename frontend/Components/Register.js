@@ -64,6 +64,11 @@ const Register = ({ navigation }) => {
   const [otpError, setOtpError] = useState('');
   const [isOtpSent, setIsOtpSent] = useState(false);
 
+  const API_URL = Platform.OS === 'android' 
+  ? process.env.EXPO_PUBLIC_API_URL_ANDROID
+  : process.env.EXPO_PUBLIC_API_URL_IOS_WEB;
+
+  console.log('Current API_URL:', API_URL); // Add this line for debugging
 
   const handleCheckboxToggle = (option, setState, state) => {
     setState(state.includes(option) ? state.filter(item => item !== option) : [...state, option]);
@@ -100,7 +105,7 @@ const Register = ({ navigation }) => {
 
   const sendEmail = async (email, username) => {
     try {
-      const response = await axios.post('http://localhost:8000/send-email/', {
+      const response = await axios.post(`${API_URL}/send-email/`, {
         to_email: email,
         subject: 'Welcome to FutureProof',
         message: `Hello ${username}, welcome to FutureProof! We are excited to have you on board.`,
@@ -124,7 +129,7 @@ const Register = ({ navigation }) => {
     }
   
     try {
-      const response = await axios.post('http://localhost:8000/verify-otp/', {
+      const response = await axios.post(`${API_URL}/verify-otp/`, {
         email: email,
         otp: otp
       });
@@ -261,7 +266,7 @@ const Register = ({ navigation }) => {
       };
   
       // Send data to Python server
-      const registerResponse = await axios.post('http://localhost:8000/register/', userData);
+      const registerResponse = await axios.post(`${API_URL}/register/`, userData);
       console.log('Register success:', registerResponse);
   
       Toast.hide();
