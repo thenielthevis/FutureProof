@@ -5,9 +5,11 @@
   "main": "index.js",
   "scripts": {
     "start": "expo start",
+    "web": "expo start --web",
+    "build": "expo export:web",
     "android": "expo start --android",
     "ios": "expo start --ios",
-    "web": "expo start --web"
+    "vercel-build": "expo export:web && mv dist web-build"
   },
   "dependencies": {
     "@babel/runtime": "^7.26.9",
