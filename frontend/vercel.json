@@ -1,6 +1,6 @@
 {
   "buildCommand": "npm run build",
-  "outputDirectory": "web-build",
+  "outputDirectory": "dist",
   "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }],
   "env": {
     "EXPO_PUBLIC_API_URL": "https://futureproof-backend.onrender.com"

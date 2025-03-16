@@ -1,8 +1,9 @@
 {
   "expo": {
-    "name": "frontend",
-    "slug": "frontend",
+    "name": "FutureProof",
+    "slug": "futureproof",
     "version": "1.0.0",
+    "platforms": ["web"],
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
@@ -22,7 +23,8 @@
       }
     },
     "web": {
-      "favicon": "./assets/favicon.png"
+      "favicon": "./assets/favicon.png",
+      "bundler": "metro"
     },
     "plugins": [
       "expo-video"
