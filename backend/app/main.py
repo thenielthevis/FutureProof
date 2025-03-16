@@ -3,42 +3,47 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import smtplib
 from app.config import get_database, print_mongo_connection_info
-from app.routes import user_routes, prediction_routes, avatar_routes, daily_reward_routes, health_quiz_routes, meditation_breathing_routes, physical_activity_routes, nutritional_tracking_routes, asset_routes, purchased_item_routes, quote_routes, task_completion_routes, daily_assessment_routes, owned_asset_routes, default_asset_routes, achievement_routes
+from app.routes import (
+    user_routes, prediction_routes, avatar_routes, daily_reward_routes, health_quiz_routes, 
+    meditation_breathing_routes, physical_activity_routes, nutritional_tracking_routes, 
+    asset_routes, purchased_item_routes, quote_routes, task_completion_routes, 
+    daily_assessment_routes, owned_asset_routes, default_asset_routes, achievement_routes
+)
 from app.services.user_service import register_user, verify_user_otp
 from app.models.user_model import UserCreate
 
 app = FastAPI()
 
-# CORS configuration
+# ✅ Updated CORS configuration
 origins = [
-    "http://localhost:8081",      # React Native / Expo
+    "http://localhost:8081",      # React Native / Expo (local dev)
     "http://localhost:19006",     # Expo web
     "http://localhost:19000",     # Expo development
     "http://localhost:19001",     # Expo development alternate
     "http://localhost:19002",     # Expo dev tools
-    "http://192.168.68.65:8081", # Your local IP for Expo
-    "http://192.168.68.65:19006",# Your local IP for Expo web
-    "http://192.168.68.65:19000",# Your local IP for Expo development
-    "http://10.0.2.2:8081",      # Android emulator
-    "exp://192.168.68.65:19000"  # Expo development URL
+    "http://192.168.68.65:8081",  # Local network Expo
+    "http://192.168.68.65:19006", # Local network Expo web
+    "http://192.168.68.65:19000", # Local network Expo development
+    "http://10.0.2.2:8081",       # Android emulator
+    "exp://192.168.68.65:19000",  # Expo dev URL
+    "https://future-proof-nbaa.vercel.app"  # ✅ Added Vercel frontend
 ]
 
-# Add CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,        # Use the origins list instead of "*"
+    allow_origins=origins,       # ✅ Include Vercel frontend
     allow_credentials=True,
-    allow_methods=["*"],  # Allows all methods (GET, POST, PUT, DELETE, etc.)
-    allow_headers=["*"],  # Allows all headers
+    allow_methods=["*"],         # ✅ Allow all HTTP methods
+    allow_headers=["*"],         # ✅ Allow all headers
 )
 
-# Define request model for email
+# ✅ Define request model for email
 class EmailRequest(BaseModel):
     to_email: str
     subject: str
     message: str
 
-# Mailtrap SMTP Credentials
+# ✅ Mailtrap SMTP Credentials
 MAILTRAP_HOST = "smtp.mailtrap.io"
 MAILTRAP_PORT = 2525
 MAILTRAP_USERNAME = "3e5da143b7a5f6"
@@ -66,7 +71,7 @@ Subject: {email_data.subject}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-# Endpoint for user registration
+# ✅ Endpoint for user registration
 @app.post("/register/")
 async def register(user: UserCreate):
     registered_user = await register_user(user)
@@ -74,7 +79,7 @@ async def register(user: UserCreate):
         raise HTTPException(status_code=400, detail="User already exists")
     return {"message": "User registered successfully. Please check your email for the OTP."}
 
-# Endpoint for OTP verification
+# ✅ Endpoint for OTP verification
 class OTPVerificationRequest(BaseModel):
     email: str
     otp: str
@@ -84,7 +89,7 @@ async def verify_otp(request: OTPVerificationRequest):
     result = await verify_user_otp(request.email, request.otp)
     return result
 
-# Include routers
+# ✅ Include all routes
 app.include_router(user_routes.router)
 app.include_router(prediction_routes.router)
 app.include_router(avatar_routes.router)
@@ -102,14 +107,13 @@ app.include_router(owned_asset_routes.router)
 app.include_router(default_asset_routes.router)
 app.include_router(achievement_routes.router)
 
-# MongoDB connection setup at startup
+# ✅ MongoDB connection setup at startup
 @app.on_event("startup")
 async def startup_db():
     try:
-        # Print MongoDB connection info
-        print_mongo_connection_info()
+        print_mongo_connection_info()  # Print MongoDB connection info
 
-        # Test MongoDB connection
+        # ✅ Test MongoDB connection
         db = get_database()
         await db.command("ping")
         print("MongoDB connection is healthy.")
