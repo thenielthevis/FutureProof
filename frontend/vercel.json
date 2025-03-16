@@ -6,6 +6,5 @@
     "EXPO_PUBLIC_API_URL": "https://futureproof-backend.onrender.com"
   },
   "installCommand": "npm install",
-  "framework": null,
-  "nodeVersion": "18.x"
+  "framework": null
 }
