@@ -6,12 +6,12 @@ import {
   StyleSheet, 
   TextInput, 
   ScrollView, 
-  Alert, 
+  Modal, 
   Animated, 
   ActivityIndicator,
-  Platform // Add this import
+  Platform
 } from 'react-native';
-import { getAllUsers, disableUser, disableInactiveUsers, deleteDisabledUsers, enableUser } from '../API/user_api';
+import { getAllUsers, disableUser, disableInactiveUsers, enableUser } from '../API/user_api';
 import { useNavigation } from '@react-navigation/native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { FontAwesome, FontAwesome5, Ionicons, MaterialIcons } from '@expo/vector-icons';
@@ -32,6 +32,19 @@ const Users = () => {
   const [headerAnimation] = useState(new Animated.Value(0));
   const navigation = useNavigation();
   const [isLoading, setIsLoading] = useState(false);
+  const [modalVisible, setModalVisible] = useState(false);
+  const [modalConfig, setModalConfig] = useState({
+    title: '',
+    message: '',
+    onConfirm: null,
+    confirmText: '',
+    type: ''
+  });
+  const [toast, setToast] = useState({
+    visible: false,
+    message: '',
+    type: 'success' // 'success', 'error', 'info'
+  });
 
   const toggleSidebar = () => {
     setSidebarCollapsed(!sidebarCollapsed);
@@ -47,7 +60,7 @@ const Users = () => {
         setFilteredUsers(usersData);
       } catch (error) {
         console.error('Error fetching users:', error);
-        Alert.alert('Error', 'Failed to load users. Please try again.');
+        showToast('Failed to load users. Please try again.', 'error');
       } finally {
         setLoading(false);
       }
@@ -247,7 +260,7 @@ const Users = () => {
           pdf.save('users-report.pdf');
         } catch (err) {
           console.error('Error generating PDF:', err);
-          Alert.alert('Error', 'Failed to generate PDF. Please try again.');
+          showToast('Failed to generate PDF. Please try again.', 'error');
         }
       } else {
         // For mobile platforms
@@ -261,164 +274,119 @@ const Users = () => {
           await shareAsync(uri, { UTI: '.pdf', mimeType: 'application/pdf' });
         } catch (error) {
           console.error('Error generating PDF:', error);
-          Alert.alert('Error', 'Failed to generate PDF. Please try again.');
+          showToast('Failed to generate PDF. Please try again.', 'error');
         }
       }
     } catch (error) {
       console.error('Error in handleExportPDF:', error);
-      Alert.alert('Error', 'Something went wrong. Please try again.');
+      showToast('Something went wrong. Please try again.', 'error');
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleDisableUser = async (userId, username) => {
-    console.log(`Disabling user: ${username} with ID: ${userId}`); // Debugging line
-    Alert.alert(
+  const handleDisableUser = (userId, username) => {
+    showModal(
       "Confirm Disable",
       `Are you sure you want to disable user "${username}"?`,
-      [
-        { text: "Cancel", style: "cancel" },
-        { 
-          text: "Disable", 
-          style: "destructive",
-          onPress: async () => {
-            try {
-              setLoading(true);
-              const token = await AsyncStorage.getItem('token');
-              await disableUser(token, userId);
-              const updatedUsers = await getAllUsers(token);
-              setUsers(updatedUsers);
-              setFilteredUsers(
-                updatedUsers.filter(user => 
-                  user.username.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                  user.email.toLowerCase().includes(searchQuery.toLowerCase())
-                )
-              );
-              Alert.alert('Success', `User "${username}" disabled successfully`);
-            } catch (error) {
-              console.error('Error disabling user:', error);
-              Alert.alert('Error', 'Failed to disable user. Please try again.');
-            } finally {
-              setLoading(false);
-            }
-          }
-        },
-      ]
+      async () => {
+        try {
+          setLoading(true);
+          const token = await AsyncStorage.getItem('token');
+          await disableUser(token, userId);
+          const updatedUsers = await getAllUsers(token);
+          setUsers(updatedUsers);
+          setFilteredUsers(
+            updatedUsers.filter(user => 
+              user.username.toLowerCase().includes(searchQuery.toLowerCase()) ||
+              user.email.toLowerCase().includes(searchQuery.toLowerCase())
+            )
+          );
+          showToast(`User "${username}" disabled successfully`);
+        } catch (error) {
+          console.error('Error disabling user:', error);
+          showToast('Failed to disable user. Please try again.', 'error');
+        } finally {
+          setLoading(false);
+        }
+      },
+      "Disable",
+      "danger"
     );
-  };
-
-  const handleDisableUserDirect = async (userId, username) => {
-    try {
-      setLoading(true);
-      const token = await AsyncStorage.getItem('token');
-      await disableUser(token, userId);
-      const updatedUsers = await getAllUsers(token);
-      setUsers(updatedUsers);
-      setFilteredUsers(
-        updatedUsers.filter(user => 
-          user.username.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          user.email.toLowerCase().includes(searchQuery.toLowerCase())
-        )
-      );
-      Alert.alert('Success', `User "${username}" disabled successfully`);
-    } catch (error) {
-      console.error('Error disabling user:', error);
-      Alert.alert('Error', 'Failed to disable user. Please try again.');
-    } finally {
-      setLoading(false);
-    }
   };
 
   const handleEnableUser = async (userId, username) => {
-    try {
-      setLoading(true);
-      const token = await AsyncStorage.getItem('token');
-      await enableUser(token, userId);
-      const updatedUsers = await getAllUsers(token);
-      setUsers(updatedUsers);
-      setFilteredUsers(
-        updatedUsers.filter(user => 
-          user.username.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          user.email.toLowerCase().includes(searchQuery.toLowerCase())
-        )
-      );
-      Alert.alert('Success', `User "${username}" enabled successfully`);
-    } catch (error) {
-      console.error('Error enabling user:', error);
-      Alert.alert('Error', 'Failed to enable user. Please try again.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleDisableInactiveUsers = async () => {
-    Alert.alert(
-      "Confirm Disable Inactive Users",
-      "Are you sure you want to disable all inactive users?",
-      [
-        { text: "Cancel", style: "cancel" },
-        { 
-          text: "Disable Inactive", 
-          style: "destructive",
-          onPress: async () => {
-            try {
-              setLoading(true);
-              const token = await AsyncStorage.getItem('token');
-              await disableInactiveUsers(token);
-              const updatedUsers = await getAllUsers(token);
-              setUsers(updatedUsers);
-              setFilteredUsers(
-                updatedUsers.filter(user => 
-                  user.username.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                  user.email.toLowerCase().includes(searchQuery.toLowerCase())
-                )
-              );
-              Alert.alert('Success', 'Inactive users disabled successfully');
-            } catch (error) {
-              console.error('Error disabling inactive users:', error);
-              Alert.alert('Error', 'Failed to disable inactive users. Please try again.');
-            } finally {
-              setLoading(false);
-            }
-          }
-        },
-      ]
+    showModal(
+      "Confirm Enable",
+      `Are you sure you want to enable user "${username}"?`,
+      async () => {
+        try {
+          setLoading(true);
+          const token = await AsyncStorage.getItem('token');
+          await enableUser(token, userId);
+          const updatedUsers = await getAllUsers(token);
+          setUsers(updatedUsers);
+          setFilteredUsers(
+            updatedUsers.filter(user => 
+              user.username.toLowerCase().includes(searchQuery.toLowerCase()) ||
+              user.email.toLowerCase().includes(searchQuery.toLowerCase())
+            )
+          );
+          showToast(`User "${username}" enabled successfully`);
+        } catch (error) {
+          console.error('Error enabling user:', error);
+          showToast('Failed to enable user. Please try again.', 'error');
+        } finally {
+          setLoading(false);
+        }
+      },
+      "Enable",
+      "sucess"
     );
   };
 
-  const handleDeleteDisabledUsers = async () => {
-    Alert.alert(
-      "Confirm Delete Disabled Users",
-      "Are you sure you want to permanently delete all disabled users? This action cannot be undone.",
-      [
-        { text: "Cancel", style: "cancel" },
-        { 
-          text: "Delete Permanently", 
-          style: "destructive",
-          onPress: async () => {
-            try {
-              setLoading(true);
-              const token = await AsyncStorage.getItem('token');
-              await deleteDisabledUsers(token);
-              const updatedUsers = await getAllUsers(token);
-              setUsers(updatedUsers);
-              setFilteredUsers(
-                updatedUsers.filter(user => 
-                  user.username.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                  user.email.toLowerCase().includes(searchQuery.toLowerCase())
-                )
-              );
-              Alert.alert('Success', 'Disabled users deleted successfully');
-            } catch (error) {
-              console.error('Error deleting disabled users:', error);
-              Alert.alert('Error', 'Failed to delete disabled users. Please try again.');
-            } finally {
-              setLoading(false);
-            }
+  const isUserInactive = (user) => {
+    if (!user.lastLogin) return true;
+    const lastLogin = new Date(user.lastLogin);
+    const oneMonthAgo = new Date();
+    oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
+    return lastLogin < oneMonthAgo;
+  };
+
+  const handleDisableInactiveUsers = () => {
+    showModal(
+      "Confirm Disable Inactive Users",
+      "Are you sure you want to disable all inactive users? This includes users who have never logged in or haven't logged in for the past month.",
+      async () => {
+        try {
+          setLoading(true);
+          const token = await AsyncStorage.getItem('token');
+          // Get all inactive users
+          const inactiveUsers = users.filter(user => isUserInactive(user) && !user.disabled);
+          
+          // Disable each inactive user
+          for (const user of inactiveUsers) {
+            await disableUser(token, user._id);
           }
-        },
-      ]
+          
+          const updatedUsers = await getAllUsers(token);
+          setUsers(updatedUsers);
+          setFilteredUsers(
+            updatedUsers.filter(user => 
+              user.username.toLowerCase().includes(searchQuery.toLowerCase()) ||
+              user.email.toLowerCase().includes(searchQuery.toLowerCase())
+            )
+          );
+          showToast(`Successfully disabled ${inactiveUsers.length} inactive users`);
+        } catch (error) {
+          console.error('Error disabling inactive users:', error);
+          showToast('Failed to disable inactive users. Please try again.', 'error');
+        } finally {
+          setLoading(false);
+        }
+      },
+      "Disable Inactive",
+      "danger"
     );
   };
 
@@ -428,6 +396,18 @@ const Users = () => {
       user.email.toLowerCase().includes(searchQuery.toLowerCase())
     );
     setFilteredUsers(filtered);
+  };
+
+  const showToast = (message, type = 'success') => {
+    setToast({ visible: true, message, type });
+    setTimeout(() => {
+      setToast({ visible: false, message: '', type: 'success' });
+    }, 3000);
+  };
+
+  const showModal = (title, message, onConfirm, confirmText, type) => {
+    setModalConfig({ title, message, onConfirm, confirmText, type });
+    setModalVisible(true);
   };
 
   return (
@@ -454,13 +434,6 @@ const Users = () => {
             >
               <FontAwesome5 name="user-clock" size={14} color="white" />
               <Text style={styles.actionButtonText}>Disable Inactive</Text>
-            </TouchableOpacity>
-            <TouchableOpacity 
-              style={[styles.actionButton, {backgroundColor: '#EF4444'}]} 
-              onPress={handleDeleteDisabledUsers}
-            >
-              <FontAwesome5 name="trash-alt" size={14} color="white" />
-              <Text style={styles.actionButtonText}>Delete Disabled</Text>
             </TouchableOpacity>
             <TouchableOpacity 
               style={[styles.actionButton, {backgroundColor: '#10B981'}]} 
@@ -510,10 +483,17 @@ const Users = () => {
                   <View style={[styles.tableCell, {flex: 1}]}>
                     <View style={[
                       styles.statusBadge, 
-                      user.disabled ? styles.statusDisabled : styles.statusActive
+                      user.disabled ? styles.statusDisabled : 
+                      isUserInactive(user) ? styles.statusInactive :
+                      styles.statusActive
                     ]}>
-                      <Text style={styles.statusText}>
-                        {user.disabled ? 'Disabled' : 'Active'}
+                      <Text style={[
+                        styles.statusText,
+                        isUserInactive(user) && !user.disabled && styles.statusTextInactive
+                      ]}>
+                        {user.disabled ? 'Disabled' : 
+                         isUserInactive(user) ? 'Inactive' : 
+                         'Active'}
                       </Text>
                     </View>
                   </View>
@@ -532,12 +512,6 @@ const Users = () => {
                           onPress={() => handleDisableUser(user._id, user.username)}
                         >
                           <FontAwesome5 name="user-slash" size={14} color="white" />
-                        </TouchableOpacity>
-                        <TouchableOpacity 
-                          style={[styles.actionBtn, styles.disableBtn]} 
-                          onPress={() => handleDisableUserDirect(user._id, user.username)}
-                        >
-                          <FontAwesome5 name="user-times" size={14} color="white" />
                         </TouchableOpacity>
                       </>
                     )}
@@ -562,6 +536,54 @@ const Users = () => {
             <Text style={styles.loadingTextPDF}>Generating PDF...</Text>
           </View>
         </View>
+      )}
+
+      {/* Confirmation Modal */}
+      <Modal
+        animationType="fade"
+        transparent={true}
+        visible={modalVisible}
+        onRequestClose={() => setModalVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>{modalConfig.title}</Text>
+            <Text style={styles.modalMessage}>{modalConfig.message}</Text>
+            <View style={styles.modalActions}>
+              <TouchableOpacity
+                style={styles.modalCancelButton}
+                onPress={() => setModalVisible(false)}
+              >
+                <Text style={styles.modalButtonText}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[
+                  styles.modalConfirmButton,
+                  modalConfig.type === 'danger' && styles.modalDangerButton
+                ]}
+                onPress={() => {
+                  setModalVisible(false);
+                  modalConfig.onConfirm?.();
+                }}
+              >
+                <Text style={styles.modalButtonText}>{modalConfig.confirmText}</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Toast Message */}
+      {toast.visible && (
+        <Animated.View
+          style={[
+            styles.toast,
+            toast.type === 'error' && styles.toastError,
+            toast.type === 'info' && styles.toastInfo
+          ]}
+        >
+          <Text style={styles.toastText}>{toast.message}</Text>
+        </Animated.View>
       )}
     </View>
   );
@@ -781,9 +803,15 @@ const styles = StyleSheet.create({
   statusDisabled: {
     backgroundColor: 'rgba(239, 68, 68, 0.1)',
   },
+  statusInactive: {
+    backgroundColor: 'rgba(245, 158, 11, 0.1)',
+  },
   statusText: {
     fontSize: 12,
     fontWeight: '600',
+  },
+  statusTextInactive: {
+    color: '#B45309',
   },
   
   // Empty state
@@ -842,6 +870,79 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#4B5563',
     fontWeight: '500',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalContent: {
+    backgroundColor: 'white',
+    borderRadius: 10,
+    padding: 20,
+    width: '80%',
+    maxWidth: 400,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 10,
+  },
+  modalMessage: {
+    fontSize: 16,
+    marginBottom: 20,
+  },
+  modalActions: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+  },
+  modalCancelButton: {
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 5,
+    backgroundColor: '#6B7280',
+    marginRight: 10,
+  },
+  modalConfirmButton: {
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 5,
+    backgroundColor: '#10B981',
+  },
+  modalDangerButton: {
+    backgroundColor: '#EF4444',
+  },
+  modalButtonText: {
+    color: 'white',
+    fontWeight: '600',
+  },
+  toast: {
+    position: 'absolute',
+    top: 20,
+    left: '50%',
+    transform: [{ translateX: -150 }],
+    backgroundColor: '#10B981',
+    padding: 15,
+    borderRadius: 8,
+    width: 300,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+  toastError: {
+    backgroundColor: '#EF4444',
+  },
+  toastInfo: {
+    backgroundColor: '#3B82F6',
+  },
+  toastText: {
+    color: 'white',
+    fontSize: 14,
+    fontWeight: '600',
   },
 });
 

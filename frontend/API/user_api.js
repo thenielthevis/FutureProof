@@ -355,20 +355,6 @@ export const disableInactiveUsers = async (token) => {
   }
 };
 
-export const deleteDisabledUsers = async (token) => {
-  try {
-    const response = await axios.post(`${API_URL}/users/delete-disabled`, {}, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
-    return response.data;
-  } catch (error) {
-    console.error('Error deleting disabled users:', error.response ? error.response.data : error);
-    throw error.response ? error.response.data : { detail: 'An error occurred' };
-  }
-};
-
 export const verifyReactivationOTP = async (otpData) => {
   try {
     const response = await axios.post(`${API_URL}/verify-reactivation-otp`, otpData);

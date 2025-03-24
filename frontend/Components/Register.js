@@ -467,6 +467,11 @@ const Register = ({ navigation }) => {
               >
                 <Text style={styles.buttonText}>Next</Text>
               </TouchableOpacity>
+              <TouchableOpacity onPress={() => navigation.navigate('Login')}>
+                <Text style={[styles.forgotPassword, isMobile && styles.mobileForgotPassword]}>
+                  I already have an account
+                </Text>
+              </TouchableOpacity>
             </View>
           )}
 
@@ -555,6 +560,11 @@ const Register = ({ navigation }) => {
               >
                 <Text style={styles.buttonText}>Next</Text>
               </TouchableOpacity>
+              <TouchableOpacity onPress={() => navigation.navigate('Login')}>
+                <Text style={[styles.forgotPassword, isMobile && styles.mobileForgotPassword]}>
+                  I already have an account
+                </Text>
+              </TouchableOpacity>
             </View>
           )}
 
@@ -601,7 +611,7 @@ const Register = ({ navigation }) => {
 
               <TouchableOpacity onPress={() => navigation.navigate('Login')}>
                 <Text style={[styles.forgotPassword, isMobile && styles.mobileForgotPassword]}>
-                  I don't have an account
+                  I already have an account
                 </Text>
               </TouchableOpacity>
             </View>

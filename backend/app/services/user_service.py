@@ -353,11 +353,16 @@ async def get_all_users():
 
 async def fetch_all_users():
     try:
-        users = await db.users.find({}, {"username": 1, "email": 1, "lastLogin": 1, "disabled": 1}).to_list(length=None)
+        users = await db.users.find(
+            {"role": "user"},
+            {"username": 1, "email": 1, "lastLogin": 1, "disabled": 1}
+        ).to_list(length=None)
+        
         for user in users:
             user["_id"] = str(user["_id"])
             if "lastLogin" in user and user["lastLogin"]:
                 user["lastLogin"] = user["lastLogin"].isoformat()
+        
         return users
     except Exception as e:
         print(f"Error in fetch_all_users: {str(e)}")
