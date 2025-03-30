@@ -292,7 +292,7 @@ return (
                     <View style={styles.loadingContainer}>
                         <View style={styles.loadingGradient}>
                             <ActivityIndicator size="large" color="#fff" />
-                            <Text style={styles.loadingText}>Analyzing Via GroqCloud Llama 3.2 Model</Text>
+                            <Text style={styles.loadingText}>Analyzing Via GroqCloud llama-3.3-70b-versatile Model</Text>
                             <View style={styles.modelFeatures}>
                                 <View style={styles.featureItem}>
                                     <FontAwesome5 name="brain" size={24} color="#fff" />

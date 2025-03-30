@@ -238,8 +238,9 @@ const Prediction = ({ navigation }) => {
 
   if (loading) {
     return (
-      <LinearGradient colors={['#ffffff', '#72f2b8']} style={styles.loadingContainer}> {/* Added Gradient for Loading */}
-        <ActivityIndicator size="large" color="black" /> {/* Changed ActivityIndicator color to white */}
+      <LinearGradient colors={['#ffffff', '#72f2b8']} style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="black" />
+        <Text style={styles.loadingText}>Analyzing Via GroqCloud llama-3.3-70b-versatile Model</Text>
       </LinearGradient>
     );
   }
@@ -473,6 +474,12 @@ const styles = StyleSheet.create({
     width: '100%',
     alignItems: 'center',
     marginBottom: 60,
+  },
+  loadingText: {
+    marginTop: 10,
+    fontSize: 16,
+    color: 'black',
+    textAlign: 'center',
   },
 });
 
