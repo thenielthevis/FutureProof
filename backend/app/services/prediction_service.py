@@ -36,12 +36,21 @@ def format_user_info(user: UserInDB) -> str:
         f"Food Intake: {', '.join(user.food_intake)}\n"
         f"Sleep Hours: {user.sleep_hours}\n"
         f"Activeness: {user.activeness}\n"
-        f"Please provide a structured response in Markdown format with the following sections:\n"
+        f"\nBased on the user information above, provide a structured response in Markdown format with the following sections:\n"
         f"### 1. Predicted Diseases with likelihood in percentage\n"
-        f"### 2. Positive Habits\n"
-        f"### 3. Areas for Improvement\n"
-        f"### 4. Recommendations\n"
-        f"Use bulleted lists for each section without usinng any bold text to condition name and details."
+        f"For each disease, use this exact format:\n"
+        f"* Disease Name: Percentage% due to specific reasons\n"
+        f"Example format:\n"
+        f"* Diabetes: 80% due to genetic predisposition and moderate environment\n"
+        f"* Heart Disease: 40% due to lifestyle and physical activity\n"
+        f"\n### 2. Positive Habits\n"
+        f"* List each habit\n"
+        f"\n### 3. Areas for Improvement\n"
+        f"* List each area\n"
+        f"\n### 4. Recommendations\n"
+        f"* List each recommendation\n"
+        f"\nImportant: For the predicted diseases section, always separate the disease name from the percentage and reasons using a colon (:). "
+        f"Do not include the percentage in the disease name. Keep disease names simple and clear."
     )
 
 async def predict_disease(user: UserInDB) -> dict:
@@ -113,7 +122,7 @@ async def predict_disease(user: UserInDB) -> dict:
             "user_info": {
                 "header": "Summary of User Information",
                 "details": f"The user, {user.username}, is a {user.age}-year-old {user.gender} with a {user.activeness} lifestyle, "
-                           f"{user.environment} environment, and existing {', '.join(user.genetic_diseases)}. They have vices such as "
+                           f"{user.environment} environment, and a genetical disease of {', '.join(user.genetic_diseases)}. They have vices such as "
                            f"{', '.join(user.vices)}, follow a {', '.join(user.food_intake)} diet, and get {user.sleep_hours} hours of sleep."
             },
             "predicted_diseases": predicted_diseases or [],
