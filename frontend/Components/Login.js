@@ -161,7 +161,7 @@ const Login = ({ navigation }) => {
       >
         <ScrollView contentContainerStyle={styles.scrollContainer} showsVerticalScrollIndicator={false}>
           <Text style={[styles.header, isMobile && styles.mobileHeader]}>
-            {step === 1 ? 'Sign in account' : 'Verify OTP'}
+            {step === 1 ? 'Sign In' : 'Verify OTP'}
           </Text>
 
           {step === 1 && (
@@ -213,7 +213,7 @@ const Login = ({ navigation }) => {
                   <ActivityIndicator size="small" color="#ffffff" /> // Show loader
                 ) : (
                   <Text style={[styles.buttonText, isMobile && styles.mobileButtonText]}>
-                    NEXT
+                    SIGN IN
                   </Text>
                 )}
               </TouchableOpacity>

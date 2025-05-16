@@ -401,7 +401,9 @@ const Register = ({ navigation }) => {
                   status={gender.includes(option) ? 'checked' : 'unchecked'}
                   onPress={() => setGender(option)}
                   key={option}
-                  labelStyle={{ color: '#ffffff' }} // White text
+                  labelStyle={{ color: '#ffffff' }}
+                  color="#ffffff"
+                  uncheckedColor="#ffffff"
                 />
               ))}
               <View style={[styles.inputContainer, isMobile && styles.mobileInputContainer]}>
@@ -433,6 +435,8 @@ const Register = ({ navigation }) => {
                   onPress={() => setEnvironment(option)}
                   key={option}
                   labelStyle={{ color: '#ffffff' }} // White text
+                  color="#ffffff"
+                  uncheckedColor="#ffffff"
                 />
               ))}
 
@@ -444,6 +448,8 @@ const Register = ({ navigation }) => {
                   onPress={() => handleCheckboxToggle(option, setVices, vices)}
                   key={option}
                   labelStyle={{ color: '#ffffff' }} // White text
+                  color="#ffffff"
+                  uncheckedColor="#ffffff"
                 />
               ))}
               <View style={[styles.inputContainer, isMobile && styles.mobileInputContainer]}>
@@ -491,6 +497,8 @@ const Register = ({ navigation }) => {
                   onPress={() => handleCheckboxToggle(option, setGeneticDiseases, genetic_diseases)}
                   key={option}
                   labelStyle={{ color: '#ffffff' }} // White text
+                  color="#ffffff"
+                  uncheckedColor="#ffffff"
                 />
               ))}
               <View style={[styles.inputContainer, isMobile && styles.mobileInputContainer]}>
@@ -517,6 +525,8 @@ const Register = ({ navigation }) => {
                   onPress={() => handleCheckboxToggle(option, setLifestyle, lifestyle)}
                   key={option}
                   labelStyle={{ color: '#ffffff' }} // White text
+                  color="#ffffff"
+                  uncheckedColor="#ffffff"
                 />
               ))}
               <View style={[styles.inputContainer, isMobile && styles.mobileInputContainer]}>
@@ -537,6 +547,8 @@ const Register = ({ navigation }) => {
                   onPress={() => handleCheckboxToggle(option, setFoodIntake, food_intake)}
                   key={option}
                   labelStyle={{ color: '#ffffff' }} // White text
+                  color="#ffffff"
+                  uncheckedColor="#ffffff"
                 />
               ))}
               <View style={[styles.inputContainer, isMobile && styles.mobileInputContainer]}>
@@ -578,6 +590,8 @@ const Register = ({ navigation }) => {
                   onPress={() => setSleepHours(option)}
                   key={option}
                   labelStyle={{ color: '#ffffff' }} // White text
+                  color="#ffffff"
+                  uncheckedColor="#ffffff"
                 />
               ))}
 
@@ -589,6 +603,8 @@ const Register = ({ navigation }) => {
                   onPress={() => setActiveness(option)}
                   key={option}
                   labelStyle={{ color: '#ffffff' }} // White text
+                  color="#ffffff"
+                  uncheckedColor="#ffffff"
                 />
               ))}
               <TouchableOpacity
@@ -788,6 +804,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 10,
+    color: '#ffffff',
   },
   backToHome: {
     color: '#004d00',

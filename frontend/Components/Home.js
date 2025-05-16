@@ -206,7 +206,6 @@ const Home = ({ navigation }) => {
     // Desktop Navigation
     const renderDesktopNav = () => (
       <View style={styles.navLinksContainer}>
-        <LinearGradient colors={['#77f3bb']} style={styles.navLinks}>
           <TouchableOpacity onPress={() => scrollToSection('about')}>
             <Text style={styles.navLinkText}>About</Text>
           </TouchableOpacity>
@@ -216,7 +215,6 @@ const Home = ({ navigation }) => {
           <TouchableOpacity onPress={() => scrollToSection('contact')}>
             <Text style={styles.navLinkText}>Contact Us</Text>
           </TouchableOpacity>
-        </LinearGradient>
 
         <View style={styles.toggleContainer}>
           {isLoggedIn ? (
@@ -1012,7 +1010,8 @@ const styles = StyleSheet.create({
     fontSize: 20,
     color: '#f0fdf7',
     marginHorizontal: 10,
-    fontWeight: '600'
+    fontWeight: '600', 
+    marginRight: 20,
   },
   toggleContainer: {
     flexDirection: 'row',
